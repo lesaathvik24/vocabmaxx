@@ -157,7 +157,7 @@ The following are intentionally **not** v1 features. They are listed here so a f
 |---|---|
 | **Card** | A persisted `Word` row + its current SRS state. The user-visible unit of study. |
 | **Term** | The headword the user captured. Lowercased, trimmed. Unique per user. |
-| **Definition source** | Either `dictionary` (free API) or `llm` (Anthropic/OpenAI fallback). |
+| **Definition source** | Either `dictionary` (free dictionaryapi.dev) or `llm` (DeepSeek fallback — see ADR 0007). |
 | **Grade** | The user's self-rating after a recall attempt: Again (0), Hard (3), Good (4), Easy (5). |
 | **SM-2** | SuperMemo 2 — the spaced repetition algorithm. See [`ADR/0006`](ADR/0006-sm2-vs-fsrs.md). |
 | **Ease factor** | SM-2 multiplier controlling interval growth. Start 2.5, floor 1.3. |

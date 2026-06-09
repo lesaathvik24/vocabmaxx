@@ -236,7 +236,7 @@ React Server Components by default. Client Components only where state, browser 
 3. Handler:
    a. auth + Zod
    b. importService.extractAdvancedTerms(text)
-        i.  calls llmClient.extract(text) — Anthropic Haiku, JSON-structured
+        i.  calls llmClient.extract(text) — DeepSeek deepseek-chat, JSON-structured
         ii. returns Term[] with confidence scores
    c. returns { candidates: Term[] }
 4. Client renders checklist; user confirms which to add

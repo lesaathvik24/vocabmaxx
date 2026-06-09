@@ -128,7 +128,7 @@ See `.env.example` in the repo root. Without these, Vercel build fails:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
-- `ANTHROPIC_API_KEY`
+- `DEEPSEEK_API_KEY` (and optionally `DEEPSEEK_BASE_URL`)
 - `RESEND_API_KEY`
 - `CRON_SECRET`
 - `SENTRY_DSN`
@@ -153,7 +153,7 @@ If anything looks off, check the relevant dashboard linked in §1.
 ### 5.2 Weekly check (5 min)
 
 - Supabase storage usage — heading toward the free-tier 500MB limit?
-- Anthropic spend — under the personal budget?
+- DeepSeek spend — under the personal budget? (shared `definition_cache` should keep this near zero after the first dozen captures.)
 - Resend emails sent vs. failures.
 
 ### 5.3 Sentry alert routing
@@ -187,9 +187,9 @@ Set up in Sentry → Alerts:
 ### 6.3 Common incidents
 
 **Sentry shows `Network failure` on `/api/capture`:**
-1. Check Anthropic status page.
-2. If Anthropic is down, capture still works for dict-hits; LLM fallback throws expected error. Users see "couldn't generate definition for rare word."
-3. No action needed unless Anthropic is down > 2h.
+1. Check DeepSeek status (https://status.deepseek.com).
+2. If DeepSeek is down, capture still works for dict-hits; LLM fallback returns `network_failure` / `rate_limited`. Users see "couldn't generate definition for rare word."
+3. No action needed unless DeepSeek is down > 2h. If it stays down, swap `DEEPSEEK_BASE_URL` to an OpenAI-compatible mirror (Together, Groq, OpenRouter) in Vercel and redeploy.
 
 **Supabase shows "Connection limit exceeded":**
 1. Drop the long-running queries from Supabase dashboard.
@@ -250,7 +250,7 @@ Each month, review:
 
 - **Supabase:** project usage. Target: stay free.
 - **Vercel:** bandwidth + function invocations. Target: stay hobby-tier.
-- **Anthropic:** API spend. Soft cap $10/month for personal use.
+- **DeepSeek:** API spend. Soft cap $5/month for personal use — shared `definition_cache` makes blowing past this unlikely.
 - **Resend:** emails sent. Free tier: 3,000/month.
 
 If approaching any limit, see relevant ADR for upgrade considerations.

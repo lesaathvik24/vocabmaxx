@@ -1,6 +1,6 @@
 # ADR 0005 — Hybrid definition pipeline (Dictionary API → LLM fallback)
 
-**Status:** Accepted
+**Status:** Accepted (LLM provider superseded by [ADR 0007](0007-deepseek-over-anthropic.md) — pipeline shape unchanged)
 **Date:** 2026-06-07
 
 ---

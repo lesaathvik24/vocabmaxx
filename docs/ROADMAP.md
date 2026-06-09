@@ -275,8 +275,8 @@ None — pure code.
 - **Status:** `[x]`
 
 ### Phase 3 — Setup actions (you)
-1. Confirm `ANTHROPIC_API_KEY` in `.env.local` and Vercel.
-2. Eyeball your Anthropic console for billing — Phase 3 starts spending pennies per capture.
+1. Confirm `DEEPSEEK_API_KEY` (and optional `DEEPSEEK_BASE_URL`) in `.env.local` and Vercel.
+2. Eyeball your DeepSeek console for billing — Phase 3 starts spending fractions of a cent per rare-word capture (cached afterwards).
 
 ### Phase 3 — End-to-end verification
 - [ ] `curl` capture endpoint with common word → JSON definition.

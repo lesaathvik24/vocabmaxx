@@ -29,7 +29,7 @@ pnpm install
 # Env
 cp .env.example .env.local
 # fill in NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY,
-# SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY (others optional in dev)
+# SUPABASE_SERVICE_ROLE_KEY, DEEPSEEK_API_KEY (others optional in dev)
 
 # DB
 pnpm db:push                  # applies Drizzle schema + RLS migrations
@@ -65,7 +65,7 @@ pnpm format         # Prettier
 
 ### 3.3 LLM keys
 
-The Anthropic key is required for the LLM fallback path. Without it, capture works only for words the free dictionary has. You can ship features without it; tests will mock it.
+`DEEPSEEK_API_KEY` (and optional `DEEPSEEK_BASE_URL`) drives the LLM fallback path. Without it, capture works only for words the free dictionary has — the service returns `no_fallback_available`. You can ship features without it; unit + integration tests mock the network entirely so they burn zero tokens.
 
 ## 4. Code conventions
 

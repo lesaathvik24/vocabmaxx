@@ -90,8 +90,8 @@ URL params and search params are also Zod-validated.
 | `NEXT_PUBLIC_SUPABASE_URL` | client + server | public |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | client + server | public (RLS-scoped) |
 | `SUPABASE_SERVICE_ROLE_KEY` | server only | env var, Vercel |
-| `ANTHROPIC_API_KEY` | server only | env var, Vercel |
-| `OPENAI_API_KEY` | server only | env var, Vercel |
+| `DEEPSEEK_API_KEY` | server only | env var, Vercel |
+| `DEEPSEEK_BASE_URL` | server only | env var, Vercel (optional, defaults to api.deepseek.com) |
 | `RESEND_API_KEY` | server only | env var, Vercel |
 | `CRON_SECRET` | server only | env var, Vercel; used to auth cron handler |
 | `SENTRY_DSN` | client + server | public (designed for it) |
@@ -99,7 +99,7 @@ URL params and search params are also Zod-validated.
 ### 7.1 Rotation policy
 
 - Rotate `SUPABASE_SERVICE_ROLE_KEY` if any contributor leaves the project.
-- Rotate `ANTHROPIC_API_KEY` quarterly or on suspected leak.
+- Rotate `DEEPSEEK_API_KEY` quarterly or on suspected leak.
 - Rotate `CRON_SECRET` on every breaking-change deploy.
 
 ### 7.2 Leak prevention

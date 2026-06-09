@@ -8,192 +8,132 @@
 
 ### What's done
 
-| Area | Status |
-|---|---|
-| Docs (PRD, ARCHITECTURE, TECH_SPEC, ROADMAP, ADRs, etc.) | ✅ Complete |
-| Next.js 15 + TypeScript + Tailwind v4 scaffold | ✅ |
-| Supabase Auth stubs (client, server, middleware) | ✅ |
-| Drizzle ORM schema (5 tables) | ✅ |
-| SM-2 domain layer | ✅ |
-| Unit tests (10/10 passing) | ✅ |
-| Marketing landing page + dashboard shell | ✅ |
-| Sign-in + sign-up pages (magic-link + Google, both `signInWithOtp`) | ✅ |
-| `app/(app)/layout.tsx` with `requireUser()` server guard | ✅ |
-| `pnpm build` — passes (Tailwind v4 / PostCSS fixed) | ✅ |
-| OAuth callback handler | ✅ |
-| Sentry + PostHog stubs | ✅ |
-| Zod validation schemas | ✅ |
-| CI workflow (Node 22, pnpm 11, lint+typecheck+test:unit) | ✅ pushed, should be green |
-| Git repo `github.com/lesaathvik24/vocabmaxx` | ✅ |
+| Phase | Status | Tests |
+|---|---|---|
+| Docs (PRD, ARCHITECTURE, TECH_SPEC, ROADMAP, ADRs 0001–0007, etc.) | ✅ | — |
+| Phase 0 — Scaffold + auth + RLS + CI | ✅ | — |
+| Phase 1 — Domain layer (SM-2 + Word invariants) | ✅ | 36 unit |
+| Phase 2 — Persistence (queries + services + RLS) | ✅ | 18 integ |
+| Phase 3 — Definition pipeline (dict + DeepSeek + cache + `/api/capture`) | ✅ | 23 (7 unit + 16 integ) |
+| **Total green** | | **90 tests** |
+
+Gates on `master`: `pnpm lint` clean, `pnpm typecheck` clean, `pnpm verify` green.
 
 ### What's NOT done yet
 
-- DB schema not applied — see instructions below
-- Google sign-in — configured in Supabase but not tested end-to-end
-- Vercel deploy — not done
-- Phase 1+ features (capture, review, words, insights) — not started
+- Phase 4+ (capture UI, dashboard, review, words list, insights, settings, polish).
+- Vercel production deploy (no auto-deploy hook wired yet — see "Vercel" below).
+- Sentry — removed in Phase 0 cleanup; deferred to post-launch as an improvement.
 
 ---
 
-## Credentials & config (all in `.env.local`)
+## Phase 1–3 surface (what shipped)
 
-| Key | Value |
-|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | `https://qbogwjfneuswzwdykoxf.supabase.co` |
-| `SUPABASE_SERVICE_ROLE_KEY` | in `.env.local` |
-| `DEEPSEEK_API_KEY` | in `.env.local` (replaces Anthropic) |
-| `GOOGLE_CLIENT_ID` | in `.env.local` |
-| `GOOGLE_CLIENT_SECRET` | in `.env.local` |
-| `NEXT_PUBLIC_SENTRY_DSN` | in `.env.local` |
-| `NEXT_PUBLIC_POSTHOG_KEY` | `phc_CBimfsjwVj24kjoiF86td9bqwdAESfj5NnA2TUFvuKjj` |
-| `RESEND_API_KEY` | in `.env.local` |
-| `DB_HOST` | `db.qbogwjfneuswzwdykoxf.supabase.co` |
-| `DB_PASSWORD` | `Supabase@vocabmaxx` |
+### Domain (`lib/domain/`)
+- `grade.ts` — `Grade = { Again:0, Hard:3, Good:4, Easy:5 }`.
+- `srs.ts` — `nextState(current, grade, now)` with fail-loud guards on NaN/negative/non-int/below-floor state. `InvalidSRSStateError`.
+- `word.ts` — `createWord()` factory + `ValidWord` type-only brand (`unique symbol`, no runtime field).
+- `errors.ts` — `Result<T,E>`, `ok`, `err`, error unions, `InvalidWordError`, `InvalidSRSStateError`.
+
+### Persistence (`lib/db/`, `lib/services/`)
+- `queries/words.ts` — `insert`, `findById`, `findByUserAndTerm`, `listByUser`, `deleteById`.
+- `queries/srs.ts` — `initialize`, `getByWordId`, `findDue`.
+- `queries/review-log.ts` — `append`, `listByUser`, `listByWord`.
+- `queries/definition-cache.ts` — `lookup`, `write` (race-safe via `onConflictDoNothing`).
+- `services/word.service.ts` — `save` (returns `Result<Word, CaptureError>`; duplicate detection).
+- `services/srs.service.ts` — `listDue`, `recordReview` (one `db.transaction` with `SELECT FOR UPDATE` + state update + log append).
+
+### Definition pipeline (`lib/services/`)
+- `dict.client.ts` — dictionaryapi.dev fetch, 5s abort, returns first def-with-example.
+- `llm.client.ts` — DeepSeek `deepseek-chat`, `response_format: json_object`, `temperature: 0`, `max_tokens: 200`, Zod-validated.
+- `definition.service.ts` — pure composer with DI: normalize → invalid_term gate → cache → dict → llm. Cache writes failure-tolerant.
+
+### API
+- `app/api/capture/route.ts` — `POST /api/capture`. `getUserForApi` 401-or-User, Zod gate, typed error → HTTP (400/404/409/502/503). Strips `raw` / `cause` before responding.
+
+### Test harness
+- `vitest.config.ts` — unit tests, `server-only` shim.
+- `vitest.integration.config.ts` — integration tests, swaps `DATABASE_URL` → `SUPABASE_TEST_DB_URL`, single forked worker, 30s timeout.
+- `tests/integration/db/_helpers.ts` — raw postgres-js client for seeding `auth.users` + cleanup.
+- MSW for dict + LLM HTTP mocking.
 
 ---
 
-## Pending manual steps (do these before running `pnpm dev`)
+## DB connection topology
 
-### 1. Apply DB schema in Supabase SQL Editor
+Three URLs to be aware of in `.env.local`:
 
-The direct Postgres connection is IPv6-only so `pnpm db:push` can't connect from a standard laptop. Apply both `drizzle/0000_next_wallow.sql` and `drizzle/0001_rls.sql` via Supabase SQL Editor (in order). `0000` creates tables, `0001` enables RLS + policies.
+| Var | Project | Pooler | Port | Used by |
+|---|---|---|---|---|
+| `DATABASE_URL` | `qbogwjfneuswzwdykoxf` (prod) | Transaction | 6543 | App runtime on Vercel (serverless) |
+| `SUPABASE_TEST_DB_URL` | `ufiizhzljxrntjeluuhv` (test) | Session | 5432 | `pnpm test:integ` |
+| (manual) | both | direct | 5432 | IPv6-only — fails from most laptops; do NOT use |
 
-1. Go to **supabase.com/dashboard → project `qbogwjfneuswzwdykoxf` → SQL Editor → New query**
-2. Paste contents of `drizzle/0000_next_wallow.sql` → **Run**
-3. New query → paste contents of `drizzle/0001_rls.sql` → **Run**
+Schema is applied via Supabase SQL Editor on both projects (db:push fails over IPv6 from typical networks).
 
-Expected: 5 tables created (`words`, `srs_state`, `review_log`, `import_jobs`, `definition_cache`) with RLS enabled on all 5.
+---
 
-### 2. Configure Google OAuth in Supabase (if not done)
+## Pending manual steps before Phase 4
 
-**Do NOT go to "OAuth Server" — that's for a different feature entirely.**
+### 1. Apply both SQL migrations to BOTH projects if not already done
+For each project (prod + test):
+1. Dashboard → SQL Editor → New query → paste `drizzle/0000_next_wallow.sql` → Run.
+2. New query → paste `drizzle/0001_rls.sql` → Run.
+3. Verify: `select tablename from pg_tables where schemaname='public';` → 5 tables.
 
-1. Supabase dashboard → **Authentication → Providers → Google**
-2. Toggle **Enable**
-3. Paste Client ID + Client Secret from `.env.local` (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`)
-4. **Save**
+### 2. Vercel deploy (when ready to ship Phase 4 UI)
+- Dashboard → Add New Project → import GitHub repo `lesaathvik24/vocabmaxx`.
+- Paste **all** `.env.local` keys into Project Settings → Environment Variables (production).
+- **Critical:** `DATABASE_URL` on Vercel must use the **transaction pooler (port 6543)**, not 5432.
 
-### 3. Configure Supabase Redirect URLs
-
-Supabase dashboard → **Authentication → URL Configuration**:
-- **Site URL**: `http://localhost:3000`
-- **Redirect URLs**: add `http://localhost:3000/**`
-
-Without this, after Google auth, Supabase blocks the redirect back to localhost.
-
-### 4. Configure Google Cloud Console
-
-In Google Cloud Console → APIs & Credentials → your OAuth 2.0 client:
-- **Authorized JavaScript origins**: `http://localhost:3000`
-- **Authorized redirect URIs**: `https://qbogwjfneuswzwdykoxf.supabase.co/auth/v1/callback`
-
-### 5. Enable magic-link in Supabase
-
-Supabase dashboard → **Authentication → Providers → Email**:
-- Toggle **Enable**
-- "Confirm email" can be off for dev
+### 3. CI secret for integration tests (optional)
+- GitHub repo → Settings → Secrets → Actions → add `SUPABASE_TEST_DB_URL`.
+- Update `.github/workflows/ci.yml` to pass it through, or skip `test:integ` in CI and run locally only.
 
 ---
 
 ## How to run locally
 
 ```bash
-cd ~/Downloads/VocabMaxx
-pnpm dev
-# open http://localhost:3000
+pnpm install
+pnpm dev                       # http://localhost:3000
+pnpm test:unit                 # ~1s, 56 tests
+pnpm test:integ                # ~60s, 34 tests, hits test Supabase
+pnpm verify                    # lint + typecheck + unit + integration
 ```
 
-Expected:
-- `/` → marketing landing page
-- `/auth/sign-in` → sign-in form (magic-link + Google button)
-- `/dashboard` → redirects to sign-in if not logged in
+`pnpm db:push` is unsupported over typical IPv6-restricted networks. Apply schema via SQL Editor.
 
 ---
 
-## Phase 0 exit checklist (not yet ticked)
+## Manual end-to-end smoke test for Phase 1–3
 
-- [ ] `pnpm dev` → `localhost:3000` renders marketing page
-- [ ] `pnpm build` → 0 errors
-- [ ] `pnpm verify` → green *(locally confirmed green)*
-- [ ] DB schema applied in Supabase SQL Editor
-- [ ] Visit `/dashboard` unauthed → redirect to `/auth/sign-in`
-- [ ] Sign in with Google → lands on `/dashboard` with "0 words due"
-- [ ] Sign in with magic-link → email arrives → click → `/dashboard`
-- [ ] CI green on GitHub Actions
-- [ ] Deploy to Vercel → live URL works
-- [ ] Update `README.md` with Vercel URL
+Until Phase 4 UI ships, exercise the API directly. Sign in at `localhost:3000` then in DevTools console (same origin so cookies attach):
 
----
-
-## Vercel deploy (do after local test passes)
-
-1. vercel.com → Add New Project → Import `lesaathvik24/vocabmaxx`
-2. Framework: Next.js (auto-detected)
-3. Add all keys from `.env.local` as environment variables
-4. Also add `NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com`
-5. Click Deploy
-6. After deploy: add Vercel URL to Supabase → Auth → URL Configuration → Redirect URLs (`https://vocabmaxx.vercel.app/**`)
-7. Add Vercel URL to Google Cloud Console → Authorized JavaScript origins + redirect URIs
-
----
-
-## File map (key files)
-
-```
-app/
-  (marketing)/page.tsx          landing page
-  (app)/layout.tsx              server guard (requireUser())
-  (app)/dashboard/page.tsx      protected dashboard shell
-  auth/sign-in/page.tsx         sign-in (Google + magic-link)
-  auth/sign-up/page.tsx         sign-up (magic-link via signInWithOtp)
-  auth/callback/route.ts        OAuth callback handler (validated next param)
-  layout.tsx                    root layout (PostHog provider)
-  globals.css
-
-lib/
-  domain/grade.ts               Grade enum (0|3|4|5)
-  domain/srs.ts                 SM-2 nextState() function
-  domain/word.ts                Word + WordWithSRS types
-  domain/errors.ts              Result<T,E>, error unions
-  auth/client.ts                Supabase browser client
-  auth/server.ts                Supabase server client + requireUser()
-  auth/middleware.ts            Auth middleware helper
-  db/schema.ts                  Drizzle schema (5 tables)
-  db/client.ts                  Drizzle DB client
-  analytics/posthog.tsx         PostHog provider
-  validation/capture.schema.ts  Zod: capture input
-  validation/review.schema.ts   Zod: grade input
-  validation/word.schema.ts     Zod: edit word input
-  utils/cn.ts                   clsx + tailwind-merge
-  utils/errors.ts               toUserMessage()
-  utils/result.ts               ok() + err() helpers
-
-middleware.ts                   Next.js middleware (auth guard)
-drizzle/0000_next_wallow.sql    canonical schema (5 tables)
-drizzle/0001_rls.sql            RLS enable + policies (paste 2nd)
-tests/unit/srs.test.ts          SM-2 unit tests (10 passing)
-.github/workflows/ci.yml        CI (lint + typecheck + test:unit)
+```js
+// success — dict path
+fetch('/api/capture',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({term:'ubiquitous'})}).then(r=>r.json().then(j=>console.log(r.status,j)))
+// duplicate
+fetch('/api/capture',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({term:'ubiquitous'})}).then(r=>r.json().then(j=>console.log(r.status,j)))
+// LLM fallback (1 DeepSeek call, ≤ $0.0001)
+fetch('/api/capture',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({term:'frabjous'})}).then(r=>r.json().then(j=>console.log(r.status,j)))
+// invalid term
+fetch('/api/capture',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({term:'123abc'})}).then(r=>r.json().then(j=>console.log(r.status,j)))
 ```
 
----
-
-## Design decisions made
-
-- **DeepSeek** instead of Anthropic for LLM fallback (same API shape)
-- **No Plausible** — PostHog only for analytics
-- **No Plausible script** — remove any reference if found
-- **Sentry free tier** — kept, DSN configured
-- **jsdom** installed as devDep but vitest uses `node` env by default; individual component test files can add `// @vitest-environment jsdom` when needed
+Expect: `200` / `409` / `200 (source: 'llm')` / `400`.
 
 ---
 
-## What the next session should do
+## Next phase
 
-Start Phase 1 (from `docs/ROADMAP.md`) only after Phase 0 checklist is fully ticked.
+**Phase 4 — Capture UI + dashboard** (`docs/ROADMAP.md` Phase 4). Branches:
+- 4.1 — App shell (Atelier).
+- 4.2 — Dashboard (due banner + recent captures).
+- 4.3 — Single-word capture page.
+- 4.4 — Paragraph extract (LLM call + UI).
+- 4.5 — Bulk import (.txt upload).
 
-Phase 1 = capture flow: `POST /api/capture`, definition service (dict → DeepSeek fallback), word saved to DB, `/capture` UI page.
+Phase 4 also requires `GET /api/words` and `GET /api/words/[id]` endpoints — add them as part of 4.2 / 4.3.
 
-Do NOT start Phase 1 until:
-1. `pnpm dev` works locally
-2. Sign-in works (both Google and magic-link)
-3. DB schema applied and verified in Supabase table editor
+Service layer for Phase 4 is already in place — UI just consumes `wordService.listForUser`, `srsService.listDue`, and `POST /api/capture`.

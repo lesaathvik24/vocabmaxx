@@ -234,7 +234,7 @@ fetch(term):
        if cached: return ok({ ...cached })
     4. dictResult = await dictClient.fetch(term)
        if dictResult.ok: writeCache(dictResult.value); return ok(dictResult.value)
-    5. if !env.ANTHROPIC_API_KEY: return err({ kind: 'no_fallback_available' })
+    5. if !env.DEEPSEEK_API_KEY: return err({ kind: 'no_fallback_available' })
     6. llmResult = await llmClient.fetch(term)
        if llmResult.ok: writeCache(llmResult.value); return ok(llmResult.value)
        else: return llmResult
@@ -407,7 +407,7 @@ export const editWordSchema = z.object({
 
 ## 7. LLM contracts
 
-### Definition fallback prompt (Anthropic Claude Haiku 4.5)
+### Definition fallback prompt (DeepSeek `deepseek-chat` — see [ADR 0007](ADR/0007-deepseek-over-anthropic.md))
 
 ```
 System:
@@ -496,7 +496,8 @@ All green required to merge to `main`.
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=         # server-only, definition_cache writes + cron
-ANTHROPIC_API_KEY=                 # server-only, LLM fallback
+DEEPSEEK_API_KEY=                  # server-only, LLM fallback
+DEEPSEEK_BASE_URL=https://api.deepseek.com  # override for self-hosted / proxy
 DEEPSEEK_API_KEY=                  # word definition LLM fallback
 DEEPSEEK_BASE_URL=https://api.deepseek.com
 RESEND_API_KEY=                    # transactional email
