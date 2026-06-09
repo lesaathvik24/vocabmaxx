@@ -250,21 +250,21 @@ None — pure code.
 - **Files:** `lib/services/dict.client.ts`.
 - **Acceptance:** GETs dictionaryapi.dev, returns first definition with non-empty example; typed errors otherwise.
 - **Automated tests:** `tests/integration/api/dict.test.ts` with MSW — 4 cases.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ### 3.2 LLM client
 - **Docs to load:** `docs/TECH_SPEC.md §7` (LLM contracts — definition prompt), `docs/ADR/0005-hybrid-definition-pipeline.md`.
 - **Files:** `lib/services/llm.client.ts`.
-- **Acceptance:** Anthropic Haiku call, strict JSON parse, typed errors on schema mismatch / 429.
-- **Automated tests:** `tests/integration/api/llm.test.ts` with MSW — 4 cases.
-- **Status:** `[ ]`
+- **Acceptance:** DeepSeek `deepseek-chat` call (substituted for Anthropic Haiku — see ADR), strict JSON parse, typed errors on schema mismatch / 429.
+- **Automated tests:** `tests/integration/api/llm.test.ts` with MSW — 5 cases.
+- **Status:** `[x]`
 
 ### 3.3 Hybrid composer
 - **Docs to load:** `docs/TECH_SPEC.md §4` (DefinitionService composer pseudocode).
 - **Files:** `lib/services/definition.service.ts`.
 - **Acceptance:** uses `definition_cache`; cache hit short-circuits; dict → LLM fallback.
-- **Automated tests:** `tests/unit/definition.service.test.ts` with mocks — 4 cases.
-- **Status:** `[ ]`
+- **Automated tests:** `tests/unit/definition.service.test.ts` with mocks — 7 cases.
+- **Status:** `[x]`
 
 ### 3.4 `/api/capture` route
 - **Docs to load:** `docs/TECH_SPEC.md §5` (Capture endpoint) + `§6` (Zod), `docs/SECURITY.md §4`.
@@ -272,7 +272,7 @@ None — pure code.
 - **Acceptance:** auth required, Zod-validates, returns typed responses.
 - **Automated tests:** `tests/integration/api/capture.test.ts` — 401, 400, 200, 409.
 - **Manual test:** signed in, POST `{term:"ubiquitous"}` → 200; again → 409; `{term:"defenestrate"}` → 200 source=`llm`.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ### Phase 3 — Setup actions (you)
 1. Confirm `ANTHROPIC_API_KEY` in `.env.local` and Vercel.
