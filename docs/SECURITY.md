@@ -141,11 +141,11 @@ Set via `next.config.ts` headers:
 
 ```
 default-src 'self';
-script-src 'self' 'unsafe-inline' https://*.posthog.com https://plausible.io;
+script-src 'self' 'unsafe-inline' https://*.posthog.com;
 style-src 'self' 'unsafe-inline';
 img-src 'self' data: https:;
 font-src 'self' data:;
-connect-src 'self' https://*.supabase.co https://api.anthropic.com https://*.posthog.com https://plausible.io https://*.sentry.io;
+connect-src 'self' https://*.supabase.co https://api.deepseek.com https://*.posthog.com https://*.sentry.io;
 frame-ancestors 'none';
 ```
 

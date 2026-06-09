@@ -119,10 +119,10 @@ Per-phase **Setup actions (you)** and **End-to-end verification** sections at th
 - **Acceptance:** thrown error in dev appears in Sentry within 60s.
 - **Status:** `[ ]`
 
-### 0.7b PostHog + Plausible
+### 0.7b PostHog
 - **Docs to load:** `docs/ARCHITECTURE.md §9`.
-- **Files:** `lib/analytics/posthog.ts`, `lib/analytics/plausible.ts`, `app/layout.tsx` (mount providers).
-- **Acceptance:** `/` page-view shows in PostHog + Plausible dashboards.
+- **Files:** `lib/analytics/posthog.ts`, `app/layout.tsx` (mount provider).
+- **Acceptance:** `/` page-view shows in PostHog dashboard.
 - **Status:** `[ ]`
 
 ### 0.8 Docs review pass
@@ -141,11 +141,10 @@ Do these in order **before** kicking off Phase 0 subtasks:
 3. **Enable auth providers** in Supabase dashboard → Auth → Providers:
    - Email (magic-link): on, confirm-email off for dev.
    - Google: paste Google OAuth client id + secret (create at console.cloud.google.com → APIs → Credentials → OAuth 2.0). Add redirect `https://<supabase-url>/auth/v1/callback`.
-4. **Get Anthropic key** from console.anthropic.com → `ANTHROPIC_API_KEY` into `.env.local`.
-5. **Create Sentry project** → copy `SENTRY_DSN`, `SENTRY_AUTH_TOKEN`.
-6. **Create PostHog project** (cloud) → copy `NEXT_PUBLIC_POSTHOG_KEY`.
-7. **Create Plausible site** → copy domain into `NEXT_PUBLIC_PLAUSIBLE_DOMAIN`.
-8. **Resend account** → API key → `RESEND_API_KEY`. Verify a sending domain (or use onboarding domain in dev).
+4. **DeepSeek key** already in `.env.local` (`DEEPSEEK_API_KEY`). Used for word-definition LLM fallback.
+5. **Sentry** DSN + auth token already in `.env.local`.
+6. **PostHog** project token already in `.env.local`.
+7. **Resend** API key already in `.env.local`. Verify a sending domain (or use onboarding domain in dev).
 9. **GitHub repo:** `gh repo create vocabmaxx --public --description "Vocabulary SRS — capture words, own them"`.
 10. **Vercel project:** import GitHub repo → paste all `.env.local` keys into Vercel → trigger first deploy.
 
@@ -163,7 +162,7 @@ Tick each line yourself. Phase is not done until every box is checked.
 - [ ] Sign in with magic-link → email arrives → click → `/dashboard`.
 - [ ] Sign out → `/dashboard` redirects to `/auth/sign-in`.
 - [ ] Throw a test error from a button in dev → Sentry issue appears.
-- [ ] Visit `/` → PostHog event + Plausible counter both increment.
+- [ ] Visit `/` → PostHog pageview event fires.
 - [ ] Open a noop PR → CI green within 5 min, Vercel preview URL posted.
 - [ ] Deploy to Vercel production → live URL renders `/` and supports sign-in.
 - [ ] All Phase 0 checkboxes above flipped to `[x]`.

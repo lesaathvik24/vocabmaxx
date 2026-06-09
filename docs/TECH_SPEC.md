@@ -497,13 +497,14 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=         # server-only, definition_cache writes + cron
 ANTHROPIC_API_KEY=                 # server-only, LLM fallback
-OPENAI_API_KEY=                    # optional, fallback provider
+DEEPSEEK_API_KEY=                  # word definition LLM fallback
+DEEPSEEK_BASE_URL=https://api.deepseek.com
 RESEND_API_KEY=                    # transactional email
 CRON_SECRET=                       # for /api/cron/* auth
-SENTRY_DSN=
+NEXT_PUBLIC_SENTRY_DSN=
+SENTRY_AUTH_TOKEN=
 NEXT_PUBLIC_POSTHOG_KEY=
 NEXT_PUBLIC_POSTHOG_HOST=
-NEXT_PUBLIC_PLAUSIBLE_DOMAIN=
 ```
 
 Server-only keys never end up in client bundle (no `NEXT_PUBLIC_` prefix).

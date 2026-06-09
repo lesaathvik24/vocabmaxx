@@ -185,10 +185,9 @@ PWA install + offline support are deferred to **Phase X** (post-v1). Do not crea
 
 ### Step 11 — Sentry + analytics stubs
 
-- `sentry.client.config.ts`, `sentry.server.config.ts` — initialise Sentry with `SENTRY_DSN`.
+- `sentry.client.config.ts`, `sentry.server.config.ts` — initialise Sentry with `NEXT_PUBLIC_SENTRY_DSN`.
 - `lib/analytics/posthog.ts` — PostHog provider wrapper.
-- `lib/analytics/plausible.ts` — `<PlausibleScript>` component.
-- Wire providers into `app/layout.tsx`.
+- Wire provider into `app/layout.tsx`.
 
 ### Step 12 — Observability stubs
 
@@ -201,24 +200,21 @@ Write `tests/unit/srs.test.ts` with all 15 cases from `docs/TECH_SPEC.md §3`. *
 
 ### Step 14 — Git + GitHub
 
+Repo already exists at `github.com/lesaathvik24/vocabmaxx` and `origin` remote is set.
+iOS archive is already at `vocabmaxx-ios-archive`. Just commit + push:
+
 ```bash
-cd ~/Downloads/vocabmaxx
-git init
+cd ~/Downloads/VocabMaxx
 git add .
 git commit -m "phase 0: scaffold SaaS foundation
 
 Next.js 15, TypeScript, Tailwind v4, shadcn/ui, Supabase Auth,
 Drizzle + Postgres schema, SM-2 domain layer, CI,
-Sentry, PostHog, Plausible stubs. Full docs in docs/.
+Sentry, PostHog stubs. Full docs in docs/.
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 
-# IMPORTANT: the name `vocabmaxx` is currently used by your old iOS repo.
-# Rename it first via GitHub UI (Settings → rename to `vocabmaxx-ios-archive`),
-# then create the new repo with the clean name:
-gh repo create vocabmaxx --public \
-    --description "Vocabulary SRS — capture words, own them" \
-    --source . --remote origin --push
+git push origin master
 ```
 
 ### Step 15 — Delete old iOS folder
@@ -263,10 +259,10 @@ When all checked, **Phase 0 is done**. Begin Phase 1 in a new session or continu
 ## Context the next session needs
 
 - **Working dir:** `~/Downloads/vocabmaxx/`
-- **GitHub repo:** `github.com/lesaathvik24/vocabmaxx` (created in this session, after renaming the old iOS repo to `vocabmaxx-ios-archive`)
-- **Old iOS repo:** renamed to `vocabmaxx-ios-archive` and archived
-- **Supabase project:** user creates this; credentials go into `.env.local` and Vercel
-- **LLM key:** `ANTHROPIC_API_KEY` — user's existing key, set in Vercel + `.env.local`
+- **GitHub repo:** `github.com/lesaathvik24/vocabmaxx` — already exists, origin remote set.
+- **Old iOS repo:** already renamed to `vocabmaxx-ios-archive`.
+- **Supabase project:** credentials already in `.env.local` (project ref: `qbogwjfneuswzwdykoxf`). Also paste into Vercel env vars.
+- **LLM:** DeepSeek — key in `.env.local` as `DEEPSEEK_API_KEY`. No Anthropic needed.
 - **Design:** Claude Design handles frontend visuals; see `docs/DESIGN.md §4` for the handoff contract
 - **Architecture decisions:** all in `docs/ADR/`
 - **Phase tracker:** `docs/ROADMAP.md` — flip `[ ] → [x]` on each subtask

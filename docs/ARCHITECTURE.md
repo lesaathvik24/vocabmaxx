@@ -62,8 +62,8 @@
    └───────────────────────────┘    └─────────────────────────┘    └──────────────────────────┘
 
    ┌───────────────────────────┐    ┌─────────────────────────┐    ┌──────────────────────────┐
-   │ Anthropic / OpenAI         │    │ Sentry                  │    │ PostHog · Plausible      │
-   │ (server-side LLM calls)    │    │ (errors, performance)   │    │ (product · web analytics)│
+   │ DeepSeek                   │    │ Sentry                  │    │ PostHog                  │
+   │ (server-side LLM calls)    │    │ (errors, performance)   │    │ (product analytics)      │
    └───────────────────────────┘    └─────────────────────────┘    └──────────────────────────┘
 ```
 
@@ -137,8 +137,7 @@ vocabmaxx/
 │   │   ├── word.schema.ts
 │   │   └── review.schema.ts
 │   ├── analytics/
-│   │   ├── posthog.ts
-│   │   └── plausible.ts
+│   │   └── posthog.ts
 │   └── utils/
 │       ├── result.ts                   Result<T, E> helpers
 │       ├── rate-limit.ts
@@ -307,7 +306,7 @@ Bubble to Next.js's `error.tsx`. Sentry captures with full stack + request conte
 | Signal | Tool | Granularity |
 |---|---|---|
 | Errors (server + client) | Sentry | Per-issue with breadcrumbs |
-| Web vitals | Vercel Analytics + Plausible | LCP, FID, CLS per page |
+| Web vitals | Vercel Analytics | LCP, FID, CLS per page |
 | Product events (capture, review-graded, import) | PostHog | Per-user-per-event |
 | Logs | Vercel Logs | Per-deployment |
 | DB performance | Supabase dashboard | Slow query log |

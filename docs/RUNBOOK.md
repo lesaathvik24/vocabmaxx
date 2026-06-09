@@ -15,9 +15,8 @@
 | Supabase | supabase.com/dashboard/project/<id> | Postgres + Auth |
 | Sentry | sentry.io/organizations/lesaathvik/issues/ | Errors, traces |
 | PostHog | app.posthog.com/project/<id> | Product analytics |
-| Plausible | plausible.io/vocabmaxx.com | Web analytics |
 | Resend | resend.com/emails | Transactional email |
-| Anthropic | console.anthropic.com | LLM key management |
+| DeepSeek | platform.deepseek.com | LLM key management |
 | GitHub | github.com/lesaathvik24/vocabmaxx-saas | Source + CI |
 
 ## 2. Deploys
@@ -35,7 +34,6 @@ After Vercel reports "Ready":
 3. Add one word.
 4. Review one card.
 5. Check Sentry for the last 10 minutes — no new issues.
-6. Check Plausible for normal traffic shape.
 
 If any step fails, **roll back** (§2.3).
 

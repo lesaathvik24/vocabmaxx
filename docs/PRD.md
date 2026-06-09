@@ -104,14 +104,14 @@ No card authoring. No paywall on the useful features. No beginner framing. A too
 
 - **Performance:** Lighthouse ≥ 95 on mobile (FCP, LCP, CLS, TBT).
 - **Accessibility:** WCAG 2.1 AA. Keyboard-navigable end-to-end. Screen-reader tested with VoiceOver and NVDA.
-- **Privacy:** No third-party analytics with user-identifying telemetry. PostHog with `disable_session_recording` for v1. Plausible (privacy-first by default).
+- **Privacy:** No third-party analytics with user-identifying telemetry. PostHog with `disable_session_recording` for v1.
 - **Security:** RLS on every domain table. Auth required for every domain API route. Secrets in env vars only. See [`SECURITY.md`](SECURITY.md).
 - **Data portability:** Full export available at all times.
 
 ## 8. Constraints
 
 - **Solo dev, ~10 hours/week** (06:30-09:30 weekday deep-work blocks + weekends).
-- **Hard budget cap: $0/month** through v1 (Supabase free, Vercel hobby, Resend free, PostHog free, Plausible free trial).
+- **Hard budget cap: $0/month** through v1 (Supabase free, Vercel hobby, Resend free, PostHog free, DeepSeek pay-per-use).
 - **No payment integration in v1** — premise is to ship the product, not the business model.
 - **Mac storage constraint:** scaffolding decisions favor lightweight stacks (no Docker required for dev).
 
