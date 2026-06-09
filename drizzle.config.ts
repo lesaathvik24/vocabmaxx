@@ -1,15 +1,14 @@
 import { defineConfig } from 'drizzle-kit'
 
+const url = process.env.DATABASE_URL
+if (!url) throw new Error('DATABASE_URL env var is required for drizzle-kit')
+
 export default defineConfig({
   schema: './lib/db/schema.ts',
   out: './drizzle',
   dialect: 'postgresql',
   dbCredentials: {
-    host: process.env.DB_HOST ?? 'db.qbogwjfneuswzwdykoxf.supabase.co',
-    port: 5432,
-    user: process.env.DB_USER ?? 'postgres',
-    password: process.env.DB_PASSWORD!,
-    database: process.env.DB_NAME ?? 'postgres',
-    ssl: true,
+    url,
+    ssl: 'require',
   },
 })

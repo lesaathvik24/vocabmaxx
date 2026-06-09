@@ -16,9 +16,8 @@ export default function SignUpPage() {
         e.preventDefault()
         setLoading(true)
         setError(null)
-        const { error } = await supabase.auth.signUp({
+        const { error } = await supabase.auth.signInWithOtp({
             email,
-            password: Math.random().toString(36),
             options: { emailRedirectTo: `${location.origin}/auth/callback` },
         })
         setLoading(false)
@@ -27,10 +26,26 @@ export default function SignUpPage() {
     }
 
     async function handleGoogle() {
-        await supabase.auth.signInWithOAuth({
+        setError(null)
+        setLoading(true)
+        const { data, error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
-            options: { redirectTo: `${location.origin}/auth/callback` },
+            options: {
+                redirectTo: `${location.origin}/auth/callback`,
+                skipBrowserRedirect: false,
+            },
         })
+        if (error) {
+            setLoading(false)
+            setError(error.message)
+            return
+        }
+        if (data?.url) {
+            window.location.href = data.url
+        } else {
+            setLoading(false)
+            setError('Google sign-in is not enabled. Check Supabase → Auth → Providers → Google.')
+        }
     }
 
     return (
@@ -49,9 +64,10 @@ export default function SignUpPage() {
                     <>
                         <button
                             onClick={handleGoogle}
-                            className="w-full flex items-center justify-center gap-2 border border-slate-300 rounded-lg px-4 py-2.5 text-sm font-medium hover:bg-slate-50 transition-colors"
+                            disabled={loading}
+                            className="w-full flex items-center justify-center gap-2 border border-slate-300 rounded-lg px-4 py-2.5 text-sm font-medium hover:bg-slate-50 disabled:opacity-50 transition-colors"
                         >
-                            Sign up with Google
+                            {loading ? 'Redirecting…' : 'Sign up with Google'}
                         </button>
 
                         <div className="flex items-center gap-3">

@@ -1,7 +1,8 @@
 import { createServerClient } from '@supabase/ssr'
 import type { CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import type { Session, User } from '@supabase/supabase-js'
+import { redirect } from 'next/navigation'
+import type { User } from '@supabase/supabase-js'
 
 export async function createClient() {
     const cookieStore = await cookies()
@@ -25,17 +26,11 @@ export async function createClient() {
     )
 }
 
-export async function getSession(): Promise<Session | null> {
-    const supabase = await createClient()
-    const { data } = await supabase.auth.getSession()
-    return data.session
-}
-
 export async function requireUser(): Promise<User> {
     const supabase = await createClient()
     const { data, error } = await supabase.auth.getUser()
     if (error || !data.user) {
-        throw new Response('Unauthorized', { status: 401 })
+        redirect('/auth/sign-in')
     }
     return data.user
 }

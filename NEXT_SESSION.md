@@ -17,7 +17,9 @@
 | SM-2 domain layer | ✅ |
 | Unit tests (10/10 passing) | ✅ |
 | Marketing landing page + dashboard shell | ✅ |
-| Sign-in + sign-up pages (magic-link + Google) | ✅ |
+| Sign-in + sign-up pages (magic-link + Google, both `signInWithOtp`) | ✅ |
+| `app/(app)/layout.tsx` with `requireUser()` server guard | ✅ |
+| `pnpm build` — passes (Tailwind v4 / PostCSS fixed) | ✅ |
 | OAuth callback handler | ✅ |
 | Sentry + PostHog stubs | ✅ |
 | Zod validation schemas | ✅ |
@@ -26,7 +28,6 @@
 
 ### What's NOT done yet
 
-- `pnpm dev` — server has never been started; pages are unverified in browser
 - DB schema not applied — see instructions below
 - Google sign-in — configured in Supabase but not tested end-to-end
 - Vercel deploy — not done
@@ -55,13 +56,13 @@
 
 ### 1. Apply DB schema in Supabase SQL Editor
 
-The direct Postgres connection is IPv6-only so `pnpm db:push` can't connect from a standard laptop. Apply manually:
+The direct Postgres connection is IPv6-only so `pnpm db:push` can't connect from a standard laptop. Apply both `drizzle/0000_next_wallow.sql` and `drizzle/0001_rls.sql` via Supabase SQL Editor (in order). `0000` creates tables, `0001` enables RLS + policies.
 
 1. Go to **supabase.com/dashboard → project `qbogwjfneuswzwdykoxf` → SQL Editor → New query**
-2. Paste the entire contents of `drizzle/apply_schema.sql`
-3. Click **Run**
+2. Paste contents of `drizzle/0000_next_wallow.sql` → **Run**
+3. New query → paste contents of `drizzle/0001_rls.sql` → **Run**
 
-Expected: 5 tables created (`words`, `srs_state`, `review_log`, `import_jobs`, `definition_cache`) with RLS enabled.
+Expected: 5 tables created (`words`, `srs_state`, `review_log`, `import_jobs`, `definition_cache`) with RLS enabled on all 5.
 
 ### 2. Configure Google OAuth in Supabase (if not done)
 
@@ -141,10 +142,11 @@ Expected:
 ```
 app/
   (marketing)/page.tsx          landing page
+  (app)/layout.tsx              server guard (requireUser())
   (app)/dashboard/page.tsx      protected dashboard shell
   auth/sign-in/page.tsx         sign-in (Google + magic-link)
-  auth/sign-up/page.tsx         sign-up
-  auth/callback/route.ts        OAuth callback handler
+  auth/sign-up/page.tsx         sign-up (magic-link via signInWithOtp)
+  auth/callback/route.ts        OAuth callback handler (validated next param)
   layout.tsx                    root layout (PostHog provider)
   globals.css
 
@@ -167,7 +169,8 @@ lib/
   utils/result.ts               ok() + err() helpers
 
 middleware.ts                   Next.js middleware (auth guard)
-drizzle/apply_schema.sql        SQL to paste in Supabase SQL Editor
+drizzle/0000_next_wallow.sql    canonical schema (5 tables)
+drizzle/0001_rls.sql            RLS enable + policies (paste 2nd)
 tests/unit/srs.test.ts          SM-2 unit tests (10 passing)
 .github/workflows/ci.yml        CI (lint + typecheck + test:unit)
 ```

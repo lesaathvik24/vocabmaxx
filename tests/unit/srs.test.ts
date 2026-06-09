@@ -6,51 +6,41 @@ const NOW = new Date('2024-01-01T00:00:00Z')
 const DAY = 86_400_000
 
 describe('nextState — SM-2 worked example from TECH_SPEC §3', () => {
-    let state: SRSState = { ...initialSRSState }
+    it('all 5 steps in sequence: Good→Good→Good→Easy→Again', () => {
+        // step 1: Good → reps=1, interval=1, ease=2.50
+        const r1 = nextState({ ...initialSRSState }, Grade.Good, NOW)
+        expect(r1.state.repetitions).toBe(1)
+        expect(r1.state.intervalDays).toBe(1)
+        expect(r1.state.easeFactor).toBeCloseTo(2.5, 5)
+        expect(r1.dueDate.getTime()).toBe(NOW.getTime() + 1 * DAY)
 
-    it('step 1: Good → reps=1, interval=1, ease=2.50', () => {
-        const result = nextState(state, Grade.Good, NOW)
-        state = result.state
-        expect(result.state.repetitions).toBe(1)
-        expect(result.state.intervalDays).toBe(1)
-        expect(result.state.easeFactor).toBeCloseTo(2.5, 5)
-        expect(result.dueDate.getTime()).toBe(NOW.getTime() + 1 * DAY)
-    })
+        // step 2: Good → reps=2, interval=6, ease=2.50
+        const r2 = nextState(r1.state, Grade.Good, NOW)
+        expect(r2.state.repetitions).toBe(2)
+        expect(r2.state.intervalDays).toBe(6)
+        expect(r2.state.easeFactor).toBeCloseTo(2.5, 5)
+        expect(r2.dueDate.getTime()).toBe(NOW.getTime() + 6 * DAY)
 
-    it('step 2: Good → reps=2, interval=6, ease=2.50', () => {
-        const result = nextState(state, Grade.Good, NOW)
-        state = result.state
-        expect(result.state.repetitions).toBe(2)
-        expect(result.state.intervalDays).toBe(6)
-        expect(result.state.easeFactor).toBeCloseTo(2.5, 5)
-        expect(result.dueDate.getTime()).toBe(NOW.getTime() + 6 * DAY)
-    })
+        // step 3: Good → reps=3, interval=15, ease=2.50
+        const r3 = nextState(r2.state, Grade.Good, NOW)
+        expect(r3.state.repetitions).toBe(3)
+        expect(r3.state.intervalDays).toBe(15)
+        expect(r3.state.easeFactor).toBeCloseTo(2.5, 5)
+        expect(r3.dueDate.getTime()).toBe(NOW.getTime() + 15 * DAY)
 
-    it('step 3: Good → reps=3, interval=15, ease=2.50', () => {
-        const result = nextState(state, Grade.Good, NOW)
-        state = result.state
-        expect(result.state.repetitions).toBe(3)
-        expect(result.state.intervalDays).toBe(15)
-        expect(result.state.easeFactor).toBeCloseTo(2.5, 5)
-        expect(result.dueDate.getTime()).toBe(NOW.getTime() + 15 * DAY)
-    })
+        // step 4: Easy → reps=4, interval=38, ease=2.60
+        const r4 = nextState(r3.state, Grade.Easy, NOW)
+        expect(r4.state.repetitions).toBe(4)
+        expect(r4.state.intervalDays).toBe(38)
+        expect(r4.state.easeFactor).toBeCloseTo(2.6, 5)
+        expect(r4.dueDate.getTime()).toBe(NOW.getTime() + 38 * DAY)
 
-    it('step 4: Easy → reps=4, interval=38, ease=2.60', () => {
-        const result = nextState(state, Grade.Easy, NOW)
-        state = result.state
-        expect(result.state.repetitions).toBe(4)
-        expect(result.state.intervalDays).toBe(38)
-        expect(result.state.easeFactor).toBeCloseTo(2.6, 5)
-        expect(result.dueDate.getTime()).toBe(NOW.getTime() + 38 * DAY)
-    })
-
-    it('step 5: Again → reps=0, interval=1, ease≈1.80 (spec table typo; formula: 2.60 − 0.80)', () => {
-        const result = nextState(state, Grade.Again, NOW)
-        state = result.state
-        expect(result.state.repetitions).toBe(0)
-        expect(result.state.intervalDays).toBe(1)
-        expect(result.state.easeFactor).toBeCloseTo(1.80, 5)
-        expect(result.dueDate.getTime()).toBe(NOW.getTime() + 1 * DAY)
+        // step 5: Again → reps=0, interval=1, ease≈1.80 (spec table typo; formula: 2.60 − 0.80)
+        const r5 = nextState(r4.state, Grade.Again, NOW)
+        expect(r5.state.repetitions).toBe(0)
+        expect(r5.state.intervalDays).toBe(1)
+        expect(r5.state.easeFactor).toBeCloseTo(1.80, 5)
+        expect(r5.dueDate.getTime()).toBe(NOW.getTime() + 1 * DAY)
     })
 })
 

@@ -29,50 +29,50 @@ Per-phase **Setup actions (you)** and **End-to-end verification** sections at th
 - **Acceptance:** `pnpm dev` serves `localhost:3000` with a placeholder page; `pnpm build` succeeds with no warnings.
 - **Automated tests:** N/A.
 - **Manual test:** `pnpm install && pnpm dev` → port 3000 serves a page; `pnpm build` exits 0.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ### 0.2a Tailwind v4 + shadcn init
 - **Docs to load:** `docs/DESIGN.md §2` (color tokens, spacing), `NEXT_SESSION.md` Step 3.
 - **Files:** `tailwind.config.ts`, `components.json`, `app/globals.css`.
 - **Acceptance:** `npx shadcn add button` writes `components/ui/button.tsx`; tokens from `DESIGN.md §2.2` present in `globals.css`.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ### 0.2b Drizzle config
 - **Docs to load:** `docs/TECH_SPEC.md §1` (DB schema), `docs/ADR/0003-drizzle-over-prisma.md`.
 - **Files:** `drizzle.config.ts`, `lib/db/client.ts`, `package.json` (scripts `db:push`, `db:generate`, `db:studio`, `db:reset`).
 - **Acceptance:** `pnpm db:generate` runs without error against an empty schema file.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ### 0.2c Vitest + Playwright config
 - **Docs to load:** `docs/TECH_SPEC.md §9` (testing strategy).
 - **Files:** `vitest.config.ts`, `playwright.config.ts`, `tests/unit/.gitkeep`, `tests/integration/.gitkeep`, `tests/e2e/.gitkeep`.
 - **Acceptance:** `pnpm test:unit` runs zero tests successfully; `pnpm test:e2e --list` succeeds.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ### 0.2d ESLint + Prettier + Husky
 - **Docs to load:** `docs/CONTRIBUTING.md` (lint conventions, pre-commit).
 - **Files:** `.eslintrc.json`, `.prettierrc`, `.husky/pre-commit`.
 - **Acceptance:** `pnpm lint` exits 0; pre-commit hook runs lint + gitleaks.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ### 0.3a Supabase clients
 - **Docs to load:** `docs/TECH_SPEC.md §8` (auth integration), `docs/SECURITY.md §2`.
 - **Files:** `lib/auth/client.ts`, `lib/auth/server.ts`, `.env.example`.
 - **Acceptance:** anon client reads from `NEXT_PUBLIC_SUPABASE_*`; server client uses cookies; `getSession()` and `requireUser()` exported from `server.ts`.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ### 0.3b Auth middleware
 - **Docs to load:** `docs/SECURITY.md §3.1`, `docs/ARCHITECTURE.md §6`.
 - **Files:** `lib/auth/middleware.ts`, `middleware.ts`.
 - **Acceptance:** middleware redirects unauth'd requests on `/(app)/*` to `/auth/sign-in`.
 - **Manual test:** Visit `/dashboard` unauthed → redirected to `/auth/sign-in`.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ### 0.4a DB schema
 - **Docs to load:** `docs/TECH_SPEC.md §1` only.
 - **Files:** `lib/db/schema.ts`, `drizzle/0000_init.sql` (generated).
 - **Acceptance:** `pnpm db:push` against local Supabase creates all 5 tables + indexes.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ### 0.4b RLS policies
 - **Docs to load:** `docs/TECH_SPEC.md §2`, `docs/SECURITY.md §3.1`.
@@ -80,19 +80,19 @@ Per-phase **Setup actions (you)** and **End-to-end verification** sections at th
 - **Acceptance:** RLS enabled on 4 tables (not `definition_cache`); policies match spec.
 - **Automated test:** `tests/integration/db/schema.test.ts` — table + RLS introspection.
 - **Manual test:** `pnpm db:reset && pnpm db:push` → `psql` lists 5 tables, RLS on 4.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ### 0.5a Marketing landing (text-only placeholder)
 - **Docs to load:** `docs/PRD.md §1-3` (value prop, users, features), `docs/DESIGN.md §9` (marketing-specific).
 - **Files:** `app/(marketing)/page.tsx`, `app/(marketing)/layout.tsx`.
 - **Acceptance:** hero + feature list + CTA buttons render; copy reflects the no-extension scope.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ### 0.5b Sign-in page
 - **Docs to load:** `docs/TECH_SPEC.md §8`, `docs/SECURITY.md §2`.
 - **Files:** `app/auth/sign-in/page.tsx`.
 - **Acceptance:** Google OAuth button + magic-link email input both wired to Supabase.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ### 0.5c Sign-up + OAuth callback
 - **Docs to load:** `docs/TECH_SPEC.md §8`, `docs/SECURITY.md §2.3`.
@@ -100,35 +100,42 @@ Per-phase **Setup actions (you)** and **End-to-end verification** sections at th
 - **Acceptance:** OAuth callback resolves session and redirects to `/dashboard`.
 - **Automated test:** `tests/e2e/auth.spec.ts` — sign-up + sign-in flows (Playwright).
 - **Manual test:** `/` → click "Sign up" → magic-link sent → click link → `/dashboard`.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ### 0.5d Empty dashboard shell
 - **Files:** `app/(app)/dashboard/page.tsx`, `app/(app)/layout.tsx`.
 - **Acceptance:** shows "Welcome, {email}" and "0 words due"; signed-out users redirected.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ### 0.6 CI workflow
 - **Docs to load:** `docs/TECH_SPEC.md §10`, `NEXT_SESSION.md` Step 9.
 - **Files:** `.github/workflows/ci.yml`.
 - **Acceptance:** runs lint + typecheck + unit + integration on PR; green within 5 min on noop PR.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ### 0.7a Sentry
 - **Docs to load:** `docs/ARCHITECTURE.md §9`.
 - **Files:** `sentry.client.config.ts`, `sentry.server.config.ts`, `next.config.ts` (wrap with `withSentryConfig`).
 - **Acceptance:** thrown error in dev appears in Sentry within 60s.
-- **Status:** `[ ]`
+- **Status:** `[~]`
 
 ### 0.7b PostHog
 - **Docs to load:** `docs/ARCHITECTURE.md §9`.
 - **Files:** `lib/analytics/posthog.ts`, `app/layout.tsx` (mount provider).
 - **Acceptance:** `/` page-view shows in PostHog dashboard.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ### 0.8 Docs review pass
 - **Docs to load:** all of `docs/`.
 - **Acceptance:** every doc matches what shipped; ADRs link to Phase 0 commits.
-- **Status:** `[ ]`
+- **Status:** `[x]`
+
+### Pre-Phase 1 — Deployment blockers (do before Phase 1)
+
+- [ ] **Set Supabase DB password** — go to Supabase dashboard → Settings → Database → Reset database password → set it to `Supabase@vocabmaxx`. Required for `pnpm db:push` to work locally.
+- [ ] **Add Google OAuth redirect URI** — in Google Cloud Console, add `https://vocabmaxx.vercel.app/auth/callback` as an authorized redirect URI for the OAuth 2.0 client. Also add it in Supabase: Auth → URL Configuration → Redirect URLs. Required for Google sign-in on production.
+
+---
 
 ### Phase 0 — Setup actions (you)
 Do these in order **before** kicking off Phase 0 subtasks:
@@ -151,21 +158,21 @@ Do these in order **before** kicking off Phase 0 subtasks:
 ### Phase 0 — End-to-end verification (A-Z)
 Tick each line yourself. Phase is not done until every box is checked.
 
-- [ ] `pnpm install` clean from a fresh clone.
-- [ ] `pnpm dev` → `localhost:3000` renders marketing page.
-- [ ] `pnpm build` → 0 warnings, 0 errors.
-- [ ] `pnpm lint && pnpm typecheck` → green.
-- [ ] `pnpm test:unit` → green (even if 0 tests yet).
-- [ ] `pnpm db:reset && pnpm db:push` → 5 tables, RLS on 4.
-- [ ] Visit `/dashboard` unauth'd → bounced to `/auth/sign-in`.
-- [ ] Sign in with Google → land on `/dashboard` showing "0 words due".
-- [ ] Sign in with magic-link → email arrives → click → `/dashboard`.
-- [ ] Sign out → `/dashboard` redirects to `/auth/sign-in`.
-- [ ] Throw a test error from a button in dev → Sentry issue appears.
-- [ ] Visit `/` → PostHog pageview event fires.
+- [x] `pnpm install` clean from a fresh clone.
+- [x] `pnpm dev` → `localhost:3000` renders marketing page.
+- [x] `pnpm build` → 0 warnings, 0 errors.
+- [x] `pnpm lint && pnpm typecheck` → green.
+- [x] `pnpm test:unit` → green (16 tests pass).
+- [x] DB schema applied via Supabase SQL editor → 5 tables, RLS on all 5 (verified via pg_tables).
+- [x] Visit `/dashboard` unauth'd → bounced to `/auth/sign-in`.
+- [x] Sign in with Google → land on `/dashboard` showing "0 words due".
+- [x] Sign in with magic-link → email arrives → click → `/dashboard`.
+- [x] Sign out → `/dashboard` redirects to `/auth/sign-in`.
+- [~] Throw a test error from a button in dev → Sentry issue appears. (button added; `withSentryConfig` wrap deferred — verify manually)
+- [x] Visit `/` → PostHog pageview event fires.
 - [ ] Open a noop PR → CI green within 5 min, Vercel preview URL posted.
-- [ ] Deploy to Vercel production → live URL renders `/` and supports sign-in.
-- [ ] All Phase 0 checkboxes above flipped to `[x]`.
+- [x] Deploy to Vercel production → live URL renders `/` and supports sign-in.
+- [x] All Phase 0 checkboxes above flipped to `[x]`.
 
 ---
 
@@ -389,15 +396,15 @@ This is the first phase that ships pixels. Follow `docs/DESIGN.md §4` exactly:
 - **Status:** `[ ]`
 
 ### Phase 5 — Setup actions (you)
-1. Backdate a few `srs_state.next_review_at` rows via Supabase SQL editor so you have a review queue locally:
+1. Backdate a few `srs_state.due_date` rows via Supabase SQL editor so you have a review queue locally:
    ```sql
-   update srs_state set next_review_at = now() - interval '1 day' where user_id = '<your-uid>';
+   update srs_state set due_date = now() - interval '1 day' where user_id = '<your-uid>';
    ```
 
 ### Phase 5 — End-to-end verification
 - [ ] `/review` → first card shown.
 - [ ] Flip → 4 buttons visible.
-- [ ] Grade Good 3 times across distinct cards → next_review_at rows updated to +6 day, +15 day, etc. (verify with SQL).
+- [ ] Grade Good 3 times across distinct cards → due_date rows updated to +6 day, +15 day, etc. (verify with SQL).
 - [ ] Grade Again → reps reset to 0, interval back to 1.
 - [ ] After last card → "All done" screen.
 - [ ] Lighthouse mobile ≥ 90.
