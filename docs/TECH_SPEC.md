@@ -179,7 +179,7 @@ Starting `{ ease: 2.5, interval: 0, reps: 0 }`, applied in sequence:
 | 2 | Good (4) | 2 | 6 | 2.50 |
 | 3 | Good (4) | 3 | 15 | 2.50 |
 | 4 | Easy (5) | 4 | 38 | 2.60 |
-| 5 | Again (0) | 0 | 1 | 2.42 |
+| 5 | Again (0) | 0 | 1 | 1.80 |
 
 `tests/unit/srs.test.ts` asserts every cell in this table.
 

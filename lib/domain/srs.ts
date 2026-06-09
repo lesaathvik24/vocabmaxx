@@ -1,4 +1,5 @@
 import { Grade } from './grade'
+import { InvalidSRSStateError } from './errors'
 
 export interface SRSState {
     easeFactor: number
@@ -18,6 +19,16 @@ export function nextState(
     grade: Grade,
     now: Date = new Date(),
 ): SRSResult {
+    if (!Number.isFinite(current.easeFactor) || current.easeFactor < 1.3) {
+        throw new InvalidSRSStateError(`easeFactor must be finite and >= 1.3, got ${current.easeFactor}`)
+    }
+    if (!Number.isInteger(current.intervalDays) || current.intervalDays < 0) {
+        throw new InvalidSRSStateError(`intervalDays must be a non-negative integer, got ${current.intervalDays}`)
+    }
+    if (!Number.isInteger(current.repetitions) || current.repetitions < 0) {
+        throw new InvalidSRSStateError(`repetitions must be a non-negative integer, got ${current.repetitions}`)
+    }
+
     let reps: number
     let interval: number
 
@@ -31,8 +42,7 @@ export function nextState(
         else interval = Math.round(current.intervalDays * current.easeFactor)
     }
 
-    const g = grade
-    let ease = current.easeFactor + (0.1 - (5 - g) * (0.08 + (5 - g) * 0.02))
+    let ease = current.easeFactor + (0.1 - (5 - grade) * (0.08 + (5 - grade) * 0.02))
     ease = Math.max(1.3, ease)
 
     return {

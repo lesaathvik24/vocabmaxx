@@ -18,3 +18,19 @@ export type CaptureError =
 export type SRSError =
     | { kind: 'word_not_found' }
     | { kind: 'not_due'; nextDue: Date }
+
+export class InvalidWordError extends Error {
+    readonly kind = 'invalid_word' as const
+    constructor(message: string) {
+        super(message)
+        this.name = 'InvalidWordError'
+    }
+}
+
+export class InvalidSRSStateError extends Error {
+    readonly kind = 'invalid_srs_state' as const
+    constructor(message: string) {
+        super(message)
+        this.name = 'InvalidSRSStateError'
+    }
+}

@@ -184,22 +184,22 @@ Tick each line yourself. Phase is not done until every box is checked.
 - **Acceptance:** pure function, deterministic given `now`.
 - **Automated tests:** `tests/unit/srs.test.ts` — all 15 cases from `TECH_SPEC §3`.
 - **Subagent:** Crucible writes the tests (red), Forge writes the implementation (green).
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ### 1.2 Domain types + invariants
 - **Docs to load:** `docs/TECH_SPEC.md §3` (`errors.ts` block), `docs/ARCHITECTURE.md §3` (domain layer).
 - **Files:** `lib/domain/word.ts`, `lib/domain/errors.ts`.
 - **Acceptance:** `Word` constructor throws on empty term/definition or examples length ∉ 1..3. `Result<T,E>` helpers exported.
 - **Automated tests:** `tests/unit/word.test.ts` — 7 cases.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ### Phase 1 — Setup actions (you)
 None — pure code.
 
 ### Phase 1 — End-to-end verification
-- [ ] `pnpm test:unit` → 22+ tests pass.
-- [ ] Worked example in `TECH_SPEC §3` traced by hand matches test output.
-- [ ] `git grep "any" lib/domain/` → 0 hits.
+- [x] `pnpm test:unit` → 22+ tests pass. (46 tests pass)
+- [x] Worked example in `TECH_SPEC §3` traced by hand matches test output.
+- [x] `git grep "any" lib/domain/` → 0 hits.
 
 ---
 
