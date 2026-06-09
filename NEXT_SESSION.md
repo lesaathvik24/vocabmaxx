@@ -1,276 +1,196 @@
-# Next Session Handoff — VocabMaxx
+# VocabMaxx — Session Handoff
 
-**Read this first.** This file is the complete context a new agent session needs to pick up and start executing Phase 0.
-
----
-
-## What has been done (this session)
-
-All documentation written. Nothing executed. No `pnpm`, no `git`, no provisioning.
-
-Files now in `~/Downloads/vocabmaxx/`:
-
-```
-README.md                   — top-level, recruiter-facing
-NEXT_SESSION.md             — this file
-docs/
-  PRD.md                    — product requirements
-  ARCHITECTURE.md           — system design + data flow
-  TECH_SPEC.md              — service contracts, DB schema, API contracts, SM-2 algorithm
-  ROADMAP.md                — phased delivery with subtask tracking + manual test steps
-  DESIGN.md                 — design system + Claude Design handoff contract
-  CONTRIBUTING.md           — dev setup, conventions, PR checklist
-  SECURITY.md               — auth model, RLS, secrets, threat model
-  RUNBOOK.md                — deploy, rollback, migration, incident response
-  ADR/
-    0001-nextjs-app-router.md
-    0002-supabase-over-firebase.md
-    0003-drizzle-over-prisma.md
-    0004-shadcn-component-strategy.md
-    0005-hybrid-definition-pipeline.md
-    0006-sm2-vs-fsrs.md
-  api/
-    openapi.yaml             — OpenAPI 3.1 spec for all routes
-```
-
-## What this session must do
-
-Execute **Phase 0 only** (from `docs/ROADMAP.md`). Stop after Phase 0 exit criteria are met.
+**Read this first. This is the complete context for the next session.**
 
 ---
 
-## Step-by-step execution
+## State as of 2026-06-09
 
-### Step 1 — Scaffold Next.js
+### What's done
 
-```bash
-cd ~/Downloads/vocabmaxx
-pnpm create next-app . \
-    --typescript \
-    --tailwind \
-    --app \
-    --no-src-dir \
-    --import-alias "@/*" \
-    --eslint
-```
+| Area | Status |
+|---|---|
+| Docs (PRD, ARCHITECTURE, TECH_SPEC, ROADMAP, ADRs, etc.) | ✅ Complete |
+| Next.js 15 + TypeScript + Tailwind v4 scaffold | ✅ |
+| Supabase Auth stubs (client, server, middleware) | ✅ |
+| Drizzle ORM schema (5 tables) | ✅ |
+| SM-2 domain layer | ✅ |
+| Unit tests (10/10 passing) | ✅ |
+| Marketing landing page + dashboard shell | ✅ |
+| Sign-in + sign-up pages (magic-link + Google) | ✅ |
+| OAuth callback handler | ✅ |
+| Sentry + PostHog stubs | ✅ |
+| Zod validation schemas | ✅ |
+| CI workflow (Node 22, pnpm 11, lint+typecheck+test:unit) | ✅ pushed, should be green |
+| Git repo `github.com/lesaathvik24/vocabmaxx` | ✅ |
 
-Answer prompts: App Router yes, no src dir, `@/*` alias.
+### What's NOT done yet
 
-### Step 2 — Install dependencies
+- `pnpm dev` — server has never been started; pages are unverified in browser
+- DB schema not applied — see instructions below
+- Google sign-in — configured in Supabase but not tested end-to-end
+- Vercel deploy — not done
+- Phase 1+ features (capture, review, words, insights) — not started
 
-```bash
-pnpm add @supabase/supabase-js @supabase/ssr drizzle-orm postgres zod \
-    @sentry/nextjs posthog-js lucide-react class-variance-authority clsx \
-    tailwind-merge next-pwa resend
+---
 
-pnpm add -D drizzle-kit vitest @vitejs/plugin-react \
-    @testing-library/react @testing-library/user-event \
-    msw playwright @playwright/test \
-    @types/node tsx dotenv-cli husky gitleaks
-```
+## Credentials & config (all in `.env.local`)
 
-### Step 3 — Initialize shadcn/ui
+| Key | Value |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://qbogwjfneuswzwdykoxf.supabase.co` |
+| `SUPABASE_SERVICE_ROLE_KEY` | in `.env.local` |
+| `DEEPSEEK_API_KEY` | in `.env.local` (replaces Anthropic) |
+| `GOOGLE_CLIENT_ID` | in `.env.local` |
+| `GOOGLE_CLIENT_SECRET` | in `.env.local` |
+| `NEXT_PUBLIC_SENTRY_DSN` | in `.env.local` |
+| `NEXT_PUBLIC_POSTHOG_KEY` | `phc_CBimfsjwVj24kjoiF86td9bqwdAESfj5NnA2TUFvuKjj` |
+| `RESEND_API_KEY` | in `.env.local` |
+| `DB_HOST` | `db.qbogwjfneuswzwdykoxf.supabase.co` |
+| `DB_PASSWORD` | `Supabase@vocabmaxx` |
 
-```bash
-npx shadcn@latest init
-# Choose: Default style, Slate base color, CSS variables yes
-npx shadcn@latest add button input dialog toast dropdown-menu badge skeleton card separator
-```
+---
 
-### Step 4 — Create folder structure
+## Pending manual steps (do these before running `pnpm dev`)
 
-Exactly as described in `docs/ARCHITECTURE.md §2`. Key folders:
+### 1. Apply DB schema in Supabase SQL Editor
 
-```
-app/(marketing)/
-app/(app)/dashboard/
-app/api/
-app/auth/
-components/ui/            ← already created by shadcn
-components/layout/
-components/capture/
-components/review/
-components/words/
-components/insights/
-components/dashboard/
-components/marketing/
-lib/domain/
-lib/services/
-lib/db/queries/
-lib/auth/
-lib/validation/
-lib/analytics/
-lib/utils/
-drizzle/
-tests/unit/
-tests/integration/
-tests/e2e/
-extension/
-public/
-docs/                     ← already exists, leave as is
-```
+The direct Postgres connection is IPv6-only so `pnpm db:push` can't connect from a standard laptop. Apply manually:
 
-### Step 5 — Config files
+1. Go to **supabase.com/dashboard → project `qbogwjfneuswzwdykoxf` → SQL Editor → New query**
+2. Paste the entire contents of `drizzle/apply_schema.sql`
+3. Click **Run**
 
-Create these from the specs in `docs/TECH_SPEC.md` and `docs/CONTRIBUTING.md`:
+Expected: 5 tables created (`words`, `srs_state`, `review_log`, `import_jobs`, `definition_cache`) with RLS enabled.
 
-- `vitest.config.ts`
-- `playwright.config.ts`
-- `drizzle.config.ts`
-- `.env.example` (from TECH_SPEC §11)
-- `.gitignore`
-- `.husky/pre-commit` (lint + gitleaks)
-- `package.json` scripts: `dev`, `build`, `test`, `test:unit`, `test:integ`, `test:e2e`, `typecheck`, `lint`, `verify`, `db:push`, `db:generate`, `db:studio`, `db:reset`, `format`
+### 2. Configure Google OAuth in Supabase (if not done)
 
-### Step 6 — Write domain + auth stubs
+**Do NOT go to "OAuth Server" — that's for a different feature entirely.**
 
-These are needed for the build to succeed before any feature lands:
+1. Supabase dashboard → **Authentication → Providers → Google**
+2. Toggle **Enable**
+3. Paste Client ID + Client Secret from `.env.local` (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`)
+4. **Save**
 
-- `lib/domain/grade.ts` — `Grade` enum (from TECH_SPEC §3)
-- `lib/domain/srs.ts` — `nextState()` pure function (from TECH_SPEC §3)
-- `lib/domain/word.ts` — `Word` type
-- `lib/domain/errors.ts` — `Result<T,E>`, error unions
-- `lib/auth/client.ts` — Supabase browser client
-- `lib/auth/server.ts` — Supabase server client + `getSession()` + `requireUser()`
-- `lib/auth/middleware.ts` — auth check function
-- `middleware.ts` — Next middleware applying auth to `/(app)/*`
-- `lib/db/schema.ts` — full Drizzle schema (from TECH_SPEC §1)
-- `lib/db/client.ts` — Drizzle client creation
+### 3. Configure Supabase Redirect URLs
 
-### Step 7 — DB migration
+Supabase dashboard → **Authentication → URL Configuration**:
+- **Site URL**: `http://localhost:3000`
+- **Redirect URLs**: add `http://localhost:3000/**`
 
-```bash
-cp .env.example .env.local
-# User must fill in NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY,
-# SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY
-# If they haven't created a Supabase project yet, prompt them to do so:
-#   1. Go to supabase.com → New project
-#   2. Copy URL + anon key + service role key into .env.local
-pnpm db:push
-```
+Without this, after Google auth, Supabase blocks the redirect back to localhost.
 
-### Step 8 — Landing page + auth pages
+### 4. Configure Google Cloud Console
 
-- `app/(marketing)/page.tsx` — hero, feature list, CTA (text only, no images; Claude Design will replace later)
-- `app/auth/sign-in/page.tsx` — sign-in form with Google + magic-link
-- `app/auth/sign-up/page.tsx` — sign-up form
-- `app/auth/callback/route.ts` — Supabase OAuth callback handler
-- `app/(app)/dashboard/page.tsx` — empty shell with "Welcome, {email}" and "0 words due"
+In Google Cloud Console → APIs & Credentials → your OAuth 2.0 client:
+- **Authorized JavaScript origins**: `http://localhost:3000`
+- **Authorized redirect URIs**: `https://qbogwjfneuswzwdykoxf.supabase.co/auth/v1/callback`
 
-### Step 9 — CI
+### 5. Enable magic-link in Supabase
 
-`.github/workflows/ci.yml`:
+Supabase dashboard → **Authentication → Providers → Email**:
+- Toggle **Enable**
+- "Confirm email" can be off for dev
 
-```yaml
-name: CI
-on: [push, pull_request]
-jobs:
-  verify:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with: { version: 9 }
-      - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: pnpm }
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm lint
-      - run: pnpm typecheck
-      - run: pnpm test:unit
-```
+---
 
-### Step 10 — (skipped) PWA manifest
-
-PWA install + offline support are deferred to **Phase X** (post-v1). Do not create `public/manifest.json` or wire `next-pwa` in Phase 0.
-
-### Step 11 — Sentry + analytics stubs
-
-- `sentry.client.config.ts`, `sentry.server.config.ts` — initialise Sentry with `NEXT_PUBLIC_SENTRY_DSN`.
-- `lib/analytics/posthog.ts` — PostHog provider wrapper.
-- Wire provider into `app/layout.tsx`.
-
-### Step 12 — Observability stubs
-
-- `lib/utils/errors.ts` — `toErrorKind()` + user-facing error message map
-- `lib/utils/result.ts` — `ok()` + `err()` helpers
-
-### Step 13 — Unit tests for domain layer
-
-Write `tests/unit/srs.test.ts` with all 15 cases from `docs/TECH_SPEC.md §3`. **All must pass before this step is done.**
-
-### Step 14 — Git + GitHub
-
-Repo already exists at `github.com/lesaathvik24/vocabmaxx` and `origin` remote is set.
-iOS archive is already at `vocabmaxx-ios-archive`. Just commit + push:
+## How to run locally
 
 ```bash
 cd ~/Downloads/VocabMaxx
-git add .
-git commit -m "phase 0: scaffold SaaS foundation
-
-Next.js 15, TypeScript, Tailwind v4, shadcn/ui, Supabase Auth,
-Drizzle + Postgres schema, SM-2 domain layer, CI,
-Sentry, PostHog stubs. Full docs in docs/.
-
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
-
-git push origin master
+pnpm dev
+# open http://localhost:3000
 ```
 
-### Step 15 — Delete old iOS folder
-
-After confirming the commit and push succeeded:
-
-```bash
-rm -rf ~/Downloads/lifemaxxing/01_job_switch/projects/vocabmaxx/
-```
-
-### Step 16 — Vercel deploy (manual — user does this)
-
-The agent cannot log in to Vercel. Prompt the user:
-
-```
-1. Go to vercel.com → Add New Project → Import from GitHub → vocabmaxx
-2. Framework Preset: Next.js (auto-detected)
-3. Add all env vars from .env.local (copy-paste each one)
-4. Click Deploy
-5. Copy the deployed URL and paste here so I can update the README
-```
-
-### Step 17 — Phase 0 exit checklist
-
-After the deploy URL is known:
-
-- [ ] `pnpm dev` works locally
-- [ ] `pnpm build` succeeds
-- [ ] `pnpm test:unit` — all 15+ SM-2 tests pass
-- [ ] `pnpm verify` — all green
-- [ ] `/` marketing page loads on Vercel URL
-- [ ] Sign up with Google → lands on `/dashboard`
-- [ ] Sign up with magic-link → confirmation email arrives → lands on `/dashboard`
-- [ ] `/dashboard` shows "0 words due"
-- [ ] ROADMAP.md Phase 0 checkboxes all flipped
-- [ ] `README.md` updated with live Vercel URL
-
-When all checked, **Phase 0 is done**. Begin Phase 1 in a new session or continue in this one.
+Expected:
+- `/` → marketing landing page
+- `/auth/sign-in` → sign-in form (magic-link + Google button)
+- `/dashboard` → redirects to sign-in if not logged in
 
 ---
 
-## Context the next session needs
+## Phase 0 exit checklist (not yet ticked)
 
-- **Working dir:** `~/Downloads/vocabmaxx/`
-- **GitHub repo:** `github.com/lesaathvik24/vocabmaxx` — already exists, origin remote set.
-- **Old iOS repo:** already renamed to `vocabmaxx-ios-archive`.
-- **Supabase project:** credentials already in `.env.local` (project ref: `qbogwjfneuswzwdykoxf`). Also paste into Vercel env vars.
-- **LLM:** DeepSeek — key in `.env.local` as `DEEPSEEK_API_KEY`. No Anthropic needed.
-- **Design:** Claude Design handles frontend visuals; see `docs/DESIGN.md §4` for the handoff contract
-- **Architecture decisions:** all in `docs/ADR/`
-- **Phase tracker:** `docs/ROADMAP.md` — flip `[ ] → [x]` on each subtask
+- [ ] `pnpm dev` → `localhost:3000` renders marketing page
+- [ ] `pnpm build` → 0 errors
+- [ ] `pnpm verify` → green *(locally confirmed green)*
+- [ ] DB schema applied in Supabase SQL Editor
+- [ ] Visit `/dashboard` unauthed → redirect to `/auth/sign-in`
+- [ ] Sign in with Google → lands on `/dashboard` with "0 words due"
+- [ ] Sign in with magic-link → email arrives → click → `/dashboard`
+- [ ] CI green on GitHub Actions
+- [ ] Deploy to Vercel → live URL works
+- [ ] Update `README.md` with Vercel URL
 
-## Things not to do in the next session
+---
 
-- Do NOT run Playwright e2e tests until the Vercel preview URL is available (Steps 13-14 happen first).
-- Do NOT install extra npm packages without checking `docs/TECH_SPEC.md §2` first.
-- Do NOT commit without running `pnpm verify`.
-- Do NOT touch `docs/` except to update ROADMAP checkboxes.
-- Do NOT delete `NEXT_SESSION.md` — update it for the following session instead.
+## Vercel deploy (do after local test passes)
+
+1. vercel.com → Add New Project → Import `lesaathvik24/vocabmaxx`
+2. Framework: Next.js (auto-detected)
+3. Add all keys from `.env.local` as environment variables
+4. Also add `NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com`
+5. Click Deploy
+6. After deploy: add Vercel URL to Supabase → Auth → URL Configuration → Redirect URLs (`https://vocabmaxx.vercel.app/**`)
+7. Add Vercel URL to Google Cloud Console → Authorized JavaScript origins + redirect URIs
+
+---
+
+## File map (key files)
+
+```
+app/
+  (marketing)/page.tsx          landing page
+  (app)/dashboard/page.tsx      protected dashboard shell
+  auth/sign-in/page.tsx         sign-in (Google + magic-link)
+  auth/sign-up/page.tsx         sign-up
+  auth/callback/route.ts        OAuth callback handler
+  layout.tsx                    root layout (PostHog provider)
+  globals.css
+
+lib/
+  domain/grade.ts               Grade enum (0|3|4|5)
+  domain/srs.ts                 SM-2 nextState() function
+  domain/word.ts                Word + WordWithSRS types
+  domain/errors.ts              Result<T,E>, error unions
+  auth/client.ts                Supabase browser client
+  auth/server.ts                Supabase server client + requireUser()
+  auth/middleware.ts            Auth middleware helper
+  db/schema.ts                  Drizzle schema (5 tables)
+  db/client.ts                  Drizzle DB client
+  analytics/posthog.tsx         PostHog provider
+  validation/capture.schema.ts  Zod: capture input
+  validation/review.schema.ts   Zod: grade input
+  validation/word.schema.ts     Zod: edit word input
+  utils/cn.ts                   clsx + tailwind-merge
+  utils/errors.ts               toUserMessage()
+  utils/result.ts               ok() + err() helpers
+
+middleware.ts                   Next.js middleware (auth guard)
+drizzle/apply_schema.sql        SQL to paste in Supabase SQL Editor
+tests/unit/srs.test.ts          SM-2 unit tests (10 passing)
+.github/workflows/ci.yml        CI (lint + typecheck + test:unit)
+```
+
+---
+
+## Design decisions made
+
+- **DeepSeek** instead of Anthropic for LLM fallback (same API shape)
+- **No Plausible** — PostHog only for analytics
+- **No Plausible script** — remove any reference if found
+- **Sentry free tier** — kept, DSN configured
+- **jsdom** installed as devDep but vitest uses `node` env by default; individual component test files can add `// @vitest-environment jsdom` when needed
+
+---
+
+## What the next session should do
+
+Start Phase 1 (from `docs/ROADMAP.md`) only after Phase 0 checklist is fully ticked.
+
+Phase 1 = capture flow: `POST /api/capture`, definition service (dict → DeepSeek fallback), word saved to DB, `/capture` UI page.
+
+Do NOT start Phase 1 until:
+1. `pnpm dev` works locally
+2. Sign-in works (both Google and magic-link)
+3. DB schema applied and verified in Supabase table editor
