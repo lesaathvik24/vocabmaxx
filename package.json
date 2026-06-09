@@ -52,6 +52,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.3.3",
     "husky": "^9.1.7",
+    "jsdom": "^29.1.1",
     "msw": "^2.8.6",
     "playwright": "^1.52.0",
     "prettier": "^3.5.3",
