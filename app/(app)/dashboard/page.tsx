@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/auth/server'
 import { SignOutButton } from '@/components/layout/sign-out-button'
-import { SentryTestButton } from '@/components/debug/sentry-test-button'
 
 export default async function DashboardPage() {
     const supabase = await createClient()
@@ -18,7 +17,6 @@ export default async function DashboardPage() {
                 <p className="text-4xl font-bold">0</p>
                 <p className="text-slate-500 mt-1">words due for review</p>
             </div>
-            <SentryTestButton />
         </main>
     )
 }

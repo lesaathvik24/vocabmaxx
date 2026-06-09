@@ -18,6 +18,6 @@ export default tseslint.config(
         },
     },
     {
-        ignores: ['.next/**', 'node_modules/**', 'drizzle/**'],
+        ignores: ['.next/**', 'node_modules/**', 'drizzle/**', 'postcss.config.js'],
     },
 )
