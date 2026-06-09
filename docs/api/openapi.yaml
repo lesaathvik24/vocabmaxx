@@ -1,0 +1,736 @@
+openapi: 3.1.0
+info:
+  title: VocabMaxx API
+  version: 1.0.0
+  description: |
+    REST API for VocabMaxx — a vocabulary SRS SaaS.
+    All endpoints require a valid Supabase session cookie except where noted.
+    Error responses follow the shape `{ "error": { "kind": string, ... } }`.
+    Success responses follow `{ "data": { ... } }`.
+  contact:
+    name: Lekhan Saathvik
+    url: https://github.com/lesaathvik24/vocabmaxx-saas
+
+servers:
+  - url: https://vocabmaxx.com/api
+    description: Production
+  - url: http://localhost:3000/api
+    description: Local development
+
+tags:
+  - name: capture
+    description: Add words to the vocabulary deck
+  - name: review
+    description: Spaced repetition review sessions
+  - name: words
+    description: CRUD on the vocabulary deck
+  - name: insights
+    description: Learning analytics and progress
+  - name: export
+    description: Data portability
+  - name: cron
+    description: Internal cron endpoints (not for public use)
+
+paths:
+  /capture:
+    post:
+      tags: [capture]
+      summary: Capture a single word
+      description: |
+        Fetches a definition using the hybrid pipeline (dictionary → LLM fallback),
+        persists the word, and initialises its SRS state.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CaptureInput'
+            examples:
+              common:
+                value: { "term": "ubiquitous" }
+              rare:
+                value: { "term": "defenestrate" }
+      responses:
+        '200':
+          description: Word captured successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      word:
+                        $ref: '#/components/schemas/Word'
+        '400':
+          description: Invalid term or no LLM fallback available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid:
+                  value: { "error": { "kind": "invalid_term" } }
+                noFallback:
+                  value: { "error": { "kind": "no_fallback_available" } }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Word not found in dictionary and no LLM configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                value: { "error": { "kind": "not_found" } }
+        '409':
+          description: Term already in the user's deck
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                value: { "error": { "kind": "duplicate_term" } }
+        '502':
+          description: LLM returned malformed response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Network failure reaching dictionary or LLM
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /review/due:
+    get:
+      tags: [review]
+      summary: Get all due cards for the current session
+      description: Returns words whose `due_date <= now()`, ordered by due date ascending.
+      responses:
+        '200':
+          description: Due cards returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      cards:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/WordWithSRS'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /review/grade:
+    post:
+      tags: [review]
+      summary: Grade a reviewed card
+      description: |
+        Records the grade, updates the SM-2 SRS state, and writes a review_log entry.
+        The update and log write are atomic (single transaction).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GradeInput'
+            examples:
+              good:
+                value: { "wordId": "uuid-here", "grade": 4 }
+              again:
+                value: { "wordId": "uuid-here", "grade": 0 }
+      responses:
+        '200':
+          description: Grade recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      nextDue:
+                        type: string
+                        format: date-time
+                        example: "2026-06-14T00:00:00.000Z"
+                      newState:
+                        $ref: '#/components/schemas/SRSState'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Word not found or not owned by the session user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /words:
+    get:
+      tags: [words]
+      summary: List words in the deck
+      parameters:
+        - name: filter
+          in: query
+          schema:
+            type: string
+            enum: [all, due, mastered]
+            default: all
+          description: |
+            - `all`: every word
+            - `due`: `due_date <= now()`
+            - `mastered`: `interval_days > 30`
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Case-insensitive prefix match on `term`
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Word list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      words:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/WordWithSRS'
+                      total:
+                        type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /words/{id}:
+    get:
+      tags: [words]
+      summary: Get a single word with full detail and review history
+      parameters:
+        - $ref: '#/components/parameters/WordId'
+      responses:
+        '200':
+          description: Word detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      word:
+                        $ref: '#/components/schemas/WordWithSRS'
+                      history:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ReviewLog'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [words]
+      summary: Edit a word's definition or examples
+      parameters:
+        - $ref: '#/components/parameters/WordId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EditWordInput'
+      responses:
+        '200':
+          description: Updated word
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      word:
+                        $ref: '#/components/schemas/Word'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [words]
+      summary: Delete a word and its SRS state
+      parameters:
+        - $ref: '#/components/parameters/WordId'
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /words/import:
+    post:
+      tags: [words]
+      summary: Import words in bulk (extract mode or save mode)
+      description: |
+        Two modes:
+        - `extract`: paste text → LLM returns candidate terms with confidence scores → client presents checklist.
+        - `save`: list of terms → batch-fetch definitions → persist all → return summary.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/ImportExtractInput'
+                - $ref: '#/components/schemas/ImportSaveInput'
+              discriminator:
+                propertyName: mode
+      responses:
+        '200':
+          description: |
+            - `extract` mode: list of candidate terms.
+            - `save` mode: job ID (for polling status).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ImportExtractResponse'
+                  - $ref: '#/components/schemas/ImportSaveResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /words/import/{jobId}:
+    get:
+      tags: [words]
+      summary: Poll the status of a bulk import job
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Job status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      job:
+                        $ref: '#/components/schemas/ImportJob'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /insights:
+    get:
+      tags: [insights]
+      summary: Get learning insights for the current user
+      parameters:
+        - name: windowDays
+          in: query
+          schema:
+            type: integer
+            default: 30
+            minimum: 7
+            maximum: 365
+      responses:
+        '200':
+          description: Insights data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      growth:
+                        type: array
+                        description: Cumulative word count per day
+                        items:
+                          type: object
+                          properties:
+                            date:
+                              type: string
+                              format: date
+                            cumulative:
+                              type: integer
+                      retentionRate:
+                        type: number
+                        format: float
+                        description: Fraction of reviews rated Good or Easy (0..1)
+                      problemWords:
+                        type: array
+                        description: Words with highest Again rate
+                        items:
+                          type: object
+                          properties:
+                            word:
+                              $ref: '#/components/schemas/Word'
+                            againRate:
+                              type: number
+                              format: float
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /export:
+    get:
+      tags: [export]
+      summary: Export all words in the specified format
+      parameters:
+        - name: format
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [json, csv, anki]
+      responses:
+        '200':
+          description: File download
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: attachment; filename="vocabmaxx-export.json"
+          content:
+            application/json:
+              schema:
+                type: string
+            text/csv:
+              schema:
+                type: string
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /cron/daily-digest:
+    post:
+      tags: [cron]
+      summary: Send daily digest emails to users with due cards
+      description: |
+        Called by Vercel Cron. Not for public use.
+        Requires `Authorization: Bearer {CRON_SECRET}` header.
+      security:
+        - CronSecret: []
+      responses:
+        '200':
+          description: Emails dispatched
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      sent:
+                        type: integer
+                      skipped:
+                        type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  parameters:
+    WordId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  securitySchemes:
+    SupabaseSession:
+      type: apiKey
+      in: cookie
+      name: sb-access-token
+      description: Set automatically by Supabase Auth after sign-in
+    CronSecret:
+      type: http
+      scheme: bearer
+      description: The CRON_SECRET environment variable value
+
+  responses:
+    Unauthorized:
+      description: Not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              kind: unauthorized
+    NotFound:
+      description: Resource not found or not owned by the session user
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              kind: not_found
+    BadRequest:
+      description: Invalid request body
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    CaptureInput:
+      type: object
+      required: [term]
+      properties:
+        term:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: '^[A-Za-z][A-Za-z''\-]*$'
+          example: ubiquitous
+
+    GradeInput:
+      type: object
+      required: [wordId, grade]
+      properties:
+        wordId:
+          type: string
+          format: uuid
+        grade:
+          type: integer
+          enum: [0, 3, 4, 5]
+          description: 0=Again, 3=Hard, 4=Good, 5=Easy
+
+    EditWordInput:
+      type: object
+      properties:
+        definition:
+          type: string
+          minLength: 1
+          maxLength: 500
+        examples:
+          type: array
+          minItems: 1
+          maxItems: 3
+          items:
+            type: string
+            minLength: 1
+            maxLength: 300
+
+    ImportExtractInput:
+      type: object
+      required: [mode, text]
+      properties:
+        mode:
+          type: string
+          enum: [extract]
+        text:
+          type: string
+          minLength: 10
+          maxLength: 10000
+
+    ImportSaveInput:
+      type: object
+      required: [mode, terms]
+      properties:
+        mode:
+          type: string
+          enum: [save]
+        terms:
+          type: array
+          minItems: 1
+          maxItems: 200
+          items:
+            type: string
+
+    ImportExtractResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            candidates:
+              type: array
+              items:
+                type: object
+                properties:
+                  term:
+                    type: string
+                  contextSnippet:
+                    type: string
+                  confidence:
+                    type: number
+                    format: float
+                    minimum: 0
+                    maximum: 1
+
+    ImportSaveResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            jobId:
+              type: string
+              format: uuid
+
+    ImportJob:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, running, done, failed]
+        totalTerms:
+          type: integer
+        addedCount:
+          type: integer
+        failedCount:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              term:
+                type: string
+              reason:
+                type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Word:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        term:
+          type: string
+          example: ubiquitous
+        definition:
+          type: string
+          example: Present, appearing, or found everywhere.
+        examples:
+          type: array
+          minItems: 1
+          maxItems: 3
+          items:
+            type: string
+        source:
+          type: string
+          enum: [dictionary, llm]
+        addedAt:
+          type: string
+          format: date-time
+
+    SRSState:
+      type: object
+      properties:
+        easeFactor:
+          type: number
+          format: double
+          minimum: 1.3
+          example: 2.5
+        intervalDays:
+          type: integer
+          minimum: 0
+          example: 6
+        repetitions:
+          type: integer
+          minimum: 0
+          example: 2
+        dueDate:
+          type: string
+          format: date-time
+        lastReviewedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    WordWithSRS:
+      allOf:
+        - $ref: '#/components/schemas/Word'
+        - $ref: '#/components/schemas/SRSState'
+
+    ReviewLog:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        grade:
+          type: integer
+          enum: [0, 3, 4, 5]
+        reviewedAt:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          required: [kind]
+          properties:
+            kind:
+              type: string
+              enum:
+                - unauthorized
+                - not_found
+                - duplicate_term
+                - invalid_term
+                - no_fallback_available
+                - malformed_llm_response
+                - network_failure
+                - rate_limited
+                - bad_request
+            message:
+              type: string
+              description: Human-readable description (optional, for debugging)
+
+security:
+  - SupabaseSession: []
