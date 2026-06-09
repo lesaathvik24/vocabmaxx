@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
-    "test:integ": "vitest run tests/integration --passWithNoTests",
+    "test:integ": "dotenv -e .env.local -- vitest run --config vitest.integration.config.ts",
     "test:e2e": "playwright test",
     "verify": "pnpm lint && pnpm typecheck && pnpm test:unit && pnpm test:integ",
     "db:push": "dotenv -e .env.local -- drizzle-kit push",

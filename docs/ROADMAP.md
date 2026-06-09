@@ -210,36 +210,36 @@ None — pure code.
 - **Files:** `lib/db/queries/words.ts`.
 - **Acceptance:** functions `insert`, `findById`, `findByUserAndTerm`, `listByUser`, `deleteById`.
 - **Automated tests:** `tests/integration/db/words.test.ts` — insert + find, unique enforced, delete cascades.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ### 2.2 Drizzle queries — SRS state + review log
 - **Docs to load:** `docs/TECH_SPEC.md §1` (srs_state, review_log tables).
 - **Files:** `lib/db/queries/srs.ts`, `lib/db/queries/review-log.ts`.
 - **Acceptance:** `findDue(userId, now)` returns only due rows; `recordReview` is transactional.
 - **Automated tests:** `tests/integration/db/srs.test.ts`.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ### 2.3 Service composition
 - **Docs to load:** `docs/TECH_SPEC.md §4` (SRSService contract), `docs/ARCHITECTURE.md §3`.
 - **Files:** `lib/services/word.service.ts`, `lib/services/srs.service.ts`.
 - **Acceptance:** services return `Result<T, E>`; `srs.service.recordReview` updates state + writes log in one transaction.
 - **Automated tests:** `tests/unit/srs.service.test.ts` with mock queries.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ### 2.4 RLS integration test
 - **Docs to load:** `docs/SECURITY.md §3.1`, `docs/TECH_SPEC.md §2`.
 - **Files:** `tests/integration/db/rls.test.ts`.
 - **Acceptance:** two seeded users — user A's JWT returns 0 rows of user B's data.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ### Phase 2 — Setup actions (you)
 1. **Local Supabase shadow DB** (recommended for integration tests): `npx supabase start` — gives a clean Postgres on `54322` for test isolation. Add `SUPABASE_TEST_DB_URL` to `.env.local`.
 2. Or use a **separate Supabase project** named `vocabmaxx-test`.
 
 ### Phase 2 — End-to-end verification
-- [ ] `pnpm test:integ` → green.
-- [ ] In Supabase SQL editor, manually try `select * from words` as anon role → 0 rows. As user A's JWT → only A's rows.
-- [ ] Insert a word, delete the user → `srs_state` row gone (cascade works).
+- [x] `pnpm test:integ` → green. (18 tests pass — words 6, srs 4, rls 5, schema 3)
+- [x] In Supabase SQL editor, manually try `select * from words` as anon role → 0 rows. As user A's JWT → only A's rows. (asserted by `tests/integration/db/rls.test.ts`)
+- [x] Insert a word, delete the user → `srs_state` row gone (cascade works). (asserted by `tests/integration/db/words.test.ts` "deleteById cascades srs_state and review_log")
 
 ---
 

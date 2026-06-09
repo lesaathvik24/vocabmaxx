@@ -1,9 +1,5 @@
 CREATE TYPE "public"."definition_source" AS ENUM('dictionary', 'llm');--> statement-breakpoint
 CREATE TYPE "public"."import_job_status" AS ENUM('pending', 'running', 'done', 'failed');--> statement-breakpoint
-CREATE TABLE "auth"."users" (
-	"id" uuid PRIMARY KEY NOT NULL
-);
---> statement-breakpoint
 CREATE TABLE "definition_cache" (
 	"term" text PRIMARY KEY NOT NULL,
 	"definition" text NOT NULL,
