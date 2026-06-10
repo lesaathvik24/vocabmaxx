@@ -384,3 +384,97 @@ Static, server-renderable SVG (no chart dependency, no `'use client'`):
    click it → opens that word's detail page.
 5. (Optional) Apply `drizzle/0002_views.sql` in the Supabase SQL editor and
    `select * from vocab_growth_daily` → matches the in-app chart.
+
+---
+
+# Performance findings — "whole app is slow" (2026-06-10, NOT yet fixed)
+
+Diagnosis only — **no code was changed**. Captured here so a follow-up session can pick it
+up. The slowness is structural (auth + DB round-trips per navigation), not in the Phase 6/7
+feature code. Ranked by likely impact. 🔴 = biggest.
+
+## 1. 🔴 Auth token re-validated over the network 3× per navigation (likely dominant)
+
+`supabase.auth.getUser()` is **not** a local cookie read — it round-trips to Supabase Auth
+(GoTrue) to revalidate the JWT every call (~100–300ms each). One `(app)` page load calls it
+**three times, sequentially**:
+
+- `lib/auth/middleware.ts:26` — `updateSession()` → `getUser()`
+- `app/(app)/layout.tsx:6` — `requireUser()` → `getUser()`
+- the page itself, e.g. `app/(app)/dashboard/page.tsx`, `app/(app)/words/page.tsx`,
+  `app/(app)/insights/page.tsx` — `requireUser()` → `getUser()` (see `lib/auth/server.ts:29`)
+
+So ~3 auth round-trips run before any data query starts.
+
+**Fix options (no behaviour change):**
+- Wrap `requireUser` / `createClient` in React `cache()` so the **layout + page** calls dedupe
+  to one per request (kills 1 of 3 instantly).
+- Middleware already validated the session, so server components don't need a fresh network
+  check: use `getClaims()` (verifies the JWT signature locally via JWKS — no round-trip) or
+  read the user from a middleware-forwarded header. Keep the single authoritative
+  `getUser()` in middleware only.
+- **Target: 1 network auth check per navigation instead of 3.**
+
+## 2. 🔴 DB connection pool capped at 1 (`max: 1`)
+
+`lib/db/client.ts:21` → `postgres(url, { prepare: false, max: 1, idle_timeout: 20, ... })`.
+With `max: 1`, `Promise.all([...])` query batches (e.g. `dashboard.service.getDashboardData`'s
+3 queries, insights' 4) **queue on a single connection and run serially**, not in parallel.
+
+**Fix:** raise `max` to a small number (3–5) so parallel queries are actually parallel. The
+Supabase transaction pooler (`:6543`) handles this; keep it small per instance to avoid
+exhausting the pooler across many serverless instances.
+
+## 3. 🟠 Vercel function region vs Supabase region (check first — cheapest win)
+
+If Vercel functions run in a different region than the Supabase project, **every** auth call
+and query pays cross-region RTT (~150ms each way). Combined with items 1+2 (≈3 auth + 3–4
+queries, serialized), a mismatch alone can add 1–2s.
+
+**Fix / check (USER, no code):** Vercel → Project → Settings → Functions region vs the
+Supabase project region — make them match. This is the single cheapest lever if mismatched.
+
+## 4. 🟠 Duplicate `countDue` query per dashboard load
+
+`app/(app)/layout.tsx:7` runs `countDue` for the sidebar badge, and the dashboard page runs
+it again inside `getDashboardData` → same query twice per dashboard navigation.
+
+**Fix:** compute once and share (cached function), or drop it from one of the two.
+
+## 5. 🟡 `force-dynamic` on every route = zero caching
+
+Every `(app)` page re-runs full SSR + all DB queries on each visit. Most data is genuinely
+per-user/per-request, so this is a smaller lever, but:
+
+**Fix:** for slowly-changing per-user data (e.g. the sidebar due-count), add a short
+`revalidate` / `unstable_cache` (few seconds) to skip repeat work.
+
+## 6. 🟡 Cold starts (function + DB TLS handshake)
+
+First request after idle pays serverless cold start **plus** a fresh TLS handshake to the
+pooler; `idle_timeout: 20` drops the connection quickly between requests.
+
+**Fix:** Vercel Fluid Compute / keep-warm and/or a longer `idle_timeout`. Infra-level — do
+after 1–4.
+
+## How to confirm before changing anything
+
+1. Vercel → Deployments → function **logs/Duration** for `/dashboard` vs `/insights`. ~1–2s
+   ⇒ server-side (auth+DB), confirming the above.
+2. DevTools → Network → the document/RSC request: if **TTFB** dominates (not asset download),
+   it's backend.
+3. Compare Vercel function region vs Supabase region (item 3).
+4. Optional: add `Server-Timing` or `console.time` around `getUser()` and the query batch to
+   see the exact split.
+
+## Recommended fix order
+
+1. **Check Vercel↔Supabase region match** (user, free, possibly the whole problem).
+2. **Dedupe auth to one network check per navigation** (`cache()` + `getClaims`) — files:
+   `lib/auth/server.ts`, `lib/auth/middleware.ts`, `app/(app)/layout.tsx`, the `(app)` pages.
+3. **Bump DB `max`** above 1 — `lib/db/client.ts`.
+4. **Remove the duplicate `countDue`** — `app/(app)/layout.tsx` + `dashboard.service`.
+5. Caching (item 5) + cold-start tuning (item 6) if still slow.
+
+Items 2–4 are small, safe code changes (no UX change). Item 1 is a Vercel/Supabase dashboard
+check. Suggest measuring (confirm step 1–2) before and after each change to attribute the win.
