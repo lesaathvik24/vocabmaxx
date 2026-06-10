@@ -409,15 +409,39 @@ This is the first phase that ships pixels. Follow `docs/DESIGN.md §4` exactly:
 - [x] After last card → "All done" screen. (queue empties after grade; SessionDoneScreen on isDone)
 - [ ] Lighthouse mobile ≥ 90. (not run — fold into Phase 9 performance pass)
 
+### Phase 5+ — Post-launch enhancements (shipped 2026-06-10, branch `claude/learning-app-perf-features-5msa7s`, merged to `master`)
+These were user-requested fixes/features delivered after Phase 5, logged in `webusage.md`:
+- [x] **Optimistic grading** — `ReviewSession` advances instantly on grade and fires
+  `POST /api/review/grade` in the background (was `await`-blocking, felt >1s). Non-blocking
+  "Saving" spinner; failed saves toast. Files: `components/review/ReviewSession.tsx`.
+- [x] **Instant tab navigation** — added `app/(app)/loading.tsx` skeleton so route switches
+  render immediately instead of hanging on the previous page during server fetch.
+- [x] **Practice (cram) mode** — `/review?mode=practice` flips through ALL captured words
+  WITHOUT touching SRS state (algorithm-safe; no grade is persisted). Entry points: "Practice
+  anyway" on the caught-up screen + "Keep reviewing" on `SessionDoneScreen`. Files:
+  `app/(app)/review/page.tsx`, `components/review/ReviewSession.tsx` (`practice` prop),
+  `components/review/SessionDoneScreen.tsx`.
+- [x] **Algorithm lab** — `/algorithm` interactive page that runs the real `nextState()` SM-2
+  function client-side (preview + history table) so the schedule can be tested live on Vercel.
+  Added to sidebar nav. Files: `app/(app)/algorithm/page.tsx`,
+  `components/algorithm/AlgorithmLab.tsx`, `components/layout/Sidebar.tsx`.
+- [x] **Auth build fix** — `force-dynamic` on `app/auth/sign-in|sign-up/page.tsx` to stop the
+  Vercel build crashing while prerendering `AuthCard` (Supabase client needs `NEXT_PUBLIC_*`
+  env not present at static-export time).
+
 ---
 
 ## Phase 6 — Word list, detail, search
 
 ### 6.1a Word list page
 - **Docs to load:** `docs/TECH_SPEC.md §5` (Words list endpoint), `docs/DESIGN.md §3, §5`.
-- **Files:** `app/(app)/words/page.tsx`, `components/words/WordList.tsx`, `components/words/WordRow.tsx`.
+- **Files:** `app/(app)/words/page.tsx`, `components/words/WordsList.tsx`.
 - **Acceptance:** virtualized for > 200 rows; search bar (case-insensitive prefix); filter All/Due/Mastered.
-- **Status:** `[ ]`
+- **Status:** `[~]` — shipped 2026-06-10: real list page (server-rendered via `wordService.listForUser`)
+  + case-insensitive search (term & definition) + per-row delete. **Remaining:** virtualization for
+  >200 rows and the All/Due/Mastered filter (words query doesn't yet join `srs_state` for status).
+  Note: built as `components/words/WordsList.tsx` (single client component), not the planned
+  `WordList`/`WordRow` split.
 
 ### 6.1b Word list — unit tests
 - **Files:** `tests/unit/word-list.test.ts`, `tests/e2e/words-list.spec.ts`.
@@ -434,17 +458,21 @@ This is the first phase that ships pixels. Follow `docs/DESIGN.md §4` exactly:
 - **Docs to load:** `docs/TECH_SPEC.md §5` (PATCH/DELETE word).
 - **Files:** `components/words/WordEditor.tsx`, dialog wiring in `WordDetail.tsx`.
 - **Acceptance:** edit dialog persists; delete behind a confirmation modal.
-- **Status:** `[ ]`
+- **Status:** `[~]` — **delete done** 2026-06-10: `DELETE /api/words/[id]` (auth + UUID-validated,
+  user-scoped) → `wordService.remove(id, userId)` → `wordsQ.deleteByIdForUser` (returns false if
+  not owner; cascades `srs_state`/`review_log`). UI: confirmation `Dialog` + toast +
+  `router.refresh()` in `components/words/WordsList.tsx`. **Remaining:** edit (PATCH word) — no
+  `WordEditor` / PATCH endpoint yet.
 
 ### Phase 6 — Setup actions (you)
 None.
 
 ### Phase 6 — End-to-end verification
-- [ ] 250 seeded words → list scrolls smoothly (DevTools Performance: no scroll jank > 16ms).
-- [ ] Search "ali" → only matching rows.
-- [ ] Filter Due → only due rows.
-- [ ] Edit a word → reload → change persisted.
-- [ ] Delete → confirmation → row gone; `srs_state` row gone (cascade).
+- [ ] 250 seeded words → list scrolls smoothly (DevTools Performance: no scroll jank > 16ms). (blocked: no virtualization yet)
+- [x] Search "ali" → only matching rows. (client filter in `WordsList`, term + definition)
+- [ ] Filter Due → only due rows. (filter not built yet)
+- [ ] Edit a word → reload → change persisted. (edit not built yet)
+- [x] Delete → confirmation → row gone; `srs_state` row gone (cascade). (confirm dialog + `DELETE /api/words/[id]`, FK cascade)
 
 ---
 
