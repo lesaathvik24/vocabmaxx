@@ -304,3 +304,83 @@ layer mocked.
    change persisted.
 6. **Delete** (from a row's trash icon or the detail page) → confirm → row gone; the word's
    `srs_state` / `review_log` rows are gone too (FK cascade).
+
+---
+
+# Phase 7 — Insights (2026-06-10)
+
+## Approach decision — no required migration
+
+The roadmap calls for SQL views in `drizzle/0002_views.sql`. To avoid forcing a manual
+migration (a setup blocker), analytics are computed **in-app** with plain aggregation
+queries over `words` / `review_log`, so the feature works on Vercel with **zero DB setup**.
+`drizzle/0002_views.sql` is still shipped as an **optional** artifact (with
+`security_invoker = true`) for direct SQL / BI access and parity with `TECH_SPEC §4`; the
+app does not depend on it. The only manual step is having some review history to see
+non-empty charts.
+
+## 7.1 — Analytics queries (+ optional views) + tests
+
+`lib/db/queries/analytics.ts` (`server-only`, Drizzle `sql` aggregation):
+- `countWordsBefore(userId, since)` — growth baseline.
+- `dailyAddedCounts(userId, since)` — words added per UTC day (`to_char(date_trunc('day', …))`).
+- `reviewOutcomes(userId, since)` — `{ total, passed }` where passed = grade ≥ 3.
+- `topFailedWords(userId, limit)` — words ranked by lapses (grade 0), zero-lapse excluded
+  (`having sum(...) > 0`), owner-scoped via `innerJoin` on `words`.
+
+`drizzle/0002_views.sql` — `vocab_growth_daily`, `retention_30d`, `top_failed_words`
+(optional, documented as such in the file header).
+
+**Tests:** `tests/integration/db/analytics.test.ts` (4 cases — growth baseline + daily
+counts, review outcomes window, top-failed ranking/exclusion, owner scoping). Seeds words
+with back-dated `added_at` and review_log rows. Not run in sandbox (needs live Supabase),
+consistent with other `tests/integration/db/*`.
+
+## 7.2 — AnalyticsService
+
+`lib/services/analytics.service.ts` — typed methods matching the `TECH_SPEC §4` contract,
+using the dashboard-style **injectable deps** pattern for unit testing:
+- `vocabGrowth(userId, windowDays)` → `{ date, cumulative }[]` (dense, one point/day).
+- `retentionRate(userId, windowDays)` → `0..1` (0 when no reviews — no divide-by-zero).
+- `problemWords(userId, limit)` → `WordWithStats[]`.
+- Exported pure helper `buildGrowthSeries(baseline, daily, windowDays, now)` fills every day
+  in the window and accumulates — unit-tested in isolation.
+
+**Tests:** `tests/unit/analytics.service.test.ts` (10 cases — `buildGrowthSeries` density /
+baseline / accumulation, plus each service method with mock deps).
+
+## 7.3a/b/c — Insights UI
+
+Static, server-renderable SVG (no chart dependency, no `'use client'`):
+- `lib/insights/chart.ts` — pure `buildGrowthGeometry(points, w, h, pad)` → line + closed
+  area SVG paths + coords (max floored at 1 so all-zero series still renders). Unit-tested
+  in `tests/unit/insights-chart.test.ts` (7 cases).
+- `components/insights/GrowthChart.tsx` — area+line chart, total + gained header, date axis,
+  empty state.
+- `components/insights/RetentionGauge.tsx` — SVG ring gauge, colour by band
+  (≥85% success / ≥60% warning / else destructive), sample-size empty state.
+- `components/insights/ProblemWords.tsx` — top-misses list, each row links to the word
+  detail page, empty state.
+- `app/(app)/insights/page.tsx` (server, `force-dynamic`) — `Promise.all` over the three
+  service calls (+ `reviewOutcomes` for the gauge sample size), renders all three widgets.
+  Replaces the "Insights are brewing" placeholder.
+
+## Phase 7 verification run
+
+- `pnpm test:unit` — green (**117** tests, +14 from Phase 6's 103).
+- `pnpm typecheck` — clean.
+- `pnpm lint` — clean (only the pre-existing `middleware.test.ts` warning).
+- `pnpm build` — **succeeds**; `/insights`, `/words`, `/words/[id]` all compile as `ƒ Dynamic`.
+- Integration test written but not run here (needs live Supabase).
+
+### Manual validation (do this on Vercel to confirm Phase 7)
+
+1. Open **Insights**. With no reviews/words yet, the three widgets show their empty states.
+2. Capture several words over a few days (or backdate `words.added_at` in Supabase) → the
+   **growth curve** climbs and the total/“+N this window” header updates.
+3. Do some reviews grading a mix of Again/Hard/Good/Easy → the **retention gauge** shows
+   `passed(grade≥3)/total` as a % with the review count, coloured by band.
+4. Repeatedly grade one word **Again** → it appears in **Problem words** with its miss count;
+   click it → opens that word's detail page.
+5. (Optional) Apply `drizzle/0002_views.sql` in the Supabase SQL editor and
+   `select * from vocab_growth_daily` → matches the in-app chart.

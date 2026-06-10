@@ -1,14 +1,56 @@
-import { BarChart3 } from 'lucide-react'
-import { ComingSoon } from '@/components/layout/ComingSoon'
+import { requireUser } from '@/lib/auth/server'
+import * as analytics from '@/lib/services/analytics.service'
+import * as analyticsQ from '@/lib/db/queries/analytics'
+import { GrowthChart } from '@/components/insights/GrowthChart'
+import { RetentionGauge } from '@/components/insights/RetentionGauge'
+import { ProblemWords } from '@/components/insights/ProblemWords'
 
 export const metadata = { title: 'Insights' }
+export const dynamic = 'force-dynamic'
 
-export default function InsightsPage() {
+const GROWTH_WINDOW = 30
+const RETENTION_WINDOW = 30
+
+export default async function InsightsPage() {
+    const user = await requireUser()
+    const now = new Date()
+    const retentionStart = new Date(now)
+    retentionStart.setUTCDate(retentionStart.getUTCDate() - RETENTION_WINDOW)
+
+    const [growth, retention, outcomes, problems] = await Promise.all([
+        analytics.vocabGrowth(user.id, GROWTH_WINDOW),
+        analytics.retentionRate(user.id, RETENTION_WINDOW),
+        analyticsQ.reviewOutcomes(user.id, retentionStart),
+        analytics.problemWords(user.id, 5),
+    ])
+
     return (
-        <ComingSoon
-            icon={BarChart3}
-            title="Insights are brewing"
-            body="Growth charts, retention, and your problem words — all once you've reviewed a few sessions. Start a review or capture more words to feed the numbers."
-        />
+        <div className="space-y-6">
+            <div>
+                <h1 className="font-display font-semibold text-2xl sm:text-3xl">Insights</h1>
+                <p className="mt-1 text-sm text-muted-foreground">
+                    Your vocabulary growth, retention, and the words giving you the most trouble.
+                </p>
+            </div>
+
+            <GrowthChart data={growth} />
+
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1.4fr] items-start">
+                <RetentionGauge
+                    rate={retention}
+                    windowDays={RETENTION_WINDOW}
+                    sampleSize={outcomes.total}
+                />
+                <ProblemWords
+                    words={problems.map((w) => ({
+                        id: w.id,
+                        term: w.term,
+                        definition: w.definition,
+                        lapses: w.lapses,
+                        reviews: w.reviews,
+                    }))}
+                />
+            </div>
+        </div>
     )
 }

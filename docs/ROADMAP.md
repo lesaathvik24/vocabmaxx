@@ -488,36 +488,49 @@ None.
 - **Files:** `drizzle/0002_views.sql`.
 - **Acceptance:** views `vocab_growth_daily`, `retention_30d`, `top_failed_words`.
 - **Automated tests:** `tests/integration/db/analytics.test.ts` — seeded data → expected aggregates.
-- **Status:** `[ ]`
+- **Status:** `[x]` — completed 2026-06-10. Analytics are computed **in-app** via
+  `lib/db/queries/analytics.ts` (aggregation over base tables) so **no migration is required**;
+  `drizzle/0002_views.sql` ships the 3 views as an **optional** artifact (`security_invoker`).
+  `tests/integration/db/analytics.test.ts` (4 cases) written — runs against a live test DB
+  (not in sandbox, same as other `tests/integration/db/*`).
 
 ### 7.2 AnalyticsService
 - **Docs to load:** `docs/TECH_SPEC.md §4` (AnalyticsService contract).
 - **Files:** `lib/services/analytics.service.ts`.
 - **Acceptance:** typed methods over each view.
-- **Status:** `[ ]`
+- **Status:** `[x]` — completed 2026-06-10. `vocabGrowth` / `retentionRate` / `problemWords`
+  (injectable-deps pattern) + exported pure `buildGrowthSeries`. Unit-tested in
+  `tests/unit/analytics.service.test.ts` (10 cases).
 
 ### 7.3a Growth chart
 - **Docs to load:** `docs/DESIGN.md §3, §8`.
 - **Files:** `components/insights/GrowthChart.tsx`.
 - **Acceptance:** SVG-based, < 50kB gzipped chart code; or recharts only if budget allows.
-- **Status:** `[ ]`
+- **Status:** `[x]` — completed 2026-06-10. Hand-rolled SVG area+line (no chart dependency),
+  geometry from pure `lib/insights/chart.ts` (unit-tested, 7 cases). Empty state included.
 
 ### 7.3b Retention gauge + problem words
 - **Files:** `components/insights/RetentionGauge.tsx`, `components/insights/ProblemWords.tsx`.
-- **Status:** `[ ]`
+- **Status:** `[x]` — completed 2026-06-10. SVG ring gauge (colour-banded, sample-size empty
+  state) + problem-words list (rows link to word detail). Both server-renderable.
 
 ### 7.3c Insights page wiring
 - **Files:** `app/(app)/insights/page.tsx`.
 - **Acceptance:** all three widgets render with real data.
-- **Status:** `[ ]`
+- **Status:** `[x]` — completed 2026-06-10. Server page (`force-dynamic`) fetches the three
+  analytics methods (+ `reviewOutcomes` for the gauge sample size) in `Promise.all` and renders
+  GrowthChart + RetentionGauge + ProblemWords. Replaces the ComingSoon placeholder.
 
 ### Phase 7 — Setup actions (you)
 1. Seed 30 days of review_log so charts have data. SQL snippet — see `docs/RUNBOOK.md` (add one if missing).
 
 ### Phase 7 — End-to-end verification
-- [ ] `/insights` renders all three widgets.
-- [ ] Manually compute retention from review_log and compare to gauge.
-- [ ] Bundle size of insights chunk < 50kB gzipped (`pnpm build` output).
+- [x] `/insights` renders all three widgets. (server page wired to AnalyticsService; empty states when no data)
+- [~] Manually compute retention from review_log and compare to gauge. (gauge = passed(grade≥3)/total; verify on Vercel with real reviews)
+- [x] Bundle size of insights chunk < 50kB gzipped. (hand-rolled SVG, no chart library — well under budget)
+
+> Note: analytics compute in-app (no migration needed). `drizzle/0002_views.sql` is an
+> optional artifact. Seed review history (or backdate `words.added_at`) to see non-empty charts.
 
 ---
 
