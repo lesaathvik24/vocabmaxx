@@ -4,7 +4,7 @@
 
 ---
 
-## State as of 2026-06-09
+## State as of 2026-06-10
 
 ### What's done
 
@@ -15,7 +15,11 @@
 | Phase 1 — Domain layer (SM-2 + Word invariants) | ✅ | 36 unit |
 | Phase 2 — Persistence (queries + services + RLS) | ✅ | 18 integ |
 | Phase 3 — Definition pipeline (dict + DeepSeek + cache + `/api/capture`) | ✅ | 23 (7 unit + 16 integ) |
-| **Total green** | | **90 tests** |
+| Phase 4 — Capture UI + dashboard + app shell + import | ✅ | see git log |
+| Phase 5 — Review session (`/review`, `/api/review/due`, `/api/review/grade`) | ✅ | 7 unit + 10 integ new |
+| **Total green** | | **133 tests (80 unit + 53 integ)** |
+
+> **⚠️ DATABASE_URL pooler host changed 2026-06-10:** prod tenant moved off `aws-0-ap-southeast-1.pooler.supabase.com` (was returning `tenant/user not found`). `.env.local` now uses `aws-1-ap-southeast-1.pooler.supabase.com:6543`. **Update `DATABASE_URL` on Vercel to the aws-1 host too**, or production will 500 on every DB call.
 
 Gates on `master`: `pnpm lint` clean, `pnpm typecheck` clean, `pnpm verify` green.
 

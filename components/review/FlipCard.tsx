@@ -14,10 +14,11 @@ interface FlipCardProps {
 export function FlipCard({ term, definition, examples, flipped, onFlip }: FlipCardProps) {
     useEffect(() => {
         function onKey(e: KeyboardEvent) {
-            if (e.key === ' ' || e.key === 'Enter') {
-                e.preventDefault()
-                onFlip()
-            }
+            if (e.key !== ' ' && e.key !== 'Enter') return
+            const target = e.target as HTMLElement | null
+            if (target?.closest('button, a, input, textarea, select, [role="button"]')) return
+            e.preventDefault()
+            onFlip()
         }
         window.addEventListener('keydown', onKey)
         return () => window.removeEventListener('keydown', onKey)
