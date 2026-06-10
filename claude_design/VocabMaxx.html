@@ -1,0 +1,1856 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VocabMaxx — Vocabulary trainer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap" />
+  <style>
+/* VocabMaxx — design tokens (shadcn-style, mapped to the DESIGN.md spec) */
+
+:root {
+  /* accent hue family — overridden by the Tweaks panel */
+  --accent-h: 174;
+  --accent-s: 64%;
+
+  /* radii */
+  --radius-card: 16px;
+  --radius-ctl: 9px;
+
+  /* motion */
+  --transition-base: 150ms ease-out;
+  --flip-ms: 460ms;
+  --flip-ease: cubic-bezier(0.34, 1.2, 0.4, 1);
+
+  /* type */
+  --font-ui: 'Inter', system-ui, sans-serif;
+  --font-display: 'Inter Tight', 'Inter', sans-serif;
+  --font-read: 'Source Serif 4', Georgia, serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+/* ---------- LIGHT ---------- */
+[data-theme='light'] {
+  --background: 40 12% 97%;
+  --surface: 0 0% 100%;
+  --foreground: 220 22% 13%;
+  --muted: 220 16% 95%;
+  --muted-foreground: 220 9% 46%;
+  --border: 220 14% 90%;
+  --card: 0 0% 100%;
+
+  --accent: var(--accent-h) var(--accent-s) 38%;
+  --accent-soft: var(--accent-h) 52% 95%;
+  --accent-foreground: 0 0% 100%;
+
+  --destructive: 5 74% 52%;
+  --success: 150 56% 38%;
+  --warning: 34 88% 46%;
+  --ring: var(--accent-h) var(--accent-s) 42%;
+
+  --shadow-sm: 0 1px 2px hsl(220 30% 12% / 0.06), 0 1px 1px hsl(220 30% 12% / 0.04);
+  --shadow-md: 0 10px 30px hsl(220 30% 12% / 0.10), 0 2px 8px hsl(220 30% 12% / 0.06);
+  --shadow-card: 0 1px 3px hsl(220 30% 12% / 0.05), 0 8px 24px hsl(220 30% 12% / 0.05);
+}
+
+/* ---------- DARK ---------- */
+[data-theme='dark'] {
+  --background: 222 28% 8%;
+  --surface: 222 24% 11%;
+  --foreground: 220 16% 92%;
+  --muted: 222 20% 15%;
+  --muted-foreground: 220 10% 60%;
+  --border: 222 18% 19%;
+  --card: 222 24% 12%;
+
+  --accent: var(--accent-h) calc(var(--accent-s) - 6%) 52%;
+  --accent-soft: var(--accent-h) 38% 18%;
+  --accent-foreground: 222 40% 7%;
+
+  --destructive: 5 70% 60%;
+  --success: 150 48% 52%;
+  --warning: 34 80% 58%;
+  --ring: var(--accent-h) var(--accent-s) 56%;
+
+  --shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.4);
+  --shadow-md: 0 14px 40px hsl(0 0% 0% / 0.5), 0 2px 8px hsl(0 0% 0% / 0.4);
+  --shadow-card: 0 1px 3px hsl(0 0% 0% / 0.3), 0 10px 30px hsl(0 0% 0% / 0.35);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body { transition: background var(--transition-base), color var(--transition-base); }
+
+::selection { background: hsl(var(--accent) / 0.22); }
+
+/* focus ring — uses --ring per a11y checklist */
+:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+:focus:not(:focus-visible) { outline: none; }
+
+/* scrollbars */
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 99px; border: 2px solid hsl(var(--background)); }
+*::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.5); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
+
+/* chrome.css — VocabMaxx component styling. Tailwind-equivalent utility intent
+   expressed as semantic classes so the prototype stays readable. */
+
+/* ---------------- App frame ---------------- */
+.vm-app { display: grid; grid-template-columns: 248px 1fr; height: 100vh; min-height: 100vh; }
+.vm-app[data-density='compact'] { --pad-card: 18px; --gap: 14px; }
+.vm-app[data-density='regular'] { --pad-card: 24px; --gap: 20px; }
+.vm-app[data-density='comfy']   { --pad-card: 32px; --gap: 28px; }
+
+/* ---------------- Sidebar ---------------- */
+.vm-side { background: hsl(var(--surface)); border-right: 1px solid hsl(var(--border)); display: flex; flex-direction: column; padding: 18px 14px; gap: 4px; }
+.vm-brand { display: flex; align-items: center; gap: 11px; padding: 8px 10px 18px; }
+.vm-mark { width: 34px; height: 34px; border-radius: 10px; background: hsl(var(--accent)); color: hsl(var(--accent-foreground)); display: grid; place-items: center; font-family: var(--font-display); font-weight: 700; font-size: 18px; box-shadow: var(--shadow-sm); flex: none; }
+.vm-brand-name { font-family: var(--font-display); font-weight: 600; font-size: 17px; letter-spacing: -0.01em; }
+.vm-brand-sub { font-size: 11px; color: hsl(var(--muted-foreground)); margin-top: 1px; }
+
+.vm-navlabel { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: hsl(var(--muted-foreground)); padding: 14px 12px 6px; }
+.vm-nav { display: flex; align-items: center; gap: 11px; padding: 9px 12px; border-radius: var(--radius-ctl); color: hsl(var(--muted-foreground)); font-size: 14px; font-weight: 500; cursor: pointer; border: none; background: none; width: 100%; text-align: left; font-family: inherit; transition: background var(--transition-base), color var(--transition-base); position: relative; }
+.vm-nav:hover { background: hsl(var(--muted)); color: hsl(var(--foreground)); }
+.vm-nav[aria-current='page'] { background: hsl(var(--accent-soft)); color: hsl(var(--accent)); font-weight: 600; }
+[data-theme='dark'] .vm-nav[aria-current='page'] { color: hsl(var(--foreground)); }
+.vm-nav-badge { margin-left: auto; font-family: var(--font-mono); font-size: 11px; font-weight: 500; background: hsl(var(--accent)); color: hsl(var(--accent-foreground)); padding: 1px 7px; border-radius: 99px; }
+.vm-nav[aria-current='page'] .vm-nav-badge { background: hsl(var(--accent)); }
+
+.vm-side-foot { margin-top: auto; display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid hsl(var(--border)); }
+.vm-user { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--radius-ctl); }
+.vm-avatar { width: 30px; height: 30px; border-radius: 99px; background: hsl(var(--muted)); color: hsl(var(--foreground)); display: grid; place-items: center; font-size: 12px; font-weight: 600; flex: none; }
+
+/* ---------------- Topbar ---------------- */
+.vm-main { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+.vm-top { height: 60px; flex: none; border-bottom: 1px solid hsl(var(--border)); background: hsl(var(--background) / 0.8); backdrop-filter: blur(8px); display: flex; align-items: center; gap: 14px; padding: 0 26px; }
+.vm-top-title { font-family: var(--font-display); font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.vm-search { flex: 1; max-width: 420px; display: flex; align-items: center; gap: 9px; height: 38px; padding: 0 12px; border-radius: var(--radius-ctl); background: hsl(var(--muted)); color: hsl(var(--muted-foreground)); border: 1px solid transparent; cursor: text; transition: border var(--transition-base); }
+.vm-search:focus-within { border-color: hsl(var(--ring)); background: hsl(var(--surface)); }
+.vm-search input { border: none; background: none; outline: none; flex: 1; font: inherit; font-size: 14px; color: hsl(var(--foreground)); }
+.vm-search input::placeholder { color: hsl(var(--muted-foreground)); }
+.vm-kbd { font-family: var(--font-mono); font-size: 11px; color: hsl(var(--muted-foreground)); background: hsl(var(--surface)); border: 1px solid hsl(var(--border)); border-radius: 6px; padding: 2px 6px; line-height: 1.2; }
+[data-theme='dark'] .vm-kbd { background: hsl(var(--background)); }
+
+.vm-content { flex: 1; overflow-y: auto; }
+.vm-page { max-width: 1080px; margin: 0 auto; padding: 30px 30px 64px; }
+
+/* ---------------- Buttons ---------------- */
+.btn { font-family: inherit; font-size: 14px; font-weight: 500; display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: var(--radius-ctl); border: 1px solid transparent; cursor: pointer; transition: all var(--transition-base); white-space: nowrap; }
+.btn:active { transform: translateY(0.5px); }
+.btn-primary { background: hsl(var(--accent)); color: hsl(var(--accent-foreground)); box-shadow: var(--shadow-sm); }
+.btn-primary:hover { background: hsl(var(--accent) / 0.92); }
+.btn-ghost { background: transparent; color: hsl(var(--foreground)); }
+.btn-ghost:hover { background: hsl(var(--muted)); }
+.btn-outline { background: hsl(var(--surface)); color: hsl(var(--foreground)); border-color: hsl(var(--border)); }
+.btn-outline:hover { background: hsl(var(--muted)); }
+.btn-icon { width: 38px; height: 38px; padding: 0; border-radius: var(--radius-ctl); }
+.btn-lg { height: 48px; padding: 0 22px; font-size: 15px; }
+
+/* ---------------- Cards ---------------- */
+.card { background: hsl(var(--card)); border: 1px solid hsl(var(--border)); border-radius: var(--radius-card); box-shadow: var(--shadow-card); }
+.card-pad { padding: var(--pad-card); }
+
+.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: hsl(var(--muted-foreground)); }
+.display-xl { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.025em; line-height: 1.02; }
+.mono { font-family: var(--font-mono); }
+
+/* ---------------- Due banner ---------------- */
+.due-banner { position: relative; overflow: hidden; border-radius: var(--radius-card); padding: 28px 30px; color: hsl(var(--accent-foreground)); background: linear-gradient(135deg, hsl(var(--accent)) 0%, hsl(var(--accent-h) calc(var(--accent-s) + 6%) 30%) 100%); box-shadow: var(--shadow-card); display: flex; align-items: center; gap: 26px; }
+.due-banner-glow { position: absolute; inset: 0; background: radial-gradient(420px 200px at 88% -20%, hsl(0 0% 100% / 0.22), transparent 70%); pointer-events: none; }
+
+/* ---------------- Stat tiles ---------------- */
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap); }
+.stat { background: hsl(var(--card)); border: 1px solid hsl(var(--border)); border-radius: var(--radius-card); padding: var(--pad-card); box-shadow: var(--shadow-card); }
+.stat-num { font-family: var(--font-display); font-weight: 600; font-size: 30px; letter-spacing: -0.02em; line-height: 1; }
+.stat-label { font-size: 13px; color: hsl(var(--muted-foreground)); margin-top: 7px; display: flex; align-items: center; gap: 6px; }
+
+/* ---------------- Capture rows ---------------- */
+.cap-row { display: flex; align-items: center; gap: 14px; padding: 13px 16px; border-radius: 12px; transition: background var(--transition-base); cursor: pointer; }
+.cap-row:hover { background: hsl(var(--muted)); }
+.cap-term { font-family: var(--font-read); font-size: 17px; font-weight: 600; }
+.cap-def { font-family: var(--font-read); font-size: 14px; color: hsl(var(--muted-foreground)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pill { font-size: 11px; font-weight: 500; padding: 2px 9px; border-radius: 99px; background: hsl(var(--muted)); color: hsl(var(--muted-foreground)); white-space: nowrap; }
+.pill-accent { background: hsl(var(--accent-soft)); color: hsl(var(--accent)); }
+[data-theme='dark'] .pill-accent { color: hsl(var(--foreground)); }
+.dot { width: 7px; height: 7px; border-radius: 99px; flex: none; }
+
+/* ---------------- Capture ---------------- */
+.seg { display: inline-flex; padding: 4px; gap: 3px; background: hsl(var(--muted)); border-radius: var(--radius-ctl); border: 1px solid hsl(var(--border)); }
+.seg-btn { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 15px; border: none; background: none; border-radius: 7px; font: inherit; font-size: 13.5px; font-weight: 500; color: hsl(var(--muted-foreground)); cursor: pointer; transition: all var(--transition-base); white-space: nowrap; }
+.seg-btn:hover { color: hsl(var(--foreground)); }
+.seg-btn[aria-pressed='true'] { background: hsl(var(--surface)); color: hsl(var(--foreground)); box-shadow: var(--shadow-sm); }
+[data-theme='dark'] .seg-btn[aria-pressed='true'] { background: hsl(var(--card)); }
+
+.cap-head { margin-bottom: 22px; }
+.cap-lede { color: hsl(var(--muted-foreground)); font-size: 15px; margin-top: 6px; max-width: 560px; }
+
+.field-xl { display: flex; align-items: center; gap: 14px; height: 68px; padding: 0 20px; background: hsl(var(--card)); border: 1.5px solid hsl(var(--border)); border-radius: var(--radius-card); box-shadow: var(--shadow-card); transition: border var(--transition-base); }
+.field-xl:focus-within { border-color: hsl(var(--accent)); }
+.field-xl input { flex: 1; border: none; background: none; outline: none; font-family: var(--font-read); font-size: 28px; font-weight: 600; letter-spacing: -0.01em; color: hsl(var(--foreground)); }
+.field-xl input::placeholder { color: hsl(var(--muted-foreground)); opacity: 0.55; font-weight: 500; }
+
+.preview-term { font-family: var(--font-read); font-size: 30px; font-weight: 600; letter-spacing: -0.01em; }
+.preview-ipa { font-family: var(--font-mono); font-size: 14px; color: hsl(var(--muted-foreground)); }
+.preview-pos { font-family: var(--font-read); font-style: italic; font-size: 15px; color: hsl(var(--muted-foreground)); }
+.def-edit { width: 100%; border: 1px solid transparent; background: hsl(var(--muted) / 0.5); border-radius: 10px; padding: 12px 14px; font-family: var(--font-read); font-size: 17px; line-height: 1.5; color: hsl(var(--foreground)); resize: none; outline: none; transition: border var(--transition-base), background var(--transition-base); }
+.def-edit:focus { border-color: hsl(var(--ring)); background: hsl(var(--surface)); }
+.field-label { font-size: 11.5px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: hsl(var(--muted-foreground)); margin-bottom: 7px; display: block; }
+.syn-chip { font-family: var(--font-read); font-size: 14px; padding: 4px 12px; border-radius: 99px; background: hsl(var(--accent-soft)); color: hsl(var(--accent)); }
+[data-theme='dark'] .syn-chip { color: hsl(var(--foreground)); }
+
+.cap-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 56px 24px; color: hsl(var(--muted-foreground)); }
+.cap-empty .ring { width: 64px; height: 64px; border-radius: 99px; display: grid; place-items: center; background: hsl(var(--muted)); color: hsl(var(--muted-foreground)); margin-bottom: 8px; }
+
+/* paragraph extractor */
+.para-input { width: 100%; min-height: 200px; border: 1.5px solid hsl(var(--border)); background: hsl(var(--card)); border-radius: var(--radius-card); padding: 18px 20px; font-family: var(--font-read); font-size: 17px; line-height: 1.65; color: hsl(var(--foreground)); resize: vertical; outline: none; box-shadow: var(--shadow-card); transition: border var(--transition-base); }
+.para-input:focus { border-color: hsl(var(--accent)); }
+.para-input::placeholder { color: hsl(var(--muted-foreground)); opacity: 0.6; }
+.extract-row { display: flex; align-items: center; gap: 14px; padding: 13px 16px; border-radius: 12px; cursor: pointer; transition: background var(--transition-base); border: 1px solid transparent; }
+.extract-row:hover { background: hsl(var(--muted) / 0.6); }
+.extract-row[data-on='true'] { background: hsl(var(--accent-soft) / 0.5); }
+.cbox { width: 22px; height: 22px; border-radius: 7px; border: 1.5px solid hsl(var(--border)); flex: none; display: grid; place-items: center; transition: all var(--transition-base); background: hsl(var(--surface)); color: transparent; }
+.extract-row[data-on='true'] .cbox { background: hsl(var(--accent)); border-color: hsl(var(--accent)); color: hsl(var(--accent-foreground)); }
+.hl { background: hsl(var(--accent-soft)); color: hsl(var(--accent)); border-radius: 4px; padding: 0 2px; font-weight: 600; }
+[data-theme='dark'] .hl { color: hsl(var(--foreground)); }
+
+/* bulk uploader */
+.dropzone { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 48px 24px; border: 2px dashed hsl(var(--border)); border-radius: var(--radius-card); background: hsl(var(--muted) / 0.35); cursor: pointer; transition: all var(--transition-base); }
+.dropzone:hover, .dropzone[data-drag='true'] { border-color: hsl(var(--accent)); background: hsl(var(--accent-soft) / 0.4); }
+.dropzone .ring { width: 56px; height: 56px; border-radius: 14px; display: grid; place-items: center; background: hsl(var(--surface)); color: hsl(var(--accent)); box-shadow: var(--shadow-sm); margin-bottom: 6px; }
+.imp-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.imp-table th { text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: hsl(var(--muted-foreground)); padding: 10px 16px; border-bottom: 1px solid hsl(var(--border)); }
+.imp-table td { padding: 12px 16px; border-bottom: 1px solid hsl(var(--border)); vertical-align: top; }
+.imp-table tr:last-child td { border-bottom: none; }
+.imp-table .t-term { font-family: var(--font-read); font-weight: 600; font-size: 16px; }
+.imp-table .t-def { font-family: var(--font-read); color: hsl(var(--muted-foreground)); }
+.format-chip { font-family: var(--font-mono); font-size: 12px; padding: 3px 9px; border-radius: 7px; background: hsl(var(--muted)); color: hsl(var(--muted-foreground)); }
+
+.toast { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 11px; padding: 13px 18px 13px 14px; background: hsl(var(--foreground)); color: hsl(var(--background)); border-radius: 12px; box-shadow: var(--shadow-lg, 0 12px 40px hsl(0 0% 0% / 0.25)); font-size: 14px; font-weight: 500; z-index: 60; animation: toastIn 280ms cubic-bezier(0.34,1.3,0.5,1) both; }
+.toast .tc { width: 26px; height: 26px; border-radius: 99px; background: hsl(var(--success)); color: white; display: grid; place-items: center; flex: none; }
+@keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(14px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+/* ---------------- Review ---------------- */
+.rv-stage { position: fixed; inset: 0; background: hsl(var(--background)); display: flex; flex-direction: column; z-index: 40; }
+.rv-top { height: 60px; flex: none; display: flex; align-items: center; gap: 16px; padding: 0 24px; border-bottom: 1px solid hsl(var(--border)); }
+.rv-progress-track { flex: 1; height: 6px; border-radius: 99px; background: hsl(var(--muted)); overflow: hidden; }
+.rv-progress-fill { height: 100%; border-radius: 99px; background: hsl(var(--accent)); transition: width 360ms cubic-bezier(0.4,0,0.2,1); }
+.rv-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; gap: 22px; }
+
+.rv-scene { perspective: 1800px; width: min(560px, 92vw); }
+.vm-app[data-density='compact'] .rv-scene { width: min(480px, 92vw); }
+.vm-app[data-density='comfy'] .rv-scene { width: min(620px, 92vw); }
+.rv-card { position: relative; width: 100%; transform-style: preserve-3d; transition: transform var(--flip-ms) var(--flip-ease); cursor: pointer; }
+.rv-card.flipped { transform: rotateY(180deg); }
+.rv-face { backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: var(--radius-card); border: 1px solid hsl(var(--border)); background: hsl(var(--card)); box-shadow: var(--shadow-md); padding: 46px 44px; min-height: 340px; display: flex; flex-direction: column; }
+.rv-back { position: absolute; inset: 0; transform: rotateY(180deg); }
+.rv-front { display: flex; align-items: center; justify-content: center; text-align: center; }
+
+.rv-term { font-family: var(--font-read); font-weight: 600; font-size: 46px; letter-spacing: -0.02em; line-height: 1.05; }
+.rv-ipa { font-family: var(--font-mono); font-size: 15px; color: hsl(var(--muted-foreground)); margin-top: 12px; }
+.rv-pos { font-style: italic; font-family: var(--font-read); color: hsl(var(--muted-foreground)); font-size: 15px; }
+.rv-def { font-family: var(--font-read); font-size: 23px; line-height: 1.42; letter-spacing: -0.003em; }
+.rv-ex { font-family: var(--font-read); font-style: italic; font-size: 18px; line-height: 1.5; color: hsl(var(--muted-foreground)); border-left: 2px solid hsl(var(--accent)); padding-left: 16px; }
+.rv-hint { font-family: var(--font-mono); font-size: 12px; color: hsl(var(--muted-foreground)); display: flex; align-items: center; gap: 8px; }
+
+/* grade buttons */
+.grade-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: min(560px, 92vw); }
+.grade { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 13px 8px 11px; border-radius: 13px; border: 1px solid hsl(var(--border)); background: hsl(var(--card)); cursor: pointer; font-family: inherit; transition: all var(--transition-base); box-shadow: var(--shadow-sm); }
+.grade:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.grade:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+.grade-key { font-family: var(--font-mono); font-size: 11px; color: hsl(var(--muted-foreground)); }
+.grade-label { font-size: 15px; font-weight: 600; }
+.grade-eta { font-family: var(--font-mono); font-size: 12px; color: hsl(var(--muted-foreground)); }
+.grade-again .grade-label { color: hsl(var(--destructive)); }
+.grade-hard  .grade-label { color: hsl(var(--warning)); }
+.grade-good  .grade-label { color: hsl(var(--accent)); }
+.grade-easy  .grade-label { color: hsl(var(--success)); }
+[data-theme='dark'] .grade-good .grade-label { color: hsl(var(--foreground)); }
+
+/* done screen */
+.rv-done { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; max-width: 460px; }
+.rv-done-ring { width: 92px; height: 92px; border-radius: 99px; background: hsl(var(--success) / 0.14); color: hsl(var(--success)); display: grid; place-items: center; margin-bottom: 14px; }
+
+/* fade/slide entrance — transform-only so content is NEVER invisible
+   (a paused/backgrounded iframe holds the start frame; opacity must stay 1) */
+@keyframes vm-rise { from { transform: translateY(14px); } to { transform: translateY(0); } }
+.rise { animation: vm-rise 460ms cubic-bezier(0.22,1,0.36,1) both; }
+@media (prefers-reduced-motion: reduce) { .rise { animation: none; } }
+
+/* sparkline bars */
+.spark { display: flex; align-items: flex-end; gap: 5px; height: 44px; }
+.spark-bar { flex: 1; border-radius: 4px 4px 2px 2px; background: hsl(var(--accent) / 0.28); min-height: 4px; }
+.spark-bar.today { background: hsl(var(--accent)); }
+
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" data-src="tweaks-panel.jsx">
+// @ds-adherence-ignore -- omelette starter scaffold (raw elements/hex/px by design)
+
+/* BEGIN USAGE */
+// tweaks-panel.jsx
+// Reusable Tweaks shell + form-control helpers.
+// Exports (to window): useTweaks, TweaksPanel, TweakSection, TweakRow, TweakSlider,
+//   TweakToggle, TweakRadio, TweakSelect, TweakText, TweakNumber, TweakColor, TweakButton.
+//
+// Owns the host protocol (listens for __activate_edit_mode / __deactivate_edit_mode,
+// posts __edit_mode_available / __edit_mode_set_keys / __edit_mode_dismissed) so
+// individual prototypes don't re-roll it. Ships a consistent set of controls so you
+// don't hand-draw <input type="range">, segmented radios, steppers, etc.
+//
+// Usage (in an HTML file that loads React + Babel):
+//
+//   const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+//     "primaryColor": "#D97757",
+//     "palette": ["#D97757", "#29261b", "#f6f4ef"],
+//     "fontSize": 16,
+//     "density": "regular",
+//     "dark": false
+//   }/*EDITMODE-END*/;
+//
+//   function App() {
+//     const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+//     return (
+//       <div style={{ fontSize: t.fontSize, color: t.primaryColor }}>
+//         Hello
+//         <TweaksPanel>
+//           <TweakSection label="Typography" />
+//           <TweakSlider label="Font size" value={t.fontSize} min={10} max={32} unit="px"
+//                        onChange={(v) => setTweak('fontSize', v)} />
+//           <TweakRadio  label="Density" value={t.density}
+//                        options={['compact', 'regular', 'comfy']}
+//                        onChange={(v) => setTweak('density', v)} />
+//           <TweakSection label="Theme" />
+//           <TweakColor  label="Primary" value={t.primaryColor}
+//                        options={['#D97757', '#2A6FDB', '#1F8A5B', '#7A5AE0']}
+//                        onChange={(v) => setTweak('primaryColor', v)} />
+//           <TweakColor  label="Palette" value={t.palette}
+//                        options={[['#D97757', '#29261b', '#f6f4ef'],
+//                                  ['#475569', '#0f172a', '#f1f5f9']]}
+//                        onChange={(v) => setTweak('palette', v)} />
+//           <TweakToggle label="Dark mode" value={t.dark}
+//                        onChange={(v) => setTweak('dark', v)} />
+//         </TweaksPanel>
+//       </div>
+//     );
+//   }
+//
+// TweakRadio is the segmented control for 2–3 short options (auto-falls-back to
+// TweakSelect past ~16/~10 chars per label); reach for TweakSelect directly when
+// options are many or long. For color tweaks always curate 3-4 options rather than
+// a free picker; an option can also be a whole 2–5 color palette (the stored value
+// is the array). The Tweak* controls are a floor, not a ceiling — build custom
+// controls inside the panel if a tweak calls for UI they don't cover.
+/* END USAGE */
+// ─────────────────────────────────────────────────────────────────────────────
+
+const __TWEAKS_STYLE = `
+  .twk-panel{position:fixed;right:16px;bottom:16px;z-index:2147483646;width:280px;
+    max-height:calc(100vh - 32px);display:flex;flex-direction:column;
+    transform:scale(var(--dc-inv-zoom,1));transform-origin:bottom right;
+    background:rgba(250,249,247,.78);color:#29261b;
+    -webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);
+    border:.5px solid rgba(255,255,255,.6);border-radius:14px;
+    box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 12px 40px rgba(0,0,0,.18);
+    font:11.5px/1.4 ui-sans-serif,system-ui,-apple-system,sans-serif;overflow:hidden}
+  .twk-hd{display:flex;align-items:center;justify-content:space-between;
+    padding:10px 8px 10px 14px;cursor:move;user-select:none}
+  .twk-hd b{font-size:12px;font-weight:600;letter-spacing:.01em}
+  .twk-x{appearance:none;border:0;background:transparent;color:rgba(41,38,27,.55);
+    width:22px;height:22px;border-radius:6px;cursor:default;font-size:13px;line-height:1}
+  .twk-x:hover{background:rgba(0,0,0,.06);color:#29261b}
+  .twk-body{padding:2px 14px 14px;display:flex;flex-direction:column;gap:10px;
+    overflow-y:auto;overflow-x:hidden;min-height:0;
+    scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.15) transparent}
+  .twk-body::-webkit-scrollbar{width:8px}
+  .twk-body::-webkit-scrollbar-track{background:transparent;margin:2px}
+  .twk-body::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:4px;
+    border:2px solid transparent;background-clip:content-box}
+  .twk-body::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.25);
+    border:2px solid transparent;background-clip:content-box}
+  .twk-row{display:flex;flex-direction:column;gap:5px}
+  .twk-row-h{flex-direction:row;align-items:center;justify-content:space-between;gap:10px}
+  .twk-lbl{display:flex;justify-content:space-between;align-items:baseline;
+    color:rgba(41,38,27,.72)}
+  .twk-lbl>span:first-child{font-weight:500}
+  .twk-val{color:rgba(41,38,27,.5);font-variant-numeric:tabular-nums}
+
+  .twk-sect{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+    color:rgba(41,38,27,.45);padding:10px 0 0}
+  .twk-sect:first-child{padding-top:0}
+
+  .twk-field{appearance:none;box-sizing:border-box;width:100%;min-width:0;height:26px;padding:0 8px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:7px;
+    background:rgba(255,255,255,.6);color:inherit;font:inherit;outline:none}
+  .twk-field:focus{border-color:rgba(0,0,0,.25);background:rgba(255,255,255,.85)}
+  select.twk-field{padding-right:22px;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='rgba(0,0,0,.5)' d='M0 0h10L5 6z'/></svg>");
+    background-repeat:no-repeat;background-position:right 8px center}
+
+  .twk-slider{appearance:none;-webkit-appearance:none;width:100%;height:4px;margin:6px 0;
+    border-radius:999px;background:rgba(0,0,0,.12);outline:none}
+  .twk-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+    width:14px;height:14px;border-radius:50%;background:#fff;
+    border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
+  .twk-slider::-moz-range-thumb{width:14px;height:14px;border-radius:50%;
+    background:#fff;border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
+
+  .twk-seg{position:relative;display:flex;padding:2px;border-radius:8px;
+    background:rgba(0,0,0,.06);user-select:none}
+  .twk-seg-thumb{position:absolute;top:2px;bottom:2px;border-radius:6px;
+    background:rgba(255,255,255,.9);box-shadow:0 1px 2px rgba(0,0,0,.12);
+    transition:left .15s cubic-bezier(.3,.7,.4,1),width .15s}
+  .twk-seg.dragging .twk-seg-thumb{transition:none}
+  .twk-seg button{appearance:none;position:relative;z-index:1;flex:1;border:0;
+    background:transparent;color:inherit;font:inherit;font-weight:500;min-height:22px;
+    border-radius:6px;cursor:default;padding:4px 6px;line-height:1.2;
+    overflow-wrap:anywhere}
+
+  .twk-toggle{position:relative;width:32px;height:18px;border:0;border-radius:999px;
+    background:rgba(0,0,0,.15);transition:background .15s;cursor:default;padding:0}
+  .twk-toggle[data-on="1"]{background:#34c759}
+  .twk-toggle i{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;
+    background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+  .twk-toggle[data-on="1"] i{transform:translateX(14px)}
+
+  .twk-num{display:flex;align-items:center;box-sizing:border-box;min-width:0;height:26px;padding:0 0 0 8px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:7px;background:rgba(255,255,255,.6)}
+  .twk-num-lbl{font-weight:500;color:rgba(41,38,27,.6);cursor:ew-resize;
+    user-select:none;padding-right:8px}
+  .twk-num input{flex:1;min-width:0;height:100%;border:0;background:transparent;
+    font:inherit;font-variant-numeric:tabular-nums;text-align:right;padding:0 8px 0 0;
+    outline:none;color:inherit;-moz-appearance:textfield}
+  .twk-num input::-webkit-inner-spin-button,.twk-num input::-webkit-outer-spin-button{
+    -webkit-appearance:none;margin:0}
+  .twk-num-unit{padding-right:8px;color:rgba(41,38,27,.45)}
+
+  .twk-btn{appearance:none;height:26px;padding:0 12px;border:0;border-radius:7px;
+    background:rgba(0,0,0,.78);color:#fff;font:inherit;font-weight:500;cursor:default}
+  .twk-btn:hover{background:rgba(0,0,0,.88)}
+  .twk-btn.secondary{background:rgba(0,0,0,.06);color:inherit}
+  .twk-btn.secondary:hover{background:rgba(0,0,0,.1)}
+
+  .twk-swatch{appearance:none;-webkit-appearance:none;width:56px;height:22px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:6px;padding:0;cursor:default;
+    background:transparent;flex-shrink:0}
+  .twk-swatch::-webkit-color-swatch-wrapper{padding:0}
+  .twk-swatch::-webkit-color-swatch{border:0;border-radius:5.5px}
+  .twk-swatch::-moz-color-swatch{border:0;border-radius:5.5px}
+
+  .twk-chips{display:flex;gap:6px}
+  .twk-chip{position:relative;appearance:none;flex:1;min-width:0;height:46px;
+    padding:0;border:0;border-radius:6px;overflow:hidden;cursor:default;
+    box-shadow:0 0 0 .5px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.06);
+    transition:transform .12s cubic-bezier(.3,.7,.4,1),box-shadow .12s}
+  .twk-chip:hover{transform:translateY(-1px);
+    box-shadow:0 0 0 .5px rgba(0,0,0,.18),0 4px 10px rgba(0,0,0,.12)}
+  .twk-chip[data-on="1"]{box-shadow:0 0 0 1.5px rgba(0,0,0,.85),
+    0 2px 6px rgba(0,0,0,.15)}
+  .twk-chip>span{position:absolute;top:0;bottom:0;right:0;width:34%;
+    display:flex;flex-direction:column;box-shadow:-1px 0 0 rgba(0,0,0,.1)}
+  .twk-chip>span>i{flex:1;box-shadow:0 -1px 0 rgba(0,0,0,.1)}
+  .twk-chip>span>i:first-child{box-shadow:none}
+  .twk-chip svg{position:absolute;top:6px;left:6px;width:13px;height:13px;
+    filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
+`;
+
+// ── useTweaks ───────────────────────────────────────────────────────────────
+// Single source of truth for tweak values. setTweak persists via the host
+// (__edit_mode_set_keys → host rewrites the EDITMODE block on disk).
+function useTweaks(defaults) {
+  const [values, setValues] = React.useState(defaults);
+  // Accepts either setTweak('key', value) or setTweak({ key: value, ... }) so a
+  // useState-style call doesn't write a "[object Object]" key into the persisted
+  // JSON block.
+  const setTweak = React.useCallback((keyOrEdits, val) => {
+    const edits = typeof keyOrEdits === 'object' && keyOrEdits !== null
+      ? keyOrEdits : { [keyOrEdits]: val };
+    setValues((prev) => ({ ...prev, ...edits }));
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits }, '*');
+    // Same-window signal so in-page listeners (deck-stage rail thumbnails)
+    // can react — the parent message only reaches the host, not peers.
+    window.dispatchEvent(new CustomEvent('tweakchange', { detail: edits }));
+  }, []);
+  return [values, setTweak];
+}
+
+// ── TweaksPanel ─────────────────────────────────────────────────────────────
+// Floating shell. Registers the protocol listener BEFORE announcing
+// availability — if the announce ran first, the host's activate could land
+// before our handler exists and the toolbar toggle would silently no-op.
+// The close button posts __edit_mode_dismissed so the host's toolbar toggle
+// flips off in lockstep; the host echoes __deactivate_edit_mode back which
+// is what actually hides the panel.
+function TweaksPanel({ title = 'Tweaks', children }) {
+  const [open, setOpen] = React.useState(false);
+  const dragRef = React.useRef(null);
+  const offsetRef = React.useRef({ x: 16, y: 16 });
+  const PAD = 16;
+
+  const clampToViewport = React.useCallback(() => {
+    const panel = dragRef.current;
+    if (!panel) return;
+    const w = panel.offsetWidth, h = panel.offsetHeight;
+    const maxRight = Math.max(PAD, window.innerWidth - w - PAD);
+    const maxBottom = Math.max(PAD, window.innerHeight - h - PAD);
+    offsetRef.current = {
+      x: Math.min(maxRight, Math.max(PAD, offsetRef.current.x)),
+      y: Math.min(maxBottom, Math.max(PAD, offsetRef.current.y)),
+    };
+    panel.style.right = offsetRef.current.x + 'px';
+    panel.style.bottom = offsetRef.current.y + 'px';
+  }, []);
+
+  React.useEffect(() => {
+    if (!open) return;
+    clampToViewport();
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', clampToViewport);
+      return () => window.removeEventListener('resize', clampToViewport);
+    }
+    const ro = new ResizeObserver(clampToViewport);
+    ro.observe(document.documentElement);
+    return () => ro.disconnect();
+  }, [open, clampToViewport]);
+
+  React.useEffect(() => {
+    const onMsg = (e) => {
+      const t = e?.data?.type;
+      if (t === '__activate_edit_mode') setOpen(true);
+      else if (t === '__deactivate_edit_mode') setOpen(false);
+    };
+    window.addEventListener('message', onMsg);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+
+  const dismiss = () => {
+    setOpen(false);
+    window.parent.postMessage({ type: '__edit_mode_dismissed' }, '*');
+  };
+
+  const onDragStart = (e) => {
+    const panel = dragRef.current;
+    if (!panel) return;
+    const r = panel.getBoundingClientRect();
+    const sx = e.clientX, sy = e.clientY;
+    const startRight = window.innerWidth - r.right;
+    const startBottom = window.innerHeight - r.bottom;
+    const move = (ev) => {
+      offsetRef.current = {
+        x: startRight - (ev.clientX - sx),
+        y: startBottom - (ev.clientY - sy),
+      };
+      clampToViewport();
+    };
+    const up = () => {
+      window.removeEventListener('mousemove', move);
+      window.removeEventListener('mouseup', up);
+    };
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
+  };
+
+  if (!open) return null;
+  return (
+    <>
+      <style>{__TWEAKS_STYLE}</style>
+      <div ref={dragRef} className="twk-panel" data-omelette-chrome=""
+           style={{ right: offsetRef.current.x, bottom: offsetRef.current.y }}>
+        <div className="twk-hd" onMouseDown={onDragStart}>
+          <b>{title}</b>
+          <button className="twk-x" aria-label="Close tweaks"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={dismiss}>✕</button>
+        </div>
+        <div className="twk-body">
+          {children}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── Layout helpers ──────────────────────────────────────────────────────────
+
+function TweakSection({ label, children }) {
+  return (
+    <>
+      <div className="twk-sect">{label}</div>
+      {children}
+    </>
+  );
+}
+
+function TweakRow({ label, value, children, inline = false }) {
+  return (
+    <div className={inline ? 'twk-row twk-row-h' : 'twk-row'}>
+      <div className="twk-lbl">
+        <span>{label}</span>
+        {value != null && <span className="twk-val">{value}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// ── Controls ────────────────────────────────────────────────────────────────
+
+function TweakSlider({ label, value, min = 0, max = 100, step = 1, unit = '', onChange }) {
+  return (
+    <TweakRow label={label} value={`${value}${unit}`}>
+      <input type="range" className="twk-slider" min={min} max={max} step={step}
+             value={value} onChange={(e) => onChange(Number(e.target.value))} />
+    </TweakRow>
+  );
+}
+
+function TweakToggle({ label, value, onChange }) {
+  return (
+    <div className="twk-row twk-row-h">
+      <div className="twk-lbl"><span>{label}</span></div>
+      <button type="button" className="twk-toggle" data-on={value ? '1' : '0'}
+              role="switch" aria-checked={!!value}
+              onClick={() => onChange(!value)}><i /></button>
+    </div>
+  );
+}
+
+function TweakRadio({ label, value, options, onChange }) {
+  const trackRef = React.useRef(null);
+  const [dragging, setDragging] = React.useState(false);
+  // The active value is read by pointer-move handlers attached for the lifetime
+  // of a drag — ref it so a stale closure doesn't fire onChange for every move.
+  const valueRef = React.useRef(value);
+  valueRef.current = value;
+
+  // Segments wrap mid-word once per-segment width runs out. The track is
+  // ~248px (280 panel − 28 body pad − 4 seg pad), each button loses 12px
+  // to its own padding, and 11.5px system-ui averages ~6.3px/char — so 2
+  // options fit ~16 chars each, 3 fit ~10. Past that (or >3 options), fall
+  // back to a dropdown rather than wrap.
+  const labelLen = (o) => String(typeof o === 'object' ? o.label : o).length;
+  const maxLen = options.reduce((m, o) => Math.max(m, labelLen(o)), 0);
+  const fitsAsSegments = maxLen <= ({ 2: 16, 3: 10 }[options.length] ?? 0);
+  if (!fitsAsSegments) {
+    // <select> emits strings — map back to the original option value so the
+    // fallback stays type-preserving (numbers, booleans) like the segment path.
+    const resolve = (s) => {
+      const m = options.find((o) => String(typeof o === 'object' ? o.value : o) === s);
+      return m === undefined ? s : typeof m === 'object' ? m.value : m;
+    };
+    return <TweakSelect label={label} value={value} options={options}
+                        onChange={(s) => onChange(resolve(s))} />;
+  }
+  const opts = options.map((o) => (typeof o === 'object' ? o : { value: o, label: o }));
+  const idx = Math.max(0, opts.findIndex((o) => o.value === value));
+  const n = opts.length;
+
+  const segAt = (clientX) => {
+    const r = trackRef.current.getBoundingClientRect();
+    const inner = r.width - 4;
+    const i = Math.floor(((clientX - r.left - 2) / inner) * n);
+    return opts[Math.max(0, Math.min(n - 1, i))].value;
+  };
+
+  const onPointerDown = (e) => {
+    setDragging(true);
+    const v0 = segAt(e.clientX);
+    if (v0 !== valueRef.current) onChange(v0);
+    const move = (ev) => {
+      if (!trackRef.current) return;
+      const v = segAt(ev.clientX);
+      if (v !== valueRef.current) onChange(v);
+    };
+    const up = () => {
+      setDragging(false);
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+
+  return (
+    <TweakRow label={label}>
+      <div ref={trackRef} role="radiogroup" onPointerDown={onPointerDown}
+           className={dragging ? 'twk-seg dragging' : 'twk-seg'}>
+        <div className="twk-seg-thumb"
+             style={{ left: `calc(2px + ${idx} * (100% - 4px) / ${n})`,
+                      width: `calc((100% - 4px) / ${n})` }} />
+        {opts.map((o) => (
+          <button key={o.value} type="button" role="radio" aria-checked={o.value === value}>
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </TweakRow>
+  );
+}
+
+function TweakSelect({ label, value, options, onChange }) {
+  return (
+    <TweakRow label={label}>
+      <select className="twk-field" value={value} onChange={(e) => onChange(e.target.value)}>
+        {options.map((o) => {
+          const v = typeof o === 'object' ? o.value : o;
+          const l = typeof o === 'object' ? o.label : o;
+          return <option key={v} value={v}>{l}</option>;
+        })}
+      </select>
+    </TweakRow>
+  );
+}
+
+function TweakText({ label, value, placeholder, onChange }) {
+  return (
+    <TweakRow label={label}>
+      <input className="twk-field" type="text" value={value} placeholder={placeholder}
+             onChange={(e) => onChange(e.target.value)} />
+    </TweakRow>
+  );
+}
+
+function TweakNumber({ label, value, min, max, step = 1, unit = '', onChange }) {
+  const clamp = (n) => {
+    if (min != null && n < min) return min;
+    if (max != null && n > max) return max;
+    return n;
+  };
+  const startRef = React.useRef({ x: 0, val: 0 });
+  const onScrubStart = (e) => {
+    e.preventDefault();
+    startRef.current = { x: e.clientX, val: value };
+    const decimals = (String(step).split('.')[1] || '').length;
+    const move = (ev) => {
+      const dx = ev.clientX - startRef.current.x;
+      const raw = startRef.current.val + dx * step;
+      const snapped = Math.round(raw / step) * step;
+      onChange(clamp(Number(snapped.toFixed(decimals))));
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+  return (
+    <div className="twk-num">
+      <span className="twk-num-lbl" onPointerDown={onScrubStart}>{label}</span>
+      <input type="number" value={value} min={min} max={max} step={step}
+             onChange={(e) => onChange(clamp(Number(e.target.value)))} />
+      {unit && <span className="twk-num-unit">{unit}</span>}
+    </div>
+  );
+}
+
+// Relative-luminance contrast pick — checkmarks drawn over a swatch need to
+// read on both #111 and #fafafa without per-option configuration. Hex input
+// only (#rgb / #rrggbb); named or rgb()/hsl() colors fall through to "light".
+function __twkIsLight(hex) {
+  const h = String(hex).replace('#', '');
+  const x = h.length === 3 ? h.replace(/./g, (c) => c + c) : h.padEnd(6, '0');
+  const n = parseInt(x.slice(0, 6), 16);
+  if (Number.isNaN(n)) return true;
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return r * 299 + g * 587 + b * 114 > 148000;
+}
+
+const __TwkCheck = ({ light }) => (
+  <svg viewBox="0 0 14 14" aria-hidden="true">
+    <path d="M3 7.2 5.8 10 11 4.2" fill="none" strokeWidth="2.2"
+          strokeLinecap="round" strokeLinejoin="round"
+          stroke={light ? 'rgba(0,0,0,.78)' : '#fff'} />
+  </svg>
+);
+
+// TweakColor — curated color/palette picker. Each option is either a single
+// hex string or an array of 1-5 hex strings; the card adapts — a lone color
+// renders solid, a palette renders colors[0] as the hero (left ~2/3) with the
+// rest stacked in a sharp column on the right. onChange emits the
+// option in the shape it was passed (string stays string, array stays array).
+// Without options it falls back to the native color input for back-compat.
+function TweakColor({ label, value, options, onChange }) {
+  if (!options || !options.length) {
+    return (
+      <div className="twk-row twk-row-h">
+        <div className="twk-lbl"><span>{label}</span></div>
+        <input type="color" className="twk-swatch" value={value}
+               onChange={(e) => onChange(e.target.value)} />
+      </div>
+    );
+  }
+  // Native <input type=color> emits lowercase hex per the HTML spec, so
+  // compare case-insensitively. String() guards JSON.stringify(undefined),
+  // which returns the primitive undefined (no .toLowerCase).
+  const key = (o) => String(JSON.stringify(o)).toLowerCase();
+  const cur = key(value);
+  return (
+    <TweakRow label={label}>
+      <div className="twk-chips" role="radiogroup">
+        {options.map((o, i) => {
+          const colors = Array.isArray(o) ? o : [o];
+          const [hero, ...rest] = colors;
+          const sup = rest.slice(0, 4);
+          const on = key(o) === cur;
+          return (
+            <button key={i} type="button" className="twk-chip" role="radio"
+                    aria-checked={on} data-on={on ? '1' : '0'}
+                    aria-label={colors.join(', ')} title={colors.join(' · ')}
+                    style={{ background: hero }}
+                    onClick={() => onChange(o)}>
+              {sup.length > 0 && (
+                <span>
+                  {sup.map((c, j) => <i key={j} style={{ background: c }} />)}
+                </span>
+              )}
+              {on && <__TwkCheck light={__twkIsLight(hero)} />}
+            </button>
+          );
+        })}
+      </div>
+    </TweakRow>
+  );
+}
+
+function TweakButton({ label, onClick, secondary = false }) {
+  return (
+    <button type="button" className={secondary ? 'twk-btn secondary' : 'twk-btn'}
+            onClick={onClick}>{label}</button>
+  );
+}
+
+Object.assign(window, {
+  useTweaks, TweaksPanel, TweakSection, TweakRow,
+  TweakSlider, TweakToggle, TweakRadio, TweakSelect,
+  TweakText, TweakNumber, TweakColor, TweakButton,
+});
+
+  </script>
+
+  <script type="text/babel" data-src="icons.jsx">
+// icons.jsx — lucide-style inline SVG icons (1.75px stroke, 20px default)
+// Open-source iconography per DESIGN.md §2.5. Exported to window.
+
+function Icon({ name, size = 20, stroke = 1.75, className = '', style }) {
+  const p = ICON_PATHS[name];
+  return (
+    <svg
+      width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round"
+      className={className} style={style} aria-hidden="true" focusable="false"
+    >
+      {p}
+    </svg>
+  );
+}
+
+const ICON_PATHS = {
+  dashboard: (<><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></>),
+  layers: (<><path d="M12 2 3 7l9 5 9-5-9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></>),
+  plus: (<><path d="M12 5v14"/><path d="M5 12h14"/></>),
+  plusCircle: (<><circle cx="12" cy="12" r="9"/><path d="M12 8v8"/><path d="M8 12h8"/></>),
+  book: (<><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></>),
+  chart: (<><path d="M3 3v18h18"/><path d="m7 14 3-4 4 3 5-7"/></>),
+  trending: (<><path d="m3 17 6-6 4 4 8-8"/><path d="M17 7h4v4"/></>),
+  sun: (<><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></>),
+  moon: (<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/>),
+  search: (<><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></>),
+  sliders: (<><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></>),
+  chevronLeft: (<path d="m15 18-6-6 6-6"/>),
+  chevronRight: (<path d="m9 18 6-6-6-6"/>),
+  arrowRight: (<><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></>),
+  check: (<path d="M20 6 9 17l-5-5"/>),
+  checkCircle: (<><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 4.5-5"/></>),
+  x: (<><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>),
+  rotate: (<><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></>),
+  flame: (<path d="M12 2c1 4 5 5 5 9a5 5 0 0 1-10 0c0-1.5.6-2.7 1.4-3.6C9 8.5 9.2 9.7 10 10c0-2 1-3.5 2-8Z"/>),
+  clock: (<><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></>),
+  calendar: (<><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></>),
+  sparkles: (<><path d="M12 4l1.6 4.4L18 10l-4.4 1.6L12 16l-1.6-4.4L6 10l4.4-1.6L12 4Z"/><path d="M19 4v3M20.5 5.5h-3M5 17v2M6 18H4"/></>),
+  command: (<path d="M15 6a3 3 0 1 0 3 3h-3V6Zm-6 0a3 3 0 1 1-3 3h3V6Zm0 12a3 3 0 1 0 3-3H9v3Zm6 0a3 3 0 1 1-3-3h3v3Z"/>),
+  zap: (<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/>),
+  volume: (<><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></>),
+  star: (<path d="M12 3l2.6 5.6 6.1.7-4.5 4.1 1.2 6L12 16.9 6.6 19.4l1.2-6L3.3 9.3l6.1-.7L12 3Z"/>),
+  pencil: (<><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/></>),
+  target: (<><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></>),
+  bookmark: (<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16Z"/>),
+  inbox: (<><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5.5 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.5A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.5Z"/></>),
+  menu: (<><path d="M4 6h16M4 12h16M4 18h16"/></>),
+};
+
+window.Icon = Icon;
+
+  </script>
+
+  <script type="text/babel" data-src="store.jsx">
+// store.jsx — sample vocabulary + spaced-repetition logic. Exported to window.
+
+const WORDS = [
+  { id: 'w01', term: 'ephemeral', ipa: '/əˈfem(ə)rəl/', pos: 'adjective',
+    def: 'Lasting for a very short time; fleeting.',
+    ex: 'The mayfly’s ephemeral life spans barely a single day.',
+    syn: ['fleeting', 'transient', 'momentary'], source: 'The Atlantic', when: '2h', status: 'review', interval: 4, streak: 3 },
+  { id: 'w02', term: 'candid', ipa: '/ˈkandɪd/', pos: 'adjective',
+    def: 'Truthful and straightforward; frank.',
+    ex: 'She gave a candid account of what went wrong on the project.',
+    syn: ['frank', 'honest', 'forthright'], source: 'Conversation', when: '5h', status: 'review', interval: 9, streak: 5 },
+  { id: 'w03', term: 'nuance', ipa: '/ˈnjuːɑːns/', pos: 'noun',
+    def: 'A subtle difference in meaning, expression, or sound.',
+    ex: 'He missed the nuance in her tone and took the joke literally.',
+    syn: ['subtlety', 'shade', 'gradation'], source: 'Podcast', when: '5h', status: 'review', interval: 2, streak: 1 },
+  { id: 'w04', term: 'pragmatic', ipa: '/praɡˈmatɪk/', pos: 'adjective',
+    def: 'Dealing with things sensibly and realistically.',
+    ex: 'A pragmatic approach: ship the simple fix now, refine it later.',
+    syn: ['practical', 'sensible', 'realistic'], source: 'Work doc', when: 'Yesterday', status: 'review', interval: 6, streak: 4 },
+  { id: 'w05', term: 'resilient', ipa: '/rɪˈzɪlɪənt/', pos: 'adjective',
+    def: 'Able to recover quickly from difficulty; tough.',
+    ex: 'The community proved remarkably resilient after the flood.',
+    syn: ['tough', 'hardy', 'buoyant'], source: 'NYT', when: 'Yesterday', status: 'learning', interval: 1, streak: 1 },
+  { id: 'w06', term: 'succinct', ipa: '/səkˈsɪŋkt/', pos: 'adjective',
+    def: 'Expressed clearly in few words; concise.',
+    ex: 'Keep the summary succinct—three sentences, no more.',
+    syn: ['concise', 'terse', 'pithy'], source: 'Email', when: 'Yesterday', status: 'review', interval: 12, streak: 6 },
+  { id: 'w07', term: 'eloquent', ipa: '/ˈeləkwənt/', pos: 'adjective',
+    def: 'Fluent and persuasive in speaking or writing.',
+    ex: 'Her eloquent toast left half the room in tears.',
+    syn: ['articulate', 'fluent', 'expressive'], source: 'Book', when: '2d', status: 'review', interval: 3, streak: 2 },
+  { id: 'w08', term: 'meticulous', ipa: '/məˈtɪkjʊləs/', pos: 'adjective',
+    def: 'Showing great attention to detail; very careful.',
+    ex: 'He kept meticulous notes on every experiment.',
+    syn: ['thorough', 'fastidious', 'scrupulous'], source: 'Article', when: '2d', status: 'learning', interval: 1, streak: 0 },
+  { id: 'w09', term: 'tenuous', ipa: '/ˈtenjʊəs/', pos: 'adjective',
+    def: 'Very weak or slight; lacking a sound basis.',
+    ex: 'The evidence for the claim was tenuous at best.',
+    syn: ['flimsy', 'shaky', 'slight'], source: 'Paper', when: '3d', status: 'review', interval: 5, streak: 3 },
+  { id: 'w10', term: 'gregarious', ipa: '/ɡrɪˈɡeːrɪəs/', pos: 'adjective',
+    def: 'Fond of company; sociable.',
+    ex: 'A gregarious host, he knew everyone’s name by dessert.',
+    syn: ['sociable', 'outgoing', 'convivial'], source: 'Novel', when: '3d', status: 'new', interval: 0, streak: 0 },
+  { id: 'w11', term: 'prudent', ipa: '/ˈpruːd(ə)nt/', pos: 'adjective',
+    def: 'Acting with care and thought for the future.',
+    ex: 'It seemed prudent to keep three months of savings.',
+    syn: ['cautious', 'judicious', 'wise'], source: 'Newsletter', when: '4d', status: 'review', interval: 8, streak: 5 },
+  { id: 'w12', term: 'ambivalent', ipa: '/amˈbɪv(ə)lənt/', pos: 'adjective',
+    def: 'Having mixed or contradictory feelings about something.',
+    ex: 'She felt ambivalent about the promotion and the move it required.',
+    syn: ['conflicted', 'uncertain', 'torn'], source: 'Conversation', when: '4d', status: 'new', interval: 0, streak: 0 },
+];
+
+// Anki-ish interval projection for the grade buttons.
+function projectIntervals(card) {
+  const base = Math.max(card.interval || 0, 0);
+  const fmt = (d) => d < 1 ? `${Math.round(d * 24 * 60) || 10}m` : d < 30 ? `${Math.round(d)}d` : `${(d / 30).toFixed(0)}mo`;
+  return {
+    again: '<10m',
+    hard: fmt(Math.max(base * 1.2, 0.4)),
+    good: fmt(base ? base * 2.3 : 1),
+    easy: fmt(base ? base * 3.6 : 3),
+  };
+}
+
+function applyGrade(card, grade) {
+  const next = { ...card };
+  if (grade === 'again') { next.interval = 0; next.streak = 0; next.status = 'learning'; }
+  else if (grade === 'hard') { next.interval = Math.max((card.interval || 1) * 1.2, 0.4); next.streak = (card.streak || 0); }
+  else if (grade === 'good') { next.interval = card.interval ? card.interval * 2.3 : 1; next.streak = (card.streak || 0) + 1; next.status = next.interval >= 21 ? 'mastered' : 'review'; }
+  else if (grade === 'easy') { next.interval = card.interval ? card.interval * 3.6 : 3; next.streak = (card.streak || 0) + 1; next.status = next.interval >= 21 ? 'mastered' : 'review'; }
+  return next;
+}
+
+const STATS = {
+  due: 8, learned: 142, streakDays: 11, retention: 0.91, reviewedToday: 0, weekGoal: 60, weekDone: 41,
+  // last 7 days reviewed counts for the sparkline
+  history: [8, 12, 6, 0, 15, 9, 11],
+};
+
+Object.assign(window, { WORDS, STATS, projectIntervals, applyGrade });
+
+  </script>
+
+  <script type="text/babel" data-src="shell.jsx">
+// shell.jsx — AppShell, Sidebar, Topbar. Exported to window.
+const NAV = [
+  { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
+  { id: 'review', label: 'Review', icon: 'layers', badge: 'due' },
+  { id: 'capture', label: 'Capture', icon: 'plusCircle' },
+  { id: 'words', label: 'Words', icon: 'book' },
+  { id: 'insights', label: 'Insights', icon: 'chart' },
+];
+
+function Sidebar({ route, onNavigate, dueCount }) {
+  return (
+    <nav className="vm-side" aria-label="Primary">
+      <div className="vm-brand">
+        <div className="vm-mark" aria-hidden="true">V</div>
+        <div>
+          <div className="vm-brand-name">VocabMaxx</div>
+          <div className="vm-brand-sub">Everyday vocabulary</div>
+        </div>
+      </div>
+
+      <div className="vm-navlabel">Practice</div>
+      {NAV.map((n) => (
+        <button
+          key={n.id}
+          className="vm-nav"
+          aria-current={route === n.id ? 'page' : undefined}
+          onClick={() => onNavigate(n.id)}
+        >
+          <Icon name={n.icon} size={19} />
+          <span>{n.label}</span>
+          {n.badge === 'due' && dueCount > 0 && <span className="vm-nav-badge">{dueCount}</span>}
+        </button>
+      ))}
+
+      <div className="vm-side-foot">
+        <button className="vm-nav" onClick={() => onNavigate('settings')}>
+          <Icon name="sliders" size={19} /><span>Settings</span>
+        </button>
+        <div className="vm-user">
+          <div className="vm-avatar" aria-hidden="true">JL</div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 600 }}>Jordan Lee</div>
+            <div style={{ fontSize: 11, color: 'hsl(var(--muted-foreground))' }}>Free · beta</div>
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+function Topbar({ title, theme, onToggleTheme }) {
+  return (
+    <header className="vm-top">
+      <div className="vm-top-title">{title}</div>
+      <label className="vm-search" aria-label="Search words">
+        <Icon name="search" size={17} />
+        <input placeholder="Search your words…" />
+        <span className="vm-kbd">/</span>
+      </label>
+      <div style={{ flex: 1 }} />
+      <button
+        className="btn btn-outline btn-icon"
+        onClick={onToggleTheme}
+        aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+        title="Toggle theme"
+      >
+        <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
+      </button>
+      <button className="btn btn-primary">
+        <Icon name="plus" size={17} /> Add word
+      </button>
+    </header>
+  );
+}
+
+function AppShell({ route, title, theme, onNavigate, onToggleTheme, density, dueCount, children }) {
+  return (
+    <div className="vm-app" data-density={density}>
+      <Sidebar route={route} onNavigate={onNavigate} dueCount={dueCount} />
+      <div className="vm-main">
+        <Topbar title={title} theme={theme} onToggleTheme={onToggleTheme} />
+        <div className="vm-content">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { AppShell, Sidebar, Topbar, NAV });
+
+  </script>
+
+  <script type="text/babel" data-src="dashboard.jsx">
+// dashboard.jsx — Dashboard screen. Exported to window.
+
+function statusDot(status) {
+  const map = { new: 'var(--muted-foreground)', learning: 'var(--warning)', review: 'var(--accent)', mastered: 'var(--success)' };
+  return `hsl(${map[status] || 'var(--muted-foreground)'})`;
+}
+
+function DueBanner({ due, onStart }) {
+  if (due === 0) {
+    return (
+      <div className="card card-pad rise" style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+        <div className="rv-done-ring" style={{ width: 60, height: 60, marginBottom: 0 }}>
+          <Icon name="checkCircle" size={30} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 20 }}>All caught up</div>
+          <div style={{ color: 'hsl(var(--muted-foreground))', fontSize: 14, marginTop: 3 }}>Nothing due right now. Capture a new word or get ahead.</div>
+        </div>
+        <button className="btn btn-outline">Review ahead</button>
+      </div>
+    );
+  }
+  return (
+    <div className="due-banner rise" role="region" aria-label="Cards due for review">
+      <div className="due-banner-glow" />
+      <div style={{ position: 'relative', flex: 1 }}>
+        <div className="eyebrow" style={{ color: 'hsl(var(--accent-foreground) / 0.8)' }}>Due now</div>
+        <div className="display-xl" style={{ fontSize: 42, marginTop: 8 }}>
+          {due} cards <span style={{ opacity: 0.7, fontWeight: 500, fontSize: 24 }}>ready to review</span>
+        </div>
+        <div style={{ marginTop: 8, opacity: 0.85, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Icon name="clock" size={16} /> About 4 minutes · spaced just right
+        </div>
+      </div>
+      <button className="btn btn-lg" style={{ position: 'relative', background: 'hsl(var(--accent-foreground))', color: 'hsl(var(--accent))' }} onClick={onStart}>
+        Start review <Icon name="arrowRight" size={18} />
+      </button>
+    </div>
+  );
+}
+
+function StatTiles({ stats }) {
+  const tiles = [
+    { num: stats.learned, label: 'Words learned', icon: 'book' },
+    { num: `${stats.streakDays}d`, label: 'Current streak', icon: 'flame', tint: 'var(--warning)' },
+    { num: `${Math.round(stats.retention * 100)}%`, label: 'Retention', icon: 'target', tint: 'var(--success)' },
+    { num: stats.due, label: 'Due today', icon: 'layers', tint: 'var(--accent)' },
+  ];
+  return (
+    <div className="stat-grid">
+      {tiles.map((t, i) => (
+        <div className="stat rise" key={t.label} style={{ animationDelay: `${60 + i * 45}ms` }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div className="stat-num">{t.num}</div>
+            <span style={{ color: t.tint ? `hsl(${t.tint})` : 'hsl(var(--muted-foreground))' }}><Icon name={t.icon} size={20} /></span>
+          </div>
+          <div className="stat-label">{t.label}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function WeekProgress({ stats }) {
+  const pct = Math.round((stats.weekDone / stats.weekGoal) * 100);
+  const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  const max = Math.max(...stats.history, 1);
+  return (
+    <div className="card card-pad" style={{ display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+        <div style={{ fontWeight: 600, fontSize: 15 }}>This week</div>
+        <div className="mono" style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))' }}>{stats.weekDone}/{stats.weekGoal}</div>
+      </div>
+      <div style={{ height: 6, borderRadius: 99, background: 'hsl(var(--muted))', marginTop: 12, overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${pct}%`, background: 'hsl(var(--accent))', borderRadius: 99 }} />
+      </div>
+      <div className="spark" style={{ marginTop: 20 }}>
+        {stats.history.map((v, i) => (
+          <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: '100%', display: 'flex', alignItems: 'flex-end', height: 44 }}>
+              <div className={'spark-bar' + (i === stats.history.length - 1 ? ' today' : '')} style={{ height: `${Math.max((v / max) * 100, 8)}%` }} />
+            </div>
+            <div className="mono" style={{ fontSize: 10, color: 'hsl(var(--muted-foreground))' }}>{days[i]}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function RecentCaptures({ words, onOpen }) {
+  return (
+    <div className="card" style={{ overflow: 'hidden' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 22px 12px' }}>
+        <div style={{ fontWeight: 600, fontSize: 15 }}>Recent captures</div>
+        <button className="btn btn-ghost" style={{ height: 32, padding: '0 10px', fontSize: 13, color: 'hsl(var(--muted-foreground))' }}>
+          View all <Icon name="arrowRight" size={15} />
+        </button>
+      </div>
+      <div style={{ padding: '0 8px 10px' }}>
+        {words.slice(0, 6).map((w) => (
+          <div className="cap-row" key={w.id} onClick={() => onOpen && onOpen(w)} tabIndex={0} role="button"
+               onKeyDown={(e) => { if (e.key === 'Enter') onOpen && onOpen(w); }}>
+            <span className="dot" style={{ background: statusDot(w.status) }} title={w.status} />
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div className="cap-term">{w.term}</div>
+              <div className="cap-def">{w.def}</div>
+            </div>
+            <span className="pill">{w.source}</span>
+            <span className="mono" style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))', width: 64, textAlign: 'right' }}>{w.when}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Dashboard({ words, stats, onStartReview, onOpenWord }) {
+  return (
+    <div className="vm-page">
+      <div style={{ marginBottom: 22 }}>
+        <div className="eyebrow">Tuesday, June 9</div>
+        <h1 className="display-xl" style={{ fontSize: 28, margin: '6px 0 0' }}>Good afternoon, Jordan</h1>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--gap)' }}>
+        <DueBanner due={stats.due} onStart={onStartReview} />
+        <StatTiles stats={stats} />
+        <div style={{ display: 'grid', gridTemplateColumns: '1.55fr 1fr', gap: 'var(--gap)', alignItems: 'start' }}>
+          <RecentCaptures words={words} onOpen={onOpenWord} />
+          <WeekProgress stats={stats} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { Dashboard, DueBanner, StatTiles, WeekProgress, RecentCaptures, statusDot });
+
+  </script>
+
+  <script type="text/babel" data-src="capture.jsx">
+// capture.jsx — Capture page: single word, paragraph extract, bulk import. Exported to window.
+const { useState: useStateCap, useRef: useRefCap, useEffect: useEffectCap, useMemo: useMemoCap } = React;
+
+// tiny mock "dictionary" so lookups feel real
+const LOOKUP = {
+  ubiquitous: { ipa: '/juːˈbɪkwɪtəs/', pos: 'adjective', def: 'Present, appearing, or found everywhere.', ex: 'Smartphones have become ubiquitous in daily life.', syn: ['omnipresent', 'pervasive', 'universal'] },
+  laconic: { ipa: '/ləˈkɒnɪk/', pos: 'adjective', def: 'Using very few words; terse to the point of seeming rude.', ex: 'His laconic reply was simply, “Fine.”', syn: ['terse', 'concise', 'curt'] },
+  serendipity: { ipa: '/ˌserənˈdɪpɪti/', pos: 'noun', def: 'The occurrence of happy or beneficial events by chance.', ex: 'A bit of serendipity led her to the perfect apartment.', syn: ['chance', 'fortune', 'luck'] },
+  quixotic: { ipa: '/kwɪkˈsɒtɪk/', pos: 'adjective', def: 'Exceedingly idealistic; unrealistic and impractical.', ex: 'A quixotic plan to end traffic with free bicycles.', syn: ['idealistic', 'romantic', 'utopian'] },
+  ephemeral: { ipa: '/əˈfem(ə)rəl/', pos: 'adjective', def: 'Lasting for a very short time; fleeting.', ex: 'The mayfly’s ephemeral life spans barely a day.', syn: ['fleeting', 'transient', 'momentary'] },
+};
+function lookupWord(raw) {
+  const term = raw.trim().toLowerCase();
+  if (!term) return null;
+  if (LOOKUP[term]) return { term, ...LOOKUP[term] };
+  return { term, ipa: '', pos: 'noun', def: '', ex: '', syn: [], unknown: true };
+}
+
+function Toast({ msg }) {
+  return (
+    <div className="toast" role="status">
+      <span className="tc"><Icon name="check" size={15} /></span>
+      {msg}
+    </div>
+  );
+}
+function useToast() {
+  const [msg, setMsg] = useStateCap(null);
+  const fire = (m) => { setMsg(m); clearTimeout(useToast._t); useToast._t = setTimeout(() => setMsg(null), 2400); };
+  return [msg ? <Toast key={msg + Date.now()} msg={msg} /> : null, fire];
+}
+
+/* ---------------- 4.3 AddWordInput (single) ---------------- */
+function AddWordInput({ onSaved }) {
+  const [q, setQ] = useStateCap('');
+  const [entry, setEntry] = useStateCap(null);
+  const inputRef = useRefCap(null);
+  useEffectCap(() => { inputRef.current && inputRef.current.focus(); }, []);
+
+  const doLookup = () => { const e = lookupWord(q); if (e) setEntry(e); };
+  const onKey = (e) => { if (e.key === 'Enter') doLookup(); };
+  const save = () => { onSaved(entry.term); setQ(''); setEntry(null); inputRef.current && inputRef.current.focus(); };
+
+  return (
+    <div className="rise" style={{ display: 'grid', gap: 18 }}>
+      <div className="field-xl">
+        <Icon name="search" size={22} style={{ color: 'hsl(var(--muted-foreground))', flex: 'none' }} />
+        <input ref={inputRef} value={q} placeholder="Type a word…" onChange={(e) => { setQ(e.target.value); }} onKeyDown={onKey} spellCheck="false" autoComplete="off" />
+        <button className="btn btn-primary" onClick={doLookup} disabled={!q.trim()} style={{ opacity: q.trim() ? 1 : 0.5 }}>
+          Look up <span className="vm-kbd" style={{ background: 'hsl(var(--accent-foreground) / 0.16)', color: 'inherit', borderColor: 'transparent' }}>⏎</span>
+        </button>
+      </div>
+
+      {!entry && (
+        <div className="cap-empty">
+          <span className="ring"><Icon name="bookmark" size={28} /></span>
+          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 17, color: 'hsl(var(--foreground))' }}>Capture a word in two seconds</div>
+          <div style={{ fontSize: 14, maxWidth: 380 }}>Type any word and press Enter. We’ll pull a definition, example and synonyms — edit anything before you save.</div>
+        </div>
+      )}
+
+      {entry && <WordPreview entry={entry} setEntry={setEntry} onSave={save} />}
+    </div>
+  );
+}
+
+function WordPreview({ entry, setEntry, onSave }) {
+  const set = (k, v) => setEntry((e) => ({ ...e, [k]: v }));
+  return (
+    <div className="card card-pad rise" style={{ display: 'grid', gap: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
+          <span className="preview-term">{entry.term}</span>
+          {entry.ipa && <span className="preview-ipa">{entry.ipa}</span>}
+          <span className="preview-pos">{entry.pos}</span>
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <span className="pill pill-accent">{entry.unknown ? 'New entry' : 'Auto-filled'}</span>
+        </div>
+      </div>
+
+      {entry.unknown && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, color: 'hsl(var(--muted-foreground))', background: 'hsl(var(--warning) / 0.1)', padding: '10px 13px', borderRadius: 10 }}>
+          <Icon name="sparkles" size={16} style={{ color: 'hsl(var(--warning))' }} />
+          No dictionary match — add your own definition and example below.
+        </div>
+      )}
+
+      <div>
+        <label className="field-label">Definition</label>
+        <textarea className="def-edit" rows={2} value={entry.def} placeholder="What does it mean?" onChange={(e) => set('def', e.target.value)} />
+      </div>
+      <div>
+        <label className="field-label">Example sentence</label>
+        <textarea className="def-edit" rows={2} value={entry.ex} placeholder="Use it in a sentence…" style={{ fontStyle: 'italic' }} onChange={(e) => set('ex', e.target.value)} />
+      </div>
+      {entry.syn && entry.syn.length > 0 && (
+        <div>
+          <label className="field-label">Synonyms</label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {entry.syn.map((s) => <span key={s} className="syn-chip">{s}</span>)}
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderTop: '1px solid hsl(var(--border))', paddingTop: 18 }}>
+        <button className="btn btn-primary btn-lg" onClick={onSave} disabled={!entry.def.trim()} style={{ opacity: entry.def.trim() ? 1 : 0.5 }}>
+          <Icon name="plus" size={18} /> Add to deck
+        </button>
+        <span className="pill" style={{ background: 'transparent' }}>Goes straight into your review queue</span>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------- 4.4b ParagraphExtractor ---------------- */
+const SAMPLE_PARA = "The negotiation had reached an impasse, and the once-amicable tone gave way to a more truculent exchange. She remained sanguine, convinced that a pragmatic compromise was still within reach if both sides could set aside their intransigent demands.";
+const CANDIDATES = {
+  impasse: { pos: 'noun', def: 'A situation in which no progress is possible; a deadlock.' },
+  amicable: { pos: 'adjective', def: 'Characterized by friendliness and absence of discord.' },
+  truculent: { pos: 'adjective', def: 'Eager or quick to argue or fight; aggressively defiant.' },
+  sanguine: { pos: 'adjective', def: 'Optimistic or positive, especially in a difficult situation.' },
+  pragmatic: { pos: 'adjective', def: 'Dealing with things sensibly and realistically.' },
+  intransigent: { pos: 'adjective', def: 'Unwilling or refusing to change one’s views or behaviour.' },
+};
+function ParagraphExtractor({ onSaved }) {
+  const [text, setText] = useStateCap('');
+  const [scanned, setScanned] = useStateCap(false);
+  const found = useMemoCap(() => {
+    const lower = text.toLowerCase();
+    return Object.keys(CANDIDATES).filter((w) => lower.includes(w));
+  }, [text]);
+  const [chosen, setChosen] = useStateCap({});
+
+  const scan = () => {
+    setScanned(true);
+    const init = {}; const lower = text.toLowerCase();
+    Object.keys(CANDIDATES).forEach((w) => { if (lower.includes(w)) init[w] = true; });
+    setChosen(init);
+  };
+  const toggle = (w) => setChosen((c) => ({ ...c, [w]: !c[w] }));
+  const count = Object.values(chosen).filter(Boolean).length;
+
+  // build highlighted preview
+  const highlighted = useMemoCap(() => {
+    if (!scanned || !found.length) return null;
+    const re = new RegExp('(' + found.join('|') + ')', 'gi');
+    return text.split(re).map((part, i) =>
+      found.includes(part.toLowerCase())
+        ? <mark key={i} className="hl">{part}</mark>
+        : <span key={i}>{part}</span>
+    );
+  }, [scanned, found, text]);
+
+  const save = () => { onSaved(count + (count === 1 ? ' word' : ' words')); setText(''); setScanned(false); setChosen({}); };
+
+  return (
+    <div className="rise" style={{ display: 'grid', gap: 18 }}>
+      {!scanned && (
+        <>
+          <textarea className="para-input" value={text} placeholder="Paste a paragraph from an article, book or email. We’ll surface the words worth keeping…" onChange={(e) => setText(e.target.value)} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button className="btn btn-primary btn-lg" onClick={scan} disabled={text.trim().length < 12} style={{ opacity: text.trim().length < 12 ? 0.5 : 1 }}>
+              <Icon name="sparkles" size={18} /> Extract words
+            </button>
+            <button className="btn btn-ghost" onClick={() => setText(SAMPLE_PARA)}>Try a sample</button>
+          </div>
+        </>
+      )}
+
+      {scanned && (
+        <>
+          <div className="card card-pad" style={{ fontFamily: 'var(--font-read)', fontSize: 17, lineHeight: 1.7 }}>{highlighted}</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 15 }}>
+              {found.length} word{found.length === 1 ? '' : 's'} worth keeping
+            </div>
+            <button className="btn btn-ghost" onClick={() => { setScanned(false); }} style={{ height: 34, fontSize: 13 }}>
+              <Icon name="chevronLeft" size={16} /> Edit text
+            </button>
+          </div>
+          <div className="card" style={{ overflow: 'hidden', padding: 8 }}>
+            {found.map((w) => (
+              <div key={w} className="extract-row" data-on={!!chosen[w]} onClick={() => toggle(w)}>
+                <span className="cbox"><Icon name="check" size={15} /></span>
+                <span className="cap-term" style={{ minWidth: 130 }}>{w}</span>
+                <span className="preview-pos" style={{ minWidth: 78 }}>{CANDIDATES[w].pos}</span>
+                <span className="cap-def" style={{ flex: 1 }}>{CANDIDATES[w].def}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, borderTop: '1px solid hsl(var(--border))', paddingTop: 16 }}>
+            <button className="btn btn-primary btn-lg" onClick={save} disabled={!count} style={{ opacity: count ? 1 : 0.5 }}>
+              <Icon name="plus" size={18} /> Add {count} to deck
+            </button>
+            <span className="pill" style={{ background: 'transparent' }}>Deselect any you already know</span>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ---------------- 4.5b BulkUploader ---------------- */
+const SAMPLE_ROWS = [
+  { term: 'cogent', pos: 'adjective', def: 'Clear, logical and convincing.' },
+  { term: 'wistful', pos: 'adjective', def: 'Having a feeling of vague or regretful longing.' },
+  { term: 'gambit', pos: 'noun', def: 'A device or action intended to gain an advantage.' },
+  { term: 'fastidious', pos: 'adjective', def: 'Very attentive to accuracy and detail.' },
+  { term: 'reticent', pos: 'adjective', def: 'Not revealing one’s thoughts or feelings readily.' },
+  { term: 'salient', pos: 'adjective', def: 'Most noticeable or important.' },
+  { term: 'voracious', pos: 'adjective', def: 'Wanting or devouring great quantities.' },
+];
+function BulkUploader({ onSaved }) {
+  const [stage, setStage] = useStateCap('drop'); // drop | review
+  const [drag, setDrag] = useStateCap(false);
+  const [rows] = useStateCap(SAMPLE_ROWS);
+  const fileRef = useRefCap(null);
+
+  const accept = () => setStage('review');
+  const save = () => { onSaved(rows.length + ' words'); setStage('drop'); };
+
+  return (
+    <div className="rise" style={{ display: 'grid', gap: 18 }}>
+      {stage === 'drop' && (
+        <>
+          <div className="dropzone" data-drag={drag}
+            onClick={() => fileRef.current && fileRef.current.click()}
+            onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
+            onDragLeave={() => setDrag(false)}
+            onDrop={(e) => { e.preventDefault(); setDrag(false); accept(); }}>
+            <span className="ring"><Icon name="inbox" size={26} /></span>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 17, color: 'hsl(var(--foreground))' }}>Drop a file, or click to browse</div>
+            <div style={{ fontSize: 14, color: 'hsl(var(--muted-foreground))', maxWidth: 420 }}>One word per line, or a CSV with <span className="format-chip">term</span> <span className="format-chip">definition</span> columns.</div>
+            <input ref={fileRef} type="file" accept=".csv,.txt" style={{ display: 'none' }} onChange={accept} />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center' }}>
+            <span style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))' }}>Supports</span>
+            <span className="format-chip">.csv</span><span className="format-chip">.txt</span><span className="format-chip">Anki .apkg</span>
+            <button className="btn btn-ghost" onClick={accept} style={{ marginLeft: 8 }}>Use sample file</button>
+          </div>
+        </>
+      )}
+
+      {stage === 'review' && (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span className="tag" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'hsl(var(--success) / 0.14)', color: 'hsl(var(--success))', padding: '6px 12px', borderRadius: 8, fontSize: 13, fontWeight: 600 }}>
+              <Icon name="checkCircle" size={16} /> vocab-list.csv parsed
+            </span>
+            <span style={{ fontSize: 13.5, color: 'hsl(var(--muted-foreground))' }}>{rows.length} rows · 0 duplicates · 0 errors</span>
+          </div>
+          <div className="card" style={{ overflow: 'hidden' }}>
+            <table className="imp-table">
+              <thead><tr><th style={{ width: 40 }}></th><th>Term</th><th>Part of speech</th><th>Definition</th></tr></thead>
+              <tbody>
+                {rows.map((r, i) => (
+                  <tr key={r.term}>
+                    <td style={{ color: 'hsl(var(--muted-foreground))', fontFamily: 'var(--font-mono)', fontSize: 12 }}>{i + 1}</td>
+                    <td className="t-term">{r.term}</td>
+                    <td><span className="preview-pos">{r.pos}</span></td>
+                    <td className="t-def">{r.def}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderTop: '1px solid hsl(var(--border))', paddingTop: 16 }}>
+            <button className="btn btn-primary btn-lg" onClick={save}><Icon name="plus" size={18} /> Import {rows.length} words</button>
+            <button className="btn btn-outline btn-lg" onClick={() => setStage('drop')}>Choose another file</button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ---------------- Capture page shell ---------------- */
+const CAP_MODES = [
+  { id: 'single', label: 'Single word', icon: 'plusCircle' },
+  { id: 'paragraph', label: 'From paragraph', icon: 'book' },
+  { id: 'bulk', label: 'Bulk import', icon: 'inbox' },
+];
+const CAP_LEDE = {
+  single: 'Look up any word and save it with a definition, example and synonyms.',
+  paragraph: 'Paste text and we’ll surface the words worth learning.',
+  bulk: 'Import a list or CSV to add many words at once.',
+};
+function CapturePage() {
+  const [mode, setMode] = useStateCap('single');
+  const [toast, fire] = useToast();
+  const onSaved = (what) => fire('Added ' + what + ' to your deck');
+
+  return (
+    <div className="vm-page">
+      <div className="cap-head" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+        <div>
+          <div className="display-xl" style={{ fontSize: 26 }}>Capture</div>
+          <div className="cap-lede">{CAP_LEDE[mode]}</div>
+        </div>
+        <div className="seg" role="tablist" aria-label="Capture mode">
+          {CAP_MODES.map((m) => (
+            <button key={m.id} className="seg-btn" role="tab" aria-pressed={mode === m.id} onClick={() => setMode(m.id)}>
+              <Icon name={m.icon} size={17} /> {m.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {mode === 'single' && <AddWordInput onSaved={onSaved} />}
+      {mode === 'paragraph' && <ParagraphExtractor onSaved={onSaved} />}
+      {mode === 'bulk' && <BulkUploader onSaved={onSaved} />}
+
+      {toast}
+    </div>
+  );
+}
+
+Object.assign(window, { CapturePage, AddWordInput, ParagraphExtractor, BulkUploader });
+
+  </script>
+
+  <script type="text/babel" data-src="review.jsx">
+// review.jsx — the flip-card SRS review session (centerpiece). Exported to window.
+const { useState: useStateRv, useEffect: useEffectRv, useCallback } = React;
+
+const GRADES = [
+  { id: 'again', label: 'Again', key: '1' },
+  { id: 'hard', label: 'Hard', key: '2' },
+  { id: 'good', label: 'Good', key: '3' },
+  { id: 'easy', label: 'Easy', key: '4' },
+];
+
+function ReviewSession({ queue, onExit, onComplete, motion }) {
+  const [idx, setIdx] = useStateRv(0);
+  const [flipped, setFlipped] = useStateRv(false);
+  const [results, setResults] = useStateRv([]);
+  const [leaving, setLeaving] = useStateRv(false);
+  const done = idx >= queue.length;
+  const card = queue[idx];
+
+  const flip = useCallback(() => { if (!done) setFlipped((f) => !f); }, [done]);
+
+  const grade = useCallback((g) => {
+    if (done || !flipped) return;
+    setLeaving(true);
+    const delay = motion ? 150 : 0;
+    setResults((r) => [...r, { id: card.id, grade: g }]);
+    setTimeout(() => {
+      setFlipped(false);
+      setIdx((i) => i + 1);
+      setLeaving(false);
+    }, delay);
+  }, [done, flipped, card, motion]);
+
+  // keyboard parity
+  useEffectRv(() => {
+    const h = (e) => {
+      if (e.key === 'Escape') { onExit(); return; }
+      if (done) return;
+      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); flip(); return; }
+      if (flipped) {
+        const g = GRADES.find((x) => x.key === e.key);
+        if (g) { e.preventDefault(); grade(g.id); }
+      }
+    };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [flip, grade, flipped, done, onExit]);
+
+  const pct = Math.round((idx / queue.length) * 100);
+  const eta = card ? projectIntervals(card) : {};
+
+  return (
+    <div className="rv-stage" role="dialog" aria-modal="true" aria-label="Review session">
+      <div className="rv-top">
+        <button className="btn btn-ghost btn-icon" onClick={onExit} aria-label="Exit review (Esc)">
+          <Icon name="x" size={20} />
+        </button>
+        <div className="rv-progress-track" aria-hidden="true">
+          <div className="rv-progress-fill" style={{ width: `${done ? 100 : pct}%` }} />
+        </div>
+        <div className="mono" style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))', minWidth: 54, textAlign: 'right' }}>
+          {Math.min(idx + (done ? 0 : 1), queue.length)} / {queue.length}
+        </div>
+      </div>
+
+      {done ? (
+        <DoneScreen results={results} onExit={onExit} onComplete={onComplete} />
+      ) : (
+        <div className="rv-body">
+          <div className="rv-scene">
+            <div
+              className={'rv-card' + (flipped ? ' flipped' : '')}
+              style={{ opacity: leaving ? 0 : 1, transition: leaving && motion ? 'opacity 140ms ease, transform var(--flip-ms) var(--flip-ease)' : undefined }}
+              onClick={flip}
+              role="button"
+              tabIndex={0}
+              aria-label={flipped ? 'Definition shown. Grade your recall.' : `Recall the meaning of ${card.term}. Press space to reveal.`}
+            >
+              {/* FRONT — the prompt */}
+              <div className="rv-face rv-front">
+                <div>
+                  <div className="rv-term">{card.term}</div>
+                  <div className="rv-ipa">{card.ipa}</div>
+                  <div className="rv-hint" style={{ justifyContent: 'center', marginTop: 26 }}>
+                    <span className="vm-kbd">Space</span> to reveal
+                  </div>
+                </div>
+              </div>
+
+              {/* BACK — the substance, set in serif */}
+              <div className="rv-face rv-back">
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
+                  <div className="rv-term" style={{ fontSize: 30 }}>{card.term}</div>
+                  <div className="rv-pos">{card.pos}</div>
+                  <div className="rv-ipa" style={{ marginTop: 0 }}>{card.ipa}</div>
+                  <button className="btn btn-ghost btn-icon" style={{ marginLeft: 'auto', width: 32, height: 32 }} aria-label="Play pronunciation" onClick={(e) => e.stopPropagation()}>
+                    <Icon name="volume" size={18} />
+                  </button>
+                </div>
+                <div className="rv-def" style={{ marginTop: 20 }}>{card.def}</div>
+                <div className="rv-ex" style={{ marginTop: 'auto' }}>{card.ex}</div>
+                <div style={{ display: 'flex', gap: 7, marginTop: 18, flexWrap: 'wrap' }}>
+                  {card.syn.map((s) => <span className="pill pill-accent" key={s}>{s}</span>)}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* grade buttons — disabled until revealed (keyboard parity 1-4) */}
+          <div className="grade-row" aria-hidden={!flipped}>
+            {GRADES.map((g) => (
+              <button
+                key={g.id}
+                className={`grade grade-${g.id}`}
+                disabled={!flipped}
+                onClick={() => grade(g.id)}
+              >
+                <span className="grade-key">{g.key}</span>
+                <span className="grade-label">{g.label}</span>
+                <span className="grade-eta">{flipped ? eta[g.id] : '·'}</span>
+              </button>
+            ))}
+          </div>
+          <div className="rv-hint">
+            {flipped
+              ? <><span className="vm-kbd">1</span><span className="vm-kbd">2</span><span className="vm-kbd">3</span><span className="vm-kbd">4</span> grade · how well did you recall it?</>
+              : <>Try to recall it, then reveal</>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DoneScreen({ results, onExit, onComplete }) {
+  const counts = results.reduce((a, r) => { a[r.grade] = (a[r.grade] || 0) + 1; return a; }, {});
+  const correct = (counts.good || 0) + (counts.easy || 0) + (counts.hard || 0);
+  const rate = results.length ? Math.round((correct / results.length) * 100) : 0;
+  useEffectRv(() => { onComplete && onComplete(results); }, []);
+  return (
+    <div className="rv-body">
+      <div className="rv-done rise">
+        <div className="rv-done-ring"><Icon name="checkCircle" size={46} /></div>
+        <div className="display-xl" style={{ fontSize: 34 }}>Session complete</div>
+        <div style={{ color: 'hsl(var(--muted-foreground))', fontSize: 16 }}>
+          You reviewed {results.length} cards with {rate}% recall. Nice streak — keep it warm.
+        </div>
+        <div style={{ display: 'flex', gap: 10, marginTop: 24, flexWrap: 'wrap', justifyContent: 'center' }}>
+          {GRADES.map((g) => (
+            <div key={g.id} className="card" style={{ padding: '12px 18px', minWidth: 78, boxShadow: 'none' }}>
+              <div className="display-xl" style={{ fontSize: 24 }}>{counts[g.id] || 0}</div>
+              <div style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))', marginTop: 2 }}>{g.label}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: 10, marginTop: 28 }}>
+          <button className="btn btn-outline btn-lg" onClick={onExit}>Back to dashboard</button>
+          <button className="btn btn-primary btn-lg" onClick={onExit}><Icon name="sparkles" size={18} /> Capture a word</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { ReviewSession, DoneScreen, GRADES });
+
+  </script>
+
+  <script type="text/babel" data-src="app.jsx">
+// app.jsx — root: routing, tweaks→CSS-variable wiring, review queue. Mounts the app.
+const { useState, useEffect, useMemo } = React;
+
+const ACCENTS = {
+  '#0d9488': { h: 174, s: '64%' }, // teal
+  '#4f46e5': { h: 244, s: '74%' }, // indigo
+  '#475569': { h: 215, s: '24%' }, // slate
+  '#7c3aed': { h: 262, s: '70%' }, // plum
+};
+const READ_FONTS = {
+  'Source Serif': "'Source Serif 4', Georgia, serif",
+  'Lora': "'Lora', Georgia, serif",
+  'Newsreader': "'Newsreader', Georgia, serif",
+};
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "accent": "#0d9488",
+  "readFont": "Source Serif",
+  "density": "regular",
+  "dark": false,
+  "reduceMotion": false,
+  "flipMs": 460
+}/*EDITMODE-END*/;
+
+const TITLES = { dashboard: 'Dashboard', review: 'Review', capture: 'Capture', words: 'Words', insights: 'Insights', settings: 'Settings' };
+
+function ComingSoon({ route }) {
+  const meta = {
+    capture: { icon: 'plusCircle', h: 'Capture words fast', s: 'Single word, paragraph extraction, or bulk import — designed in a later phase.' },
+    words: { icon: 'book', h: 'Your word library', s: 'Browse, filter and edit every word you’ve captured.' },
+    insights: { icon: 'chart', h: 'See your growth', s: 'Retention curves, problem words and learning velocity.' },
+    settings: { icon: 'sliders', h: 'Settings', s: 'Account, review limits and notification preferences.' },
+  }[route] || { icon: 'inbox', h: 'Nothing here yet', s: '' };
+  return (
+    <div className="vm-page">
+      <div className="card card-pad rise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: 64, gap: 4 }}>
+        <div className="rv-done-ring" style={{ background: 'hsl(var(--accent-soft))', color: 'hsl(var(--accent))' }}><Icon name={meta.icon} size={40} /></div>
+        <div className="display-xl" style={{ fontSize: 24 }}>{meta.h}</div>
+        <div style={{ color: 'hsl(var(--muted-foreground))', fontSize: 15, maxWidth: 380 }}>{meta.s}</div>
+        <span className="pill" style={{ marginTop: 14 }}>Phase 4+ · this prototype focuses on Shell · Dashboard · Review</span>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const [route, setRoute] = useState('dashboard');
+  const [inReview, setInReview] = useState(false);
+  const [stats, setStats] = useState(STATS);
+
+  // apply theme + tokens
+  useEffect(() => {
+    const root = document.documentElement;
+    root.setAttribute('data-theme', t.dark ? 'dark' : 'light');
+    const a = ACCENTS[t.accent] || ACCENTS['#0d9488'];
+    root.style.setProperty('--accent-h', a.h);
+    root.style.setProperty('--accent-s', a.s);
+    root.style.setProperty('--font-read', READ_FONTS[t.readFont] || READ_FONTS['Source Serif']);
+    root.style.setProperty('--flip-ms', (t.reduceMotion ? 0 : t.flipMs) + 'ms');
+  }, [t.dark, t.accent, t.readFont, t.flipMs, t.reduceMotion]);
+
+  const queue = useMemo(() => WORDS.filter((w) => w.status !== 'mastered').slice(0, stats.due), [stats.due]);
+
+  const startReview = () => { setInReview(true); };
+  const completeReview = (results) => {
+    setStats((s) => ({ ...s, due: 0, reviewedToday: results.length, weekDone: Math.min(s.weekGoal, s.weekDone + results.length) }));
+  };
+
+  const goto = (r) => {
+    if (r === 'review') { startReview(); return; }
+    setRoute(r);
+  };
+
+  return (
+    <>
+      <AppShell
+        route={route}
+        title={TITLES[route]}
+        theme={t.dark ? 'dark' : 'light'}
+        density={t.density}
+        dueCount={stats.due}
+        onNavigate={goto}
+        onToggleTheme={() => setTweak('dark', !t.dark)}
+      >
+        {route === 'dashboard'
+          ? <Dashboard words={WORDS} stats={stats} onStartReview={startReview} onOpenWord={() => {}} />
+          : route === 'capture'
+          ? <CapturePage />
+          : <ComingSoon route={route} />}
+      </AppShell>
+
+      {inReview && (
+        <ReviewSession
+          queue={queue.length ? queue : WORDS.slice(0, 8)}
+          motion={!t.reduceMotion}
+          onExit={() => setInReview(false)}
+          onComplete={completeReview}
+        />
+      )}
+
+      <TweaksPanel>
+        <TweakSection label="Theme" />
+        <TweakToggle label="Dark mode" value={t.dark} onChange={(v) => setTweak('dark', v)} />
+        <TweakColor label="Accent" value={t.accent}
+          options={['#0d9488', '#4f46e5', '#475569', '#7c3aed']}
+          onChange={(v) => setTweak('accent', v)} />
+
+        <TweakSection label="Reading" />
+        <TweakRadio label="Definition serif" value={t.readFont}
+          options={['Source Serif', 'Lora', 'Newsreader']}
+          onChange={(v) => setTweak('readFont', v)} />
+        <TweakRadio label="Density" value={t.density}
+          options={['compact', 'regular', 'comfy']}
+          onChange={(v) => setTweak('density', v)} />
+
+        <TweakSection label="Motion" />
+        <TweakToggle label="Reduce motion" value={t.reduceMotion} onChange={(v) => setTweak('reduceMotion', v)} />
+        <TweakSlider label="Card flip speed" value={t.flipMs} min={180} max={900} step={20} unit="ms"
+          disabled={t.reduceMotion} onChange={(v) => setTweak('flipMs', v)} />
+
+        <TweakSection label="Try it" />
+        <TweakButton label="Start a review session" onClick={() => setInReview(true)} />
+      </TweaksPanel>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+
+  </script>
+
+</body>
+</html>

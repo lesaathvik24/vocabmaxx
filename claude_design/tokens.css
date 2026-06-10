@@ -1,0 +1,105 @@
+/* VocabMaxx — design tokens (shadcn-style, mapped to the DESIGN.md spec) */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  /* accent hue family — overridden by the Tweaks panel */
+  --accent-h: 174;
+  --accent-s: 64%;
+
+  /* radii */
+  --radius-card: 16px;
+  --radius-ctl: 9px;
+
+  /* motion */
+  --transition-base: 150ms ease-out;
+  --flip-ms: 460ms;
+  --flip-ease: cubic-bezier(0.34, 1.2, 0.4, 1);
+
+  /* type */
+  --font-ui: 'Inter', system-ui, sans-serif;
+  --font-display: 'Inter Tight', 'Inter', sans-serif;
+  --font-read: 'Source Serif 4', Georgia, serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+/* ---------- LIGHT ---------- */
+[data-theme='light'] {
+  --background: 40 12% 97%;
+  --surface: 0 0% 100%;
+  --foreground: 220 22% 13%;
+  --muted: 220 16% 95%;
+  --muted-foreground: 220 9% 46%;
+  --border: 220 14% 90%;
+  --card: 0 0% 100%;
+
+  --accent: var(--accent-h) var(--accent-s) 38%;
+  --accent-soft: var(--accent-h) 52% 95%;
+  --accent-foreground: 0 0% 100%;
+
+  --destructive: 5 74% 52%;
+  --success: 150 56% 38%;
+  --warning: 34 88% 46%;
+  --ring: var(--accent-h) var(--accent-s) 42%;
+
+  --shadow-sm: 0 1px 2px hsl(220 30% 12% / 0.06), 0 1px 1px hsl(220 30% 12% / 0.04);
+  --shadow-md: 0 10px 30px hsl(220 30% 12% / 0.10), 0 2px 8px hsl(220 30% 12% / 0.06);
+  --shadow-card: 0 1px 3px hsl(220 30% 12% / 0.05), 0 8px 24px hsl(220 30% 12% / 0.05);
+}
+
+/* ---------- DARK ---------- */
+[data-theme='dark'] {
+  --background: 222 28% 8%;
+  --surface: 222 24% 11%;
+  --foreground: 220 16% 92%;
+  --muted: 222 20% 15%;
+  --muted-foreground: 220 10% 60%;
+  --border: 222 18% 19%;
+  --card: 222 24% 12%;
+
+  --accent: var(--accent-h) calc(var(--accent-s) - 6%) 52%;
+  --accent-soft: var(--accent-h) 38% 18%;
+  --accent-foreground: 222 40% 7%;
+
+  --destructive: 5 70% 60%;
+  --success: 150 48% 52%;
+  --warning: 34 80% 58%;
+  --ring: var(--accent-h) var(--accent-s) 56%;
+
+  --shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.4);
+  --shadow-md: 0 14px 40px hsl(0 0% 0% / 0.5), 0 2px 8px hsl(0 0% 0% / 0.4);
+  --shadow-card: 0 1px 3px hsl(0 0% 0% / 0.3), 0 10px 30px hsl(0 0% 0% / 0.35);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body { transition: background var(--transition-base), color var(--transition-base); }
+
+::selection { background: hsl(var(--accent) / 0.22); }
+
+/* focus ring — uses --ring per a11y checklist */
+:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+:focus:not(:focus-visible) { outline: none; }
+
+/* scrollbars */
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 99px; border: 2px solid hsl(var(--background)); }
+*::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.5); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
