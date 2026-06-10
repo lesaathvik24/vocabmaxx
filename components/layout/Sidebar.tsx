@@ -111,7 +111,7 @@ export function Sidebar({ dueCount, userEmail, onClose }: SidebarProps) {
             </div>
 
             {/* Footer */}
-            <div className="border-t border-border px-3 py-3 space-y-1">
+            <div className="px-3 py-3 space-y-1">
                 <Link
                     href="/settings"
                     onClick={onClose}
