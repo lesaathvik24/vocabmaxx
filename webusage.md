@@ -205,4 +205,102 @@ other keys from `.env.local` are configured for **Preview** (not only Production
 likely reason the env was missing at build. With the dynamic fix the build will no
 longer crash even if a var is briefly missing, but the auth UI needs the
 `NEXT_PUBLIC_*` values present at build to function in the browser.
-</content>
+
+---
+
+# Phase 6 — Word list, detail, search (2026-06-10)
+
+Goal for this session: finish Phase 6 and Phase 7 from `docs/ROADMAP.md`, with unit
+tests + manual validation steps per task. Branch: `claude/learning-app-perf-features-5msa7s`.
+
+## 6.1a / 6.1b — Word list: status filter + virtualization + unit tests
+
+**What was missing.** The list shipped earlier had search + delete but no
+All/Due/Mastered filter and no virtualization (roadmap `[~]`), and there were no unit
+tests for the list logic.
+
+**Process & changes.**
+
+1. **Pure, client-safe logic module** — `lib/words/filter.ts`:
+   - `repsToStatus(reps)` → `new | learning | review | mastered` (mirrors
+     `dashboard.service.repsToStatus`, but dependency-free so client code can import it —
+     `dashboard.service` is `server-only`).
+   - `filterWords(words, { query, filter })` — applies the All/Due/Mastered filter then a
+     case-insensitive substring match over term + definition. Pure → unit-testable.
+2. **SRS-joined query** — `lib/db/queries/words.ts` `listWithSrsByUser(userId)` LEFT JOINs
+   `srs_state` so each row carries `repetitions` + `dueDate` (left join so a word with no
+   srs row still shows, treated as new / now-due). Returns `WordListRow`.
+3. **Service** — `word.service.listWithStatus(userId, now)` maps those rows to
+   `WordWithStatus` (adds `status` via `repsToStatus`, `due` = dueDate ≤ now).
+4. **Page** — `app/(app)/words/page.tsx` now calls `listWithStatus` and passes `status` +
+   `due` into each `WordRow`.
+5. **UI** — `components/words/WordsList.tsx` rewritten:
+   - Segmented **All / Due / Mastered** filter (tablist, `aria-selected`).
+   - Filtering delegated to the pure `filterWords` (search + filter combined).
+   - **Virtualization**: lists over 50 rows render through `VirtualRows`, a self-contained
+     windowing component (fixed 68px row height, 640px viewport, 6-row overscan, absolute
+     positioning inside a full-height spacer). No new dependency added (network-restricted
+     env) — implemented by hand. Lists ≤ 50 rows render normally.
+   - Rows are now clickable (role=link, Enter/Space) → navigate to `/words/[id]`; the trash
+     button `stopPropagation`s so deleting doesn't open the detail page. Status + Due pills
+     per row.
+
+**Unit tests** — `tests/unit/word-list.test.ts` (17 cases): `repsToStatus` boundaries,
+search by term/definition (case-insensitive, trim, no-match), and the All/Due/Mastered
+filter incl. combined filter+search. Plus `tests/unit/word.service.test.ts` covers
+`listWithStatus` status/due derivation (query layer mocked).
+
+## 6.2a — Word detail page
+
+**Data.** `lib/db/queries/words.ts` `findByIdForUser(id, userId)` (owner-scoped fetch).
+`word.service.getDetail(id, userId)` returns `{ word, status, due, srs, history }` —
+combining the word, its `srs_state` (via `srsQ.getByWordId`) and its review history (via
+`reviewLogQ.listByWord`). Null when not found / not owner.
+
+**UI.** `app/(app)/words/[id]/page.tsx` (server, `force-dynamic`): validates the id is a
+UUID (`notFound()` otherwise), loads `getDetail`, `notFound()` if null, serializes dates to
+ISO and renders `components/words/WordDetail.tsx`. The detail component shows term + status
++ due pills, definition, examples, an SRS stat grid (reps / interval / ease / next due) and
+the review-history list with coloured grade labels (Again/Hard/Good/Easy). Replaces the old
+"Word pages coming soon" placeholder.
+
+## 6.2b — Word edit (+ delete)
+
+Delete already existed. Added **edit**:
+
+- **Query** — `words.updateForUser(id, userId, { definition?, examples? })` updates only the
+  owner's row, returns the updated `Word` or null.
+- **Service** — `word.service.update(...)` validates (definition non-empty; examples trimmed
+  to 1–3 non-empty) → `Result<Word, { kind: 'word_not_found' | 'invalid_word' }>`.
+- **API** — `PATCH /api/words/[id]` (`app/api/words/[id]/route.ts`): auth (401), UUID (400),
+  Zod body (`definition?`, `examples?` 1–3, at least one present; 400 otherwise),
+  `word_not_found` → 404, `invalid_word` → 400, else 200 `{ data: { word } }`.
+- **UI** — `components/words/WordEditor.tsx` dialog (definition textarea + 1–3 example
+  inputs, add/remove) wired into `WordDetail` via an "Edit" button; PATCH → toast →
+  `router.refresh()`. Delete in `WordDetail` uses a confirm dialog → `DELETE` → back to
+  `/words`.
+
+**Unit tests** — `tests/unit/word.service.test.ts` (6 cases): update validation
+(empty def, 0 / >3 examples, trim+persist valid patch, not-found mapping) with the query
+layer mocked.
+
+## Phase 6 verification run
+
+- `pnpm test:unit` — green (**103** tests, +23 from Phase 5's 80).
+- `pnpm typecheck` — clean.
+- `pnpm lint` — clean (only the pre-existing `tests/unit/middleware.test.ts` `any` warning).
+- Integration/E2E not run here (need live Supabase / dev server — unavailable in sandbox).
+
+### Manual validation (do this on Vercel to confirm Phase 6)
+
+1. **Words list** → search "ali" (or any fragment) → only matching rows; clear → all return.
+2. Click the **Due** filter → only rows tagged "Due"; **Mastered** → only mastered rows;
+   **All** → everything. Combine a filter with a search term → both apply.
+3. With 250+ words, scroll the list → smooth (windowed); only ~15 rows in the DOM at a time
+   (check DevTools Elements).
+4. Click a row → **word detail** opens: definition, examples, reps/interval/ease/next-due,
+   and review history.
+5. On detail, **Edit** → change the definition / add an example → Save → toast → reload →
+   change persisted.
+6. **Delete** (from a row's trash icon or the detail page) → confirm → row gone; the word's
+   `srs_state` / `review_log` rows are gone too (FK cascade).

@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function WordsPage() {
     const user = await requireUser()
-    const words = await wordService.listForUser(user.id)
+    const words = await wordService.listWithStatus(user.id)
 
     const rows: WordRow[] = words.map((w) => ({
         id: w.id,
@@ -15,6 +15,8 @@ export default async function WordsPage() {
         definition: w.definition,
         source: w.source,
         addedAt: w.addedAt.toISOString(),
+        status: w.status,
+        due: w.due,
     }))
 
     return (

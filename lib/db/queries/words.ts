@@ -1,8 +1,13 @@
 import 'server-only'
 import { and, count, desc, eq } from 'drizzle-orm'
 import { db } from '../client'
-import { words } from '../schema'
+import { words, srsState } from '../schema'
 import type { Word } from '@/lib/domain/word'
+
+export interface WordListRow extends Word {
+    repetitions: number
+    dueDate: Date
+}
 
 export interface InsertWordInput {
     userId: string
@@ -31,6 +36,44 @@ export async function findById(id: string): Promise<Word | null> {
     return row ? rowToWord(row) : null
 }
 
+export async function findByIdForUser(id: string, userId: string): Promise<Word | null> {
+    const [row] = await db
+        .select()
+        .from(words)
+        .where(and(eq(words.id, id), eq(words.userId, userId)))
+        .limit(1)
+    return row ? rowToWord(row) : null
+}
+
+export interface UpdateWordFields {
+    definition?: string
+    examples?: string[]
+}
+
+/**
+ * Update a word's editable fields (definition / examples) only if it belongs to
+ * the given user. Returns the updated word, or null when nothing matched.
+ */
+export async function updateForUser(
+    id: string,
+    userId: string,
+    fields: UpdateWordFields,
+): Promise<Word | null> {
+    const patch: Partial<typeof words.$inferInsert> = {}
+    if (fields.definition !== undefined) patch.definition = fields.definition
+    if (fields.examples !== undefined) patch.examples = fields.examples
+    if (Object.keys(patch).length === 0) {
+        return findByIdForUser(id, userId)
+    }
+
+    const [row] = await db
+        .update(words)
+        .set(patch)
+        .where(and(eq(words.id, id), eq(words.userId, userId)))
+        .returning()
+    return row ? rowToWord(row) : null
+}
+
 export async function findByUserAndTerm(userId: string, term: string): Promise<Word | null> {
     const [row] = await db
         .select()
@@ -48,6 +91,32 @@ export async function listByUser(userId: string, opts?: { limit?: number }): Pro
         .orderBy(desc(words.addedAt))
     const rows = opts?.limit ? await q.limit(opts.limit) : await q
     return rows.map(rowToWord)
+}
+
+/**
+ * List a user's words joined with their SRS state (repetitions + due date) so the
+ * word-list UI can derive status (new/learning/review/mastered) and the Due filter.
+ * Left join so a word without an srs_state row still appears (treated as new/now-due).
+ */
+export async function listWithSrsByUser(userId: string): Promise<WordListRow[]> {
+    const rows = await db
+        .select()
+        .from(words)
+        .leftJoin(srsState, eq(srsState.wordId, words.id))
+        .where(eq(words.userId, userId))
+        .orderBy(desc(words.addedAt))
+
+    return rows.map(({ words: w, srs_state: s }) => ({
+        id: w.id,
+        userId: w.userId,
+        term: w.term,
+        definition: w.definition,
+        examples: w.examples,
+        source: w.source,
+        addedAt: w.addedAt,
+        repetitions: s?.repetitions ?? 0,
+        dueDate: s?.dueDate ?? w.addedAt,
+    }))
 }
 
 export async function countByUser(userId: string): Promise<number> {

@@ -437,41 +437,46 @@ These were user-requested fixes/features delivered after Phase 5, logged in `web
 - **Docs to load:** `docs/TECH_SPEC.md §5` (Words list endpoint), `docs/DESIGN.md §3, §5`.
 - **Files:** `app/(app)/words/page.tsx`, `components/words/WordsList.tsx`.
 - **Acceptance:** virtualized for > 200 rows; search bar (case-insensitive prefix); filter All/Due/Mastered.
-- **Status:** `[~]` — shipped 2026-06-10: real list page (server-rendered via `wordService.listForUser`)
-  + case-insensitive search (term & definition) + per-row delete. **Remaining:** virtualization for
-  >200 rows and the All/Due/Mastered filter (words query doesn't yet join `srs_state` for status).
-  Note: built as `components/words/WordsList.tsx` (single client component), not the planned
-  `WordList`/`WordRow` split.
+- **Status:** `[x]` — completed 2026-06-10. Server-rendered list (`wordService.listWithStatus`,
+  which LEFT JOINs `srs_state` for reps + due date) + case-insensitive search (term & definition,
+  via pure `lib/words/filter.ts`) + **All/Due/Mastered filter** + **hand-rolled virtualization**
+  (`VirtualRows` in `WordsList.tsx`, windowed at >50 rows, no new dependency) + per-row delete +
+  rows link to the detail page. Built as `components/words/WordsList.tsx` (single client component),
+  not the planned `WordList`/`WordRow` split.
 
 ### 6.1b Word list — unit tests
 - **Files:** `tests/unit/word-list.test.ts`, `tests/e2e/words-list.spec.ts`.
 - **Acceptance:** filter and search logic covered.
-- **Status:** `[ ]`
+- **Status:** `[x]` — `tests/unit/word-list.test.ts` (17 cases: `repsToStatus`, search,
+  All/Due/Mastered filter, combined) + `tests/unit/word.service.test.ts` (status/due derivation).
+  Playwright `words-list.spec.ts` deferred until the e2e harness exists (consistent with other phases).
 
 ### 6.2a Word detail page
 - **Docs to load:** `docs/TECH_SPEC.md §5` (Words detail endpoint).
 - **Files:** `app/(app)/words/[id]/page.tsx`, `components/words/WordDetail.tsx`.
 - **Acceptance:** definition, examples, SRS stats.
-- **Status:** `[ ]`
+- **Status:** `[x]` — completed 2026-06-10. Server page (UUID-validated → `notFound()`,
+  `wordService.getDetail`) renders `WordDetail`: definition, examples, SRS stat grid
+  (reps / interval / ease / next due) + review history with grade labels.
 
 ### 6.2b Word edit + delete
 - **Docs to load:** `docs/TECH_SPEC.md §5` (PATCH/DELETE word).
 - **Files:** `components/words/WordEditor.tsx`, dialog wiring in `WordDetail.tsx`.
 - **Acceptance:** edit dialog persists; delete behind a confirmation modal.
-- **Status:** `[~]` — **delete done** 2026-06-10: `DELETE /api/words/[id]` (auth + UUID-validated,
-  user-scoped) → `wordService.remove(id, userId)` → `wordsQ.deleteByIdForUser` (returns false if
-  not owner; cascades `srs_state`/`review_log`). UI: confirmation `Dialog` + toast +
-  `router.refresh()` in `components/words/WordsList.tsx`. **Remaining:** edit (PATCH word) — no
-  `WordEditor` / PATCH endpoint yet.
+- **Status:** `[x]` — completed 2026-06-10. **Delete:** `DELETE /api/words/[id]` (auth +
+  UUID-validated, user-scoped) → `wordService.remove` → `deleteByIdForUser` (cascades
+  `srs_state`/`review_log`), confirm `Dialog` in `WordsList`/`WordDetail`. **Edit:**
+  `PATCH /api/words/[id]` (Zod-validated `definition?`/`examples?` 1–3) → `wordService.update`
+  (`updateForUser`, owner-scoped) wired to `components/words/WordEditor.tsx` dialog in `WordDetail`.
 
 ### Phase 6 — Setup actions (you)
 None.
 
 ### Phase 6 — End-to-end verification
-- [ ] 250 seeded words → list scrolls smoothly (DevTools Performance: no scroll jank > 16ms). (blocked: no virtualization yet)
-- [x] Search "ali" → only matching rows. (client filter in `WordsList`, term + definition)
-- [ ] Filter Due → only due rows. (filter not built yet)
-- [ ] Edit a word → reload → change persisted. (edit not built yet)
+- [~] 250 seeded words → list scrolls smoothly (DevTools Performance: no scroll jank > 16ms). (virtualization shipped — `VirtualRows`; final perf check is a user manual step on Vercel)
+- [x] Search "ali" → only matching rows. (pure `filterWords`, term + definition)
+- [x] Filter Due → only due rows. (All/Due/Mastered segmented filter in `WordsList`)
+- [x] Edit a word → reload → change persisted. (`WordEditor` → `PATCH /api/words/[id]`)
 - [x] Delete → confirmation → row gone; `srs_state` row gone (cascade). (confirm dialog + `DELETE /api/words/[id]`, FK cascade)
 
 ---
