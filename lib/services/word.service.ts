@@ -32,6 +32,10 @@ export async function getById(id: string): Promise<Word | null> {
     return wordsQ.findById(id)
 }
 
-export async function remove(id: string): Promise<void> {
-    await wordsQ.deleteById(id)
+/**
+ * Remove a word owned by `userId`. Returns true if a row was deleted, false if
+ * the word does not exist or belongs to someone else.
+ */
+export async function remove(id: string, userId: string): Promise<boolean> {
+    return wordsQ.deleteByIdForUser(id, userId)
 }

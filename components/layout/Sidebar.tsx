@@ -9,6 +9,7 @@ import {
     PlusCircle,
     BookOpen,
     BarChart3,
+    FlaskConical,
     Sliders,
     X,
 } from 'lucide-react'
@@ -30,6 +31,7 @@ const NAV: NavItem[] = [
     { id: 'capture', label: 'Capture', href: '/capture', icon: PlusCircle },
     { id: 'words', label: 'Words', href: '/words', icon: BookOpen },
     { id: 'insights', label: 'Insights', href: '/insights', icon: BarChart3 },
+    { id: 'algorithm', label: 'Algorithm lab', href: '/algorithm', icon: FlaskConical },
 ]
 
 interface SidebarProps {

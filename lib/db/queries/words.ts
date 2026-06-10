@@ -59,6 +59,19 @@ export async function deleteById(id: string): Promise<void> {
     await db.delete(words).where(eq(words.id, id))
 }
 
+/**
+ * Delete a word only if it belongs to the given user. Returns true when a row
+ * was actually removed, false when nothing matched (wrong owner or missing id).
+ * SRS state + review log rows cascade via the FK `onDelete: 'cascade'`.
+ */
+export async function deleteByIdForUser(id: string, userId: string): Promise<boolean> {
+    const deleted = await db
+        .delete(words)
+        .where(and(eq(words.id, id), eq(words.userId, userId)))
+        .returning({ id: words.id })
+    return deleted.length > 0
+}
+
 type WordRow = typeof words.$inferSelect
 function rowToWord(r: WordRow): Word {
     return {
