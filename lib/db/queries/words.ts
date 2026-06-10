@@ -17,6 +17,10 @@ export interface InsertWordInput {
     source: 'dictionary' | 'llm'
 }
 
+/**
+ * Low-level insert. Throws on a `(user_id, term)` unique-index violation — use
+ * `insertIfAbsent` for the user-facing capture path, which handles the race.
+ */
 export async function insert(input: InsertWordInput): Promise<Word> {
     const [row] = await db
         .insert(words)
@@ -31,8 +35,23 @@ export async function insert(input: InsertWordInput): Promise<Word> {
     return rowToWord(row)
 }
 
-export async function findById(id: string): Promise<Word | null> {
-    const [row] = await db.select().from(words).where(eq(words.id, id)).limit(1)
+/**
+ * Race-safe insert: a concurrent duplicate that hits the `(user_id, term)`
+ * unique index returns `null` (via `onConflictDoNothing`) instead of throwing,
+ * letting the capture path report a clean 409 instead of a 500.
+ */
+export async function insertIfAbsent(input: InsertWordInput): Promise<Word | null> {
+    const [row] = await db
+        .insert(words)
+        .values({
+            userId: input.userId,
+            term: input.term,
+            definition: input.definition,
+            examples: input.examples,
+            source: input.source,
+        })
+        .onConflictDoNothing({ target: [words.userId, words.term] })
+        .returning()
     return row ? rowToWord(row) : null
 }
 
@@ -98,13 +117,17 @@ export async function listByUser(userId: string, opts?: { limit?: number }): Pro
  * word-list UI can derive status (new/learning/review/mastered) and the Due filter.
  * Left join so a word without an srs_state row still appears (treated as new/now-due).
  */
-export async function listWithSrsByUser(userId: string): Promise<WordListRow[]> {
-    const rows = await db
+export async function listWithSrsByUser(
+    userId: string,
+    opts?: { limit?: number },
+): Promise<WordListRow[]> {
+    const base = db
         .select()
         .from(words)
         .leftJoin(srsState, eq(srsState.wordId, words.id))
         .where(eq(words.userId, userId))
         .orderBy(desc(words.addedAt))
+    const rows = opts?.limit ? await base.limit(opts.limit) : await base
 
     return rows.map(({ words: w, srs_state: s }) => ({
         id: w.id,
@@ -152,10 +175,6 @@ export async function listForExport(userId: string): Promise<ExportRow[]> {
 export async function countByUser(userId: string): Promise<number> {
     const [row] = await db.select({ value: count() }).from(words).where(eq(words.userId, userId))
     return row?.value ?? 0
-}
-
-export async function deleteById(id: string): Promise<void> {
-    await db.delete(words).where(eq(words.id, id))
 }
 
 /**

@@ -2,7 +2,7 @@ import 'server-only'
 import * as wordsQ from '@/lib/db/queries/words'
 import * as srsQ from '@/lib/db/queries/srs'
 import * as reviewLogQ from '@/lib/db/queries/review-log'
-import type { Word } from '@/lib/domain/word'
+import { type Word, assertWordFields, createWord } from '@/lib/domain/word'
 import type { Grade } from '@/lib/domain/grade'
 import { type Result, ok, err, type CaptureError } from '@/lib/domain/errors'
 import { repsToStatus, type WordStatus } from '@/lib/words/filter'
@@ -16,15 +16,30 @@ export interface SaveWordInput {
 }
 
 export async function save(input: SaveWordInput): Promise<Result<Word, CaptureError>> {
-    const normalisedTerm = input.term.trim().toLowerCase()
-    if (!normalisedTerm) return err({ kind: 'invalid_term' })
+    let fields: { term: string; definition: string; examples: string[] }
+    try {
+        fields = assertWordFields(input)
+    } catch {
+        return err({ kind: 'invalid_term' })
+    }
 
-    const existing = await wordsQ.findByUserAndTerm(input.userId, normalisedTerm)
+    // Fast-path: report the common case (already captured) without an insert attempt.
+    const existing = await wordsQ.findByUserAndTerm(input.userId, fields.term)
     if (existing) return err({ kind: 'duplicate_term' })
 
-    const word = await wordsQ.insert({ ...input, term: normalisedTerm })
-    await srsQ.initialize(word.id, input.userId)
-    return ok(word)
+    // Race-safe insert: a concurrent duplicate that slips past the check above
+    // hits the unique index and returns null rather than throwing a 500.
+    const inserted = await wordsQ.insertIfAbsent({
+        userId: input.userId,
+        term: fields.term,
+        definition: fields.definition,
+        examples: fields.examples,
+        source: input.source,
+    })
+    if (!inserted) return err({ kind: 'duplicate_term' })
+
+    await srsQ.initialize(inserted.id, input.userId)
+    return ok(createWord(inserted))
 }
 
 export async function listForUser(userId: string): Promise<Word[]> {
@@ -56,10 +71,6 @@ export async function listWithStatus(
         status: repsToStatus(r.repetitions),
         due: r.dueDate.getTime() <= now.getTime(),
     }))
-}
-
-export async function getById(id: string): Promise<Word | null> {
-    return wordsQ.findById(id)
 }
 
 export interface WordReviewEntry {

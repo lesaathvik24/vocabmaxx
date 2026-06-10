@@ -44,7 +44,8 @@ describe('srs queries + service', () => {
 
     it('recordReview updates state and appends a review_log in one transaction', async () => {
         const w = await wordsQ.insert({ userId: USER_A, term: 'tx', definition: 'd', examples: ['e'], source: 'dictionary' })
-        await srsQ.initialize(w.id, USER_A)
+        // Initialise due before the grade time so the card is actually due when graded.
+        await srsQ.initialize(w.id, USER_A, new Date('2024-05-01T00:00:00Z'))
 
         const now = new Date('2024-06-01T00:00:00Z')
         const result = await srsService.recordReview(USER_A, w.id, Grade.Good, now)

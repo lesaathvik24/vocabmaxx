@@ -25,15 +25,15 @@ export async function updateSession(request: NextRequest) {
 
     const { data: { user } } = await supabase.auth.getUser()
 
-    const isProtected = request.nextUrl.pathname.startsWith('/dashboard')
-        || request.nextUrl.pathname.startsWith('/review')
-        || request.nextUrl.pathname.startsWith('/words')
-        || request.nextUrl.pathname.startsWith('/insights')
+    // Every route in the (app) group. Kept in sync with the layout's requireUser()
+    // as defense-in-depth so unauth'd users are redirected at the edge, not just SSR.
+    const PROTECTED_PREFIXES = ['/dashboard', '/review', '/words', '/insights', '/capture', '/settings', '/algorithm']
+    const isProtected = PROTECTED_PREFIXES.some((p) => request.nextUrl.pathname.startsWith(p))
 
     if (isProtected && !user) {
         const url = request.nextUrl.clone()
         url.pathname = '/auth/sign-in'
-        url.searchParams.set('next', request.nextUrl.pathname)
+        url.searchParams.set('next', request.nextUrl.pathname + request.nextUrl.search)
         return NextResponse.redirect(url)
     }
 

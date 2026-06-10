@@ -3,11 +3,10 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { Route } from 'next'
-import { Menu, Search, Sun, Moon, Plus } from 'lucide-react'
+import { Menu, Sun, Moon, Plus } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
 import { Button, buttonVariants } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { Sidebar } from './Sidebar'
 import { cn } from '@/lib/utils'
@@ -60,22 +59,6 @@ export function Topbar({ dueCount, userEmail, displayName }: TopbarProps) {
             >
                 VocabMaxx
             </Link>
-
-            {/* Search placeholder — wired in Phase 6 */}
-            <div className="hidden md:flex relative flex-1 max-w-sm" role="search" aria-hidden="true">
-                <Search
-                    size={16}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
-                    aria-hidden="true"
-                />
-                <Input
-                    placeholder="Search coming soon"
-                    className="pl-9 h-9 text-sm cursor-not-allowed"
-                    readOnly
-                    disabled
-                    tabIndex={-1}
-                />
-            </div>
 
             <div className="flex-1" aria-hidden="true" />
 

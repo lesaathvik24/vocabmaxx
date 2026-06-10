@@ -28,7 +28,19 @@ interface CreateWordInput {
     addedAt: Date
 }
 
-export function createWord(input: CreateWordInput): ValidWord {
+export interface WordFields {
+    term: string
+    definition: string
+    examples: string[]
+}
+
+/**
+ * Normalise and validate the editable fields of a word, throwing
+ * `InvalidWordError` on any violation. Shared by `createWord` (post-persist
+ * branding) and `word.service.save` (pre-persist guard) so the invariant has a
+ * single definition.
+ */
+export function assertWordFields(input: WordFields): WordFields {
     const term = input.term.trim().toLowerCase()
     if (term.length === 0) throw new InvalidWordError('term must not be empty')
 
@@ -45,6 +57,11 @@ export function createWord(input: CreateWordInput): ValidWord {
         return trimmed
     })
 
+    return { term, definition, examples }
+}
+
+export function createWord(input: CreateWordInput): ValidWord {
+    const { term, definition, examples } = assertWordFields(input)
     return {
         id: input.id,
         userId: input.userId,

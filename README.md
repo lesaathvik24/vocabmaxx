@@ -3,9 +3,9 @@
 > **Anki is for flashcards. VocabMaxx is for actually owning the words you hear.**
 > Type a word. Get a clean definition + two real-world examples in 200ms. Forget it on your terms — the algorithm brings it back exactly when you'd otherwise lose it.
 
-[![CI](https://img.shields.io/badge/CI-passing-brightgreen)](.github/workflows/ci.yml) [![Tests](https://img.shields.io/badge/tests-90%20green-brightgreen)](#) [![TS](https://img.shields.io/badge/TypeScript-strict-blue)](tsconfig.json) [![License](https://img.shields.io/badge/license-MIT-black)](LICENSE)
+[![CI](https://img.shields.io/badge/CI-passing-brightgreen)](.github/workflows/ci.yml) [![Tests](https://img.shields.io/badge/tests-168%20green-brightgreen)](#) [![TS](https://img.shields.io/badge/TypeScript-strict-blue)](tsconfig.json) [![License](https://img.shields.io/badge/license-MIT-black)](LICENSE)
 
-**Live demo:** _shipping with Phase 4_ &nbsp;·&nbsp; **Docs:** [`docs/`](docs/) &nbsp;·&nbsp; **Roadmap:** [`docs/ROADMAP.md`](docs/ROADMAP.md)
+**Live demo:** _private beta_ &nbsp;·&nbsp; **Docs:** [`docs/`](docs/) &nbsp;·&nbsp; **Roadmap:** [`docs/ROADMAP.md`](docs/ROADMAP.md)
 
 ---
 
@@ -34,10 +34,10 @@ Every existing tool makes you do work to keep it:
 | Card-creation friction | **zero — the input *is* the card** | high | medium | n/a |
 | Built for | **the word you just heard** | medical school, kanji | classrooms | one-shot answers |
 | Cost | free + your tokens | free / paid mobile | free + ads | free / $20 |
-| Owns your data | **JSON / CSV / Anki `.apkg` export** | yes | locked | no |
+| Owns your data | **your data, your DB — JSON / CSV export live; Anki `.apkg` coming** | yes | locked | no |
 | Open source | **MIT** | yes | no | no |
 
-Translation: **Anki is a mature general-purpose SRS that asks you to be a card author. VocabMaxx is a single-purpose vocabulary tool that does the authoring for you.** Export to Anki any time if you want to migrate — your data stays yours.
+Translation: **Anki is a mature general-purpose SRS that asks you to be a card author. VocabMaxx is a single-purpose vocabulary tool that does the authoring for you.** Your data stays yours in your own Supabase Postgres; JSON and CSV export are live now, Anki `.apkg` export is next on the roadmap.
 
 ---
 
@@ -46,7 +46,7 @@ Translation: **Anki is a mature general-purpose SRS that asks you to be a card a
 - **Hybrid definition pipeline.** Free dictionary first (~200ms), DeepSeek LLM only when the dictionary doesn't have a good example. Per-word cost is fractions of a cent. Definitions are cached **globally** — the first user to capture a word pays, every future user is free. [(ADR 0005)](docs/ADR/0005-hybrid-definition-pipeline.md) [(ADR 0007)](docs/ADR/0007-deepseek-over-anthropic.md)
 - **SM-2 spaced repetition.** The Anki algorithm, implemented as a pure function in 40 lines with 20 unit tests pinning every cell of the worked example. [(ADR 0006)](docs/ADR/0006-sm2-vs-fsrs.md)
 - **Row-Level Security end-to-end.** Postgres RLS, not just app-layer checks — even with a stolen anon key, you can't read someone else's vocab. Verified by integration tests that simulate two users' JWTs. [(SECURITY.md)](docs/SECURITY.md)
-- **Strict TypeScript + Zod at every boundary.** Illegal states unrepresentable via branded types (`ValidWord` is a `unique symbol` — type-only, no runtime field to leak into your DB). 90 tests, zero `any` in the domain layer.
+- **Strict TypeScript + Zod at every boundary.** Illegal states unrepresentable via branded types (`ValidWord` is a `unique symbol` — type-only, no runtime field to leak into your DB) enforced on the capture path. 168 unit tests, zero `any` in the domain layer.
 - **Modular by construction.** Pure domain → service layer → API. Each layer testable in isolation. The capture pipeline has 7 unit tests with mocked deps that run in milliseconds, plus 16 integration tests against a real Supabase project.
 
 ---
@@ -57,15 +57,15 @@ Translation: **Anki is a mature general-purpose SRS that asks you to be a card a
 |---|---|---|
 | Framework | Next.js 16 (App Router, RSC) | One stack, ship to Vercel |
 | Language | TypeScript (strict) | No runtime surprises |
-| UI | Tailwind v4 · shadcn/ui · Radix | Accessible by default |
+| UI | Tailwind v4 · shadcn/ui · Base UI | Accessible by default |
 | Auth | Supabase Auth (magic-link + Google) | Free tier, RLS native |
 | Database | Supabase Postgres + RLS | Defense in depth |
 | ORM | Drizzle | Lightweight, typed |
 | Definitions | dictionaryapi.dev + DeepSeek `deepseek-chat` | $0 happy path, ~$0.0001 fallback |
 | Validation | Zod | Shared client/server |
-| Email | Resend | Daily digest only |
+| Email | Resend | Daily digest (shipped — Vercel Cron `0 14 * * *`) |
 | Deploy | Vercel | Push to deploy |
-| CI/CD | GitHub Actions | Lint + typecheck + 90 tests on every PR |
+| CI/CD | GitHub Actions | Lint + typecheck + unit tests + gitleaks on every PR |
 | Testing | Vitest + MSW + Playwright | Real DB integration, mocked network |
 
 ADRs explaining every non-obvious choice live in [`docs/ADR/`](docs/ADR/) — 7 of them.
@@ -80,14 +80,14 @@ ADRs explaining every non-obvious choice live in [`docs/ADR/`](docs/ADR/) — 7 
 | 1 — Domain | ✅ | SM-2 + Word invariants (36 unit tests) |
 | 2 — Persistence | ✅ | Queries + services + RLS integration test (18 tests) |
 | 3 — Definition pipeline | ✅ | Dict + DeepSeek + `/api/capture` (23 tests) |
-| 4 — Capture UI + dashboard | ⏳ next | The screens that turn the API into a product |
-| 5 — Review session | ⏳ | FlipCard + grade buttons + SM-2 wiring |
-| 6 — Word list, detail, search | ⏳ | Manage your captured words |
-| 7 — Insights | ⏳ | Growth chart, retention rate, problem words |
-| 8 — Settings, export, daily digest | ⏳ | JSON / CSV / `.apkg` export, Resend cron |
-| 9 — Polish & launch | ⏳ | Lighthouse ≥ 95, SEO, OG, ship |
+| 4 — Capture UI + dashboard | ✅ | Capture (single/paragraph/bulk), dashboard, app shell |
+| 5 — Review session | ✅ | FlipCard + grade buttons + SM-2 wiring + practice mode |
+| 6 — Word list, detail, search | ✅ | List, filter/search, detail, edit, delete |
+| 7 — Insights | ✅ | Growth chart, retention gauge, problem words |
+| 8 — Settings, export, daily digest | ✅ | Settings form, account deletion, JSON / CSV export, Resend daily-digest cron |
+| 9 — Polish & launch | ⏳ next | Lighthouse ≥ 95, SEO, OG, ship; Anki `.apkg` export |
 
-**90 tests green, 0 `any` in `lib/domain/`.** See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the full phase breakdown.
+**168 unit tests green, 0 `any` in `lib/domain/`.** Also shipped beyond the core phases: an interactive SM-2 [Algorithm lab](docs/ROADMAP.md) (`/algorithm`) and non-destructive practice mode. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the full phase breakdown.
 
 ---
 

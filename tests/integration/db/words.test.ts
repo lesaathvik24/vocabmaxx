@@ -33,8 +33,8 @@ describe('words queries', () => {
         expect(w.addedAt).toBeInstanceOf(Date)
     })
 
-    it('findById returns null when not found', async () => {
-        const w = await words.findById('00000000-0000-0000-0000-000000000000')
+    it('findByIdForUser returns null when not found', async () => {
+        const w = await words.findByIdForUser('00000000-0000-0000-0000-000000000000', USER_A)
         expect(w).toBeNull()
     })
 
@@ -53,6 +53,13 @@ describe('words queries', () => {
         ).rejects.toThrow()
     })
 
+    it('insertIfAbsent returns null on a duplicate instead of throwing', async () => {
+        const first = await words.insertIfAbsent({ userId: USER_A, term: 'safedup', definition: 'd', examples: ['e'], source: 'dictionary' })
+        expect(first).not.toBeNull()
+        const second = await words.insertIfAbsent({ userId: USER_A, term: 'safedup', definition: 'd2', examples: ['e2'], source: 'dictionary' })
+        expect(second).toBeNull()
+    })
+
     it('listByUser returns rows in descending addedAt', async () => {
         await words.insert({ userId: USER_A, term: 'first', definition: 'd', examples: ['e'], source: 'dictionary' })
         await new Promise(r => setTimeout(r, 10))
@@ -62,12 +69,13 @@ describe('words queries', () => {
         expect(list[0].term).toBe('second')
     })
 
-    it('deleteById cascades srs_state and review_log', async () => {
+    it('deleteByIdForUser cascades srs_state and review_log', async () => {
         const w = await words.insert({ userId: USER_A, term: 'cascade', definition: 'd', examples: ['e'], source: 'dictionary' })
         await raw`insert into srs_state (word_id, user_id, due_date) values (${w.id}::uuid, ${USER_A}::uuid, now())`
         await raw`insert into review_log (user_id, word_id, grade) values (${USER_A}::uuid, ${w.id}::uuid, 4)`
 
-        await words.deleteById(w.id)
+        const deleted = await words.deleteByIdForUser(w.id, USER_A)
+        expect(deleted).toBe(true)
 
         const srs = await raw`select 1 from srs_state where word_id = ${w.id}::uuid`
         const log = await raw`select 1 from review_log where word_id = ${w.id}::uuid`

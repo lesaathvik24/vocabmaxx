@@ -3,8 +3,7 @@ import { type Result, ok, err, type DefinitionError, type CaptureError } from '@
 import * as cache from '@/lib/db/queries/definition-cache'
 import { fetchDefinition as fetchFromDict, type DefinitionResult } from './dict.client'
 import { fetchLLMDefinition } from './llm.client'
-
-const TERM_RE = /^[a-z][a-z'-]*$/
+import { TERM_PATTERN } from '@/lib/validation/capture.schema'
 
 export interface DefinitionDeps {
     cacheLookup: typeof cache.lookup
@@ -25,7 +24,7 @@ export async function fetchDefinition(
     deps: DefinitionDeps = defaultDeps,
 ): Promise<Result<{ term: string; def: DefinitionResult }, CaptureError>> {
     const term = rawTerm.trim().toLowerCase()
-    if (!TERM_RE.test(term)) return err({ kind: 'invalid_term' })
+    if (!TERM_PATTERN.test(term)) return err({ kind: 'invalid_term' })
 
     const cached = await deps.cacheLookup(term)
     if (cached) return ok({ term, def: { ...cached } })

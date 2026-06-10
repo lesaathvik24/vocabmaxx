@@ -13,11 +13,11 @@
 |---|---|---|
 | Vercel | vercel.com/lesaathvik/vocabmaxx | App hosting + edge functions + Cron |
 | Supabase | supabase.com/dashboard/project/<id> | Postgres + Auth |
-| Sentry | sentry.io/organizations/lesaathvik/issues/ | Errors, traces |
+| Vercel Logs | vercel.com/lesaathvik/vocabmaxx/logs | Runtime errors + function logs |
 | PostHog | app.posthog.com/project/<id> | Product analytics |
 | Resend | resend.com/emails | Transactional email |
 | DeepSeek | platform.deepseek.com | LLM key management |
-| GitHub | github.com/lesaathvik24/vocabmaxx-saas | Source + CI |
+| GitHub | github.com/lesaathvik24/vocabmaxx | Source + CI |
 
 ## 2. Deploys
 
@@ -33,7 +33,7 @@ After Vercel reports "Ready":
 2. Sign in.
 3. Add one word.
 4. Review one card.
-5. Check Sentry for the last 10 minutes — no new issues.
+5. Check Vercel Logs and PostHog for the last 10 minutes — no new errors or anomalies.
 
 If any step fails, **roll back** (§2.3).
 
@@ -67,7 +67,7 @@ git add drizzle/ lib/db/schema.ts
 git commit -m "feat(db): <change>"
 ```
 
-CI on `main` runs `pnpm db:migrate` against the Supabase prod URL using `SUPABASE_DB_URL_PROD` secret.
+CI does **not** run migrations automatically. Apply schema changes manually via the Supabase SQL Editor or `pnpm db:push` with network access to the DB. See §3.4 for rollback procedure.
 
 ### 3.2 Backups
 
@@ -131,7 +131,7 @@ See `.env.example` in the repo root. Without these, Vercel build fails:
 - `DEEPSEEK_API_KEY` (and optionally `DEEPSEEK_BASE_URL`)
 - `RESEND_API_KEY`
 - `CRON_SECRET`
-- `SENTRY_DSN`
+- `NEXT_PUBLIC_POSTHOG_KEY` (and optionally `NEXT_PUBLIC_POSTHOG_HOST`)
 
 ### 4.3 Rotating a key
 
@@ -144,9 +144,9 @@ See `.env.example` in the repo root. Without these, Vercel build fails:
 
 ### 5.1 Daily check (1 min)
 
-- Sentry: any new issues in the last 24h?
+- Vercel Logs: any new errors in the last 24h?
 - PostHog: capture/review event rate normal?
-- Vercel: any failed cron runs?
+- Vercel: any failed function invocations?
 
 If anything looks off, check the relevant dashboard linked in §1.
 
@@ -156,15 +156,9 @@ If anything looks off, check the relevant dashboard linked in §1.
 - DeepSeek spend — under the personal budget? (shared `definition_cache` should keep this near zero after the first dozen captures.)
 - Resend emails sent vs. failures.
 
-### 5.3 Sentry alert routing
+### 5.3 Alert routing
 
-Set up in Sentry → Alerts:
-
-| Condition | Action |
-|---|---|
-| Error rate > 5/min for 5 min | Email + Slack DM |
-| New issue (first seen in last hour) | Email |
-| Performance: P95 > 5s for 10 min | Email |
+Currently no automated alerting is configured. Monitor via Vercel Logs and PostHog dashboards. Planned: set up Vercel log drains or PostHog webhooks for error-rate thresholds once error volume justifies it.
 
 ## 6. Incident response
 
@@ -178,7 +172,7 @@ Set up in Sentry → Alerts:
 
 ### 6.2 Procedure
 
-1. **Acknowledge.** Comment on the alerting issue (Sentry / GitHub) within the SLA.
+1. **Acknowledge.** Comment on the alerting issue (Vercel Logs / GitHub) within the SLA.
 2. **Contain.** Roll back the most recent deploy (§2.3). Rotate any suspected-leaked secret (§4.3).
 3. **Communicate.** If users are affected, post status to vocabmaxx.com/status (a static page).
 4. **Eradicate.** Root-cause the bug. Write a failing test. Fix. Deploy.
@@ -186,7 +180,7 @@ Set up in Sentry → Alerts:
 
 ### 6.3 Common incidents
 
-**Sentry shows `Network failure` on `/api/capture`:**
+**Vercel Logs shows `Network failure` on `/api/capture`:**
 1. Check DeepSeek status (https://status.deepseek.com).
 2. If DeepSeek is down, capture still works for dict-hits; LLM fallback returns `network_failure` / `rate_limited`. Users see "couldn't generate definition for rare word."
 3. No action needed unless DeepSeek is down > 2h. If it stays down, swap `DEEPSEEK_BASE_URL` to an OpenAI-compatible mirror (Together, Groq, OpenRouter) in Vercel and redeploy.
@@ -205,9 +199,11 @@ Set up in Sentry → Alerts:
 2. If env var missing in Production scope, add it; redeploy.
 3. If TS error, hotfix in `main` (after checking the offending PR is the cause).
 
-## 7. Daily-digest cron
+## 7. Daily-digest cron (Phase 8 — not yet implemented)
 
-Schedule defined in `vercel.json`:
+The daily-digest cron and its route (`/api/cron/daily-digest`) are planned for Phase 8. The route does not exist in the current codebase.
+
+When implemented, the planned schedule is:
 
 ```json
 {
@@ -217,26 +213,15 @@ Schedule defined in `vercel.json`:
 }
 ```
 
-(14:00 UTC = 19:30 IST = user's deep-work window.)
+(14:00 UTC = 19:30 IST.)
 
-### 7.1 Cron monitoring
-
-Vercel logs cron invocations under Deployments → Functions → `/api/cron/daily-digest`. Failures are visible there.
-
-### 7.2 Manual fire
-
-```bash
-curl -X POST https://vocabmaxx.com/api/cron/daily-digest \
-    -H "Authorization: Bearer $CRON_SECRET"
-```
-
-Useful for testing email rendering changes.
+See [`ROADMAP.md`](ROADMAP.md) §8.3 for the implementation plan.
 
 ## 8. Account management
 
 ### 8.1 Deleting your own account
 
-In-app: Settings → Delete account → confirm. Triggers `delete from auth.users where id = auth.uid()`; cascades through all domain tables.
+The in-app Settings → Delete account flow is planned for Phase 8 and does not yet exist. To delete your account now, use the operator SQL below (§8.2).
 
 ### 8.2 Manual user deletion (operator)
 

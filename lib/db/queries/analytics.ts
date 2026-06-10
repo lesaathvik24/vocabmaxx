@@ -47,6 +47,34 @@ export async function reviewOutcomes(userId: string, since: Date): Promise<Revie
     return { total: row?.total ?? 0, passed: row?.passed ?? 0 }
 }
 
+export interface DailyReviewCount {
+    day: string // 'YYYY-MM-DD'
+    count: number
+}
+
+/** Reviews performed per calendar day (UTC) on or after `since`, ascending. */
+export async function dailyReviewCounts(userId: string, since: Date): Promise<DailyReviewCount[]> {
+    return db
+        .select({
+            day: sql<string>`to_char(date_trunc('day', ${reviewLog.reviewedAt}), 'YYYY-MM-DD')`,
+            count: sql<number>`count(*)::int`,
+        })
+        .from(reviewLog)
+        .where(and(eq(reviewLog.userId, userId), gte(reviewLog.reviewedAt, since)))
+        .groupBy(sql`date_trunc('day', ${reviewLog.reviewedAt})`)
+        .orderBy(sql`date_trunc('day', ${reviewLog.reviewedAt})`)
+}
+
+/** Distinct calendar days (UTC, 'YYYY-MM-DD') on which the user reviewed since `since`. */
+export async function reviewDayKeys(userId: string, since: Date): Promise<string[]> {
+    const rows = await db
+        .select({ day: sql<string>`to_char(date_trunc('day', ${reviewLog.reviewedAt}), 'YYYY-MM-DD')` })
+        .from(reviewLog)
+        .where(and(eq(reviewLog.userId, userId), gte(reviewLog.reviewedAt, since)))
+        .groupBy(sql`date_trunc('day', ${reviewLog.reviewedAt})`)
+    return rows.map((r) => r.day)
+}
+
 export interface FailedWordRow {
     id: string
     term: string

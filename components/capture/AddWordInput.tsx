@@ -34,7 +34,7 @@ export function AddWordInput({ onSubmit, loading }: AddWordInputProps) {
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
-                <Label htmlFor="capture-input">Word or phrase</Label>
+                <Label htmlFor="capture-input">Word</Label>
                 <div className="flex gap-2">
                     <Input
                         id="capture-input"

@@ -3,10 +3,20 @@ import { captureSchema } from '@/lib/validation/capture.schema'
 import { getUserForApi } from '@/lib/auth/api'
 import * as definitionService from '@/lib/services/definition.service'
 import * as wordService from '@/lib/services/word.service'
+import { take } from '@/lib/utils/rate-limit'
+import { toUserMessage } from '@/lib/utils/errors'
 
 export async function POST(req: Request) {
     const user = await getUserForApi()
     if (!user) return NextResponse.json({ error: { kind: 'unauthorized' } }, { status: 401 })
+
+    // Throttle per user: the capture pipeline can trigger a paid LLM call.
+    if (!take(`capture:${user.id}`, { capacity: 20, refillPerSec: 0.5 })) {
+        return NextResponse.json(
+            { error: { kind: 'rate_limited', message: toUserMessage('rate_limited') } },
+            { status: 429 },
+        )
+    }
 
     let body: unknown
     try {

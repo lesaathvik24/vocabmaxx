@@ -21,24 +21,26 @@ vi.mock('next/server', () => {
     return { NextResponse: MockNextResponse }
 })
 
+import type { NextRequest } from 'next/server'
 import { updateSession } from '@/lib/auth/middleware'
 
-function makeRequest(pathname: string) {
+function makeRequest(pathname: string, search = '') {
     const searchParams = new URLSearchParams()
     return {
         nextUrl: {
             pathname,
+            search,
             clone: () => ({
                 pathname,
                 searchParams,
-                toString: () => `http://localhost${pathname}`,
+                toString: () => `http://localhost${pathname}${search}`,
             }),
         },
         cookies: {
             getAll: () => [],
             set: vi.fn(),
         },
-    } as any
+    } as unknown as NextRequest
 }
 
 describe('updateSession middleware', () => {

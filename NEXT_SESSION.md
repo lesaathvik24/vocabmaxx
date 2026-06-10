@@ -4,95 +4,34 @@
 
 ---
 
-## State as of 2026-06-10
+## State as of 2026-06-10 (post final-review remediation)
 
 ### What's done
 
-| Phase | Status | Tests |
+| Phase | Status | Notes |
 |---|---|---|
-| Docs (PRD, ARCHITECTURE, TECH_SPEC, ROADMAP, ADRs 0001–0007, etc.) | ✅ | — |
-| Phase 0 — Scaffold + auth + RLS + CI | ✅ | — |
-| Phase 1 — Domain layer (SM-2 + Word invariants) | ✅ | 36 unit |
-| Phase 2 — Persistence (queries + services + RLS) | ✅ | 18 integ |
-| Phase 3 — Definition pipeline (dict + DeepSeek + cache + `/api/capture`) | ✅ | 23 (7 unit + 16 integ) |
-| Phase 4 — Capture UI + dashboard + app shell + import | ✅ | see git log |
-| Phase 5 — Review session (`/review`, `/api/review/due`, `/api/review/grade`) | ✅ | 7 unit + 10 integ new |
-| **Total green** | | **133 tests (80 unit + 53 integ)** |
+| Docs (PRD, ARCHITECTURE, TECH_SPEC, ROADMAP, ADRs 0001–0007, SECURITY, RUNBOOK, CONTRIBUTING) | ✅ | reconciled to code in this pass |
+| Phase 0 — Scaffold + auth + RLS + CI | ✅ | |
+| Phase 1 — Domain (SM-2 + Word invariants) | ✅ | `ValidWord` brand now enforced on the save path |
+| Phase 2 — Persistence (queries + services + RLS) | ✅ | |
+| Phase 3 — Definition pipeline (dict + DeepSeek + cache + `/api/capture`) | ✅ | capture route now rate-limited |
+| Phase 4 — Capture UI + dashboard + app shell + import | ✅ | dashboard stats are now **real** (streak/retention/week/sparkline) |
+| Phase 5 — Review session (`/review`, `/api/review/due`, `/api/review/grade`) | ✅ | grade now enforces the due-date (`not_due` → 409) |
+| Phase 6 — Word list / detail / search / edit / delete | ✅ | |
+| Phase 7 — Insights (growth / retention / problem words) | ✅ | |
+| Phase 8 — Settings, account deletion, JSON/CSV export, daily digest cron | ✅ | real `SettingsForm` + `DeleteAccountDialog`; `GET /api/export?format=json\|csv` (Anki → 501); `DELETE /api/account`; `GET`/`PATCH /api/preferences`; `GET`/`POST /api/cron/daily-digest` (Vercel Cron `0 14 * * *`) |
+| **Beyond core:** `/algorithm` SM-2 lab, practice mode | ✅ | |
 
-> **⚠️ DATABASE_URL pooler host changed 2026-06-10:** prod tenant moved off `aws-0-ap-southeast-1.pooler.supabase.com` (was returning `tenant/user not found`). `.env.local` now uses `aws-1-ap-southeast-1.pooler.supabase.com:6543`. **Update `DATABASE_URL` on Vercel to the aws-1 host too**, or production will 500 on every DB call.
-
-Gates on `master`: `pnpm lint` clean, `pnpm typecheck` clean, `pnpm verify` green.
+**168 unit tests green.** `pnpm lint`, `pnpm typecheck` clean on a fresh checkout. Integration tests (`pnpm test:integ`) require a live Supabase test project and were **not** re-run in the remediation worktree — run them before merging.
 
 ### What's NOT done yet
 
-- Phase 4+ (capture UI, dashboard, review, words list, insights, settings, polish).
-- Vercel production deploy (no auto-deploy hook wired yet — see "Vercel" below).
-- Sentry — removed in Phase 0 cleanup; deferred to post-launch as an improvement.
+- **Phase 9** — Polish & launch (Lighthouse ≥ 95, SEO, OG, perf pass).
+- **Anki `.apkg` export** — `GET /api/export?format=anki` currently returns 501 (not yet implemented); planned for Phase 9 or a dedicated pass.
+- Sentry — removed in Phase 0 cleanup; not planned for MVP. All references purged from docs/config.
+- Distributed rate limiting — current limiter is best-effort in-memory (per serverless instance); see `docs/SECURITY.md` §6. Upgrade to Upstash/Redis before heavy traffic.
 
----
-
-## Phase 1–3 surface (what shipped)
-
-### Domain (`lib/domain/`)
-- `grade.ts` — `Grade = { Again:0, Hard:3, Good:4, Easy:5 }`.
-- `srs.ts` — `nextState(current, grade, now)` with fail-loud guards on NaN/negative/non-int/below-floor state. `InvalidSRSStateError`.
-- `word.ts` — `createWord()` factory + `ValidWord` type-only brand (`unique symbol`, no runtime field).
-- `errors.ts` — `Result<T,E>`, `ok`, `err`, error unions, `InvalidWordError`, `InvalidSRSStateError`.
-
-### Persistence (`lib/db/`, `lib/services/`)
-- `queries/words.ts` — `insert`, `findById`, `findByUserAndTerm`, `listByUser`, `deleteById`.
-- `queries/srs.ts` — `initialize`, `getByWordId`, `findDue`.
-- `queries/review-log.ts` — `append`, `listByUser`, `listByWord`.
-- `queries/definition-cache.ts` — `lookup`, `write` (race-safe via `onConflictDoNothing`).
-- `services/word.service.ts` — `save` (returns `Result<Word, CaptureError>`; duplicate detection).
-- `services/srs.service.ts` — `listDue`, `recordReview` (one `db.transaction` with `SELECT FOR UPDATE` + state update + log append).
-
-### Definition pipeline (`lib/services/`)
-- `dict.client.ts` — dictionaryapi.dev fetch, 5s abort, returns first def-with-example.
-- `llm.client.ts` — DeepSeek `deepseek-chat`, `response_format: json_object`, `temperature: 0`, `max_tokens: 200`, Zod-validated.
-- `definition.service.ts` — pure composer with DI: normalize → invalid_term gate → cache → dict → llm. Cache writes failure-tolerant.
-
-### API
-- `app/api/capture/route.ts` — `POST /api/capture`. `getUserForApi` 401-or-User, Zod gate, typed error → HTTP (400/404/409/502/503). Strips `raw` / `cause` before responding.
-
-### Test harness
-- `vitest.config.ts` — unit tests, `server-only` shim.
-- `vitest.integration.config.ts` — integration tests, swaps `DATABASE_URL` → `SUPABASE_TEST_DB_URL`, single forked worker, 30s timeout.
-- `tests/integration/db/_helpers.ts` — raw postgres-js client for seeding `auth.users` + cleanup.
-- MSW for dict + LLM HTTP mocking.
-
----
-
-## DB connection topology
-
-Three URLs to be aware of in `.env.local`:
-
-| Var | Project | Pooler | Port | Used by |
-|---|---|---|---|---|
-| `DATABASE_URL` | `qbogwjfneuswzwdykoxf` (prod) | Transaction | 6543 | App runtime on Vercel (serverless) |
-| `SUPABASE_TEST_DB_URL` | `ufiizhzljxrntjeluuhv` (test) | Session | 5432 | `pnpm test:integ` |
-| (manual) | both | direct | 5432 | IPv6-only — fails from most laptops; do NOT use |
-
-Schema is applied via Supabase SQL Editor on both projects (db:push fails over IPv6 from typical networks).
-
----
-
-## Pending manual steps before Phase 4
-
-### 1. Apply both SQL migrations to BOTH projects if not already done
-For each project (prod + test):
-1. Dashboard → SQL Editor → New query → paste `drizzle/0000_next_wallow.sql` → Run.
-2. New query → paste `drizzle/0001_rls.sql` → Run.
-3. Verify: `select tablename from pg_tables where schemaname='public';` → 5 tables.
-
-### 2. Vercel deploy (when ready to ship Phase 4 UI)
-- Dashboard → Add New Project → import GitHub repo `lesaathvik24/vocabmaxx`.
-- Paste **all** `.env.local` keys into Project Settings → Environment Variables (production).
-- **Critical:** `DATABASE_URL` on Vercel must use the **transaction pooler (port 6543)**, not 5432.
-
-### 3. CI secret for integration tests (optional)
-- GitHub repo → Settings → Secrets → Actions → add `SUPABASE_TEST_DB_URL`.
-- Update `.github/workflows/ci.yml` to pass it through, or skip `test:integ` in CI and run locally only.
+> **⚠️ DATABASE_URL pooler host:** prod uses `aws-1-ap-southeast-1.pooler.supabase.com:6543` (transaction pooler). The aws-0 host returns `tenant/user not found`. Keep Vercel's `DATABASE_URL` on the aws-1 host.
 
 ---
 
@@ -101,43 +40,28 @@ For each project (prod + test):
 ```bash
 pnpm install
 pnpm dev                       # http://localhost:3000
-pnpm test:unit                 # ~1s, 56 tests
-pnpm test:integ                # ~60s, 34 tests, hits test Supabase
+pnpm test:unit                 # ~1.5s, 131 tests
+pnpm test:integ                # hits the Supabase test project
 pnpm verify                    # lint + typecheck + unit + integration
 ```
 
-`pnpm db:push` is unsupported over typical IPv6-restricted networks. Apply schema via SQL Editor.
+`pnpm db:push` is unsupported over typical IPv6-restricted networks. Apply schema via the Supabase SQL Editor: `drizzle/0000_next_wallow.sql`, then `0001_rls.sql`, then `0002_views.sql` (optional analytics views), then `0003_user_preferences.sql` (Phase 8 preferences table + RLS).
 
 ---
 
-## Manual end-to-end smoke test for Phase 1–3
+## DB connection topology
 
-Until Phase 4 UI ships, exercise the API directly. Sign in at `localhost:3000` then in DevTools console (same origin so cookies attach):
-
-```js
-// success — dict path
-fetch('/api/capture',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({term:'ubiquitous'})}).then(r=>r.json().then(j=>console.log(r.status,j)))
-// duplicate
-fetch('/api/capture',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({term:'ubiquitous'})}).then(r=>r.json().then(j=>console.log(r.status,j)))
-// LLM fallback (1 DeepSeek call, ≤ $0.0001)
-fetch('/api/capture',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({term:'frabjous'})}).then(r=>r.json().then(j=>console.log(r.status,j)))
-// invalid term
-fetch('/api/capture',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({term:'123abc'})}).then(r=>r.json().then(j=>console.log(r.status,j)))
-```
-
-Expect: `200` / `409` / `200 (source: 'llm')` / `400`.
+| Var | Project | Pooler | Port | Used by |
+|---|---|---|---|---|
+| `DATABASE_URL` | prod | Transaction | 6543 | App runtime on Vercel |
+| `SUPABASE_TEST_DB_URL` | test | Session | 5432 | `pnpm test:integ` |
 
 ---
 
 ## Next phase
 
-**Phase 4 — Capture UI + dashboard** (`docs/ROADMAP.md` Phase 4). Branches:
-- 4.1 — App shell (Atelier).
-- 4.2 — Dashboard (due banner + recent captures).
-- 4.3 — Single-word capture page.
-- 4.4 — Paragraph extract (LLM call + UI).
-- 4.5 — Bulk import (.txt upload).
-
-Phase 4 also requires `GET /api/words` and `GET /api/words/[id]` endpoints — add them as part of 4.2 / 4.3.
-
-Service layer for Phase 4 is already in place — UI just consumes `wordService.listForUser`, `srsService.listDue`, and `POST /api/capture`.
+**Phase 9 — Polish & launch** (`docs/ROADMAP.md` Phase 9):
+- Lighthouse ≥ 95 on `/`, `/dashboard`, `/review`.
+- SEO meta tags + OG image.
+- Performance pass (bundle trim, preload hints).
+- Anki `.apkg` export (currently returns 501 at `GET /api/export?format=anki`).

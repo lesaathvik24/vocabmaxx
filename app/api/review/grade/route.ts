@@ -24,6 +24,12 @@ export async function POST(req: Request) {
         if (result.error.kind === 'word_not_found') {
             return NextResponse.json({ error: result.error }, { status: 404 })
         }
+        if (result.error.kind === 'not_due') {
+            return NextResponse.json(
+                { error: { kind: result.error.kind, nextDue: result.error.nextDue.toISOString() } },
+                { status: 409 },
+            )
+        }
         return NextResponse.json({ error: result.error }, { status: 500 })
     }
 

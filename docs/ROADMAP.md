@@ -51,8 +51,8 @@ Per-phase **Setup actions (you)** and **End-to-end verification** sections at th
 
 ### 0.2d ESLint + Prettier + Husky
 - **Docs to load:** `docs/CONTRIBUTING.md` (lint conventions, pre-commit).
-- **Files:** `.eslintrc.json`, `.prettierrc`, `.husky/pre-commit`.
-- **Acceptance:** `pnpm lint` exits 0; pre-commit hook runs lint + gitleaks.
+- **Files:** `eslint.config.mjs`, `.husky/pre-commit`.
+- **Acceptance:** `pnpm lint` exits 0; pre-commit hook runs `pnpm lint && pnpm typecheck`; gitleaks runs in CI.
 - **Status:** `[x]`
 
 ### 0.3a Supabase clients
@@ -117,7 +117,7 @@ Per-phase **Setup actions (you)** and **End-to-end verification** sections at th
 - **Docs to load:** `docs/ARCHITECTURE.md §9`.
 - **Files:** `sentry.client.config.ts`, `sentry.server.config.ts`, `next.config.ts` (wrap with `withSentryConfig`).
 - **Acceptance:** thrown error in dev appears in Sentry within 60s.
-- **Status:** `[~]`
+- **Status:** `[ ]` — removed from codebase; not planned for MVP. Errors logged to Vercel platform logs instead.
 
 ### 0.7b PostHog
 - **Docs to load:** `docs/ARCHITECTURE.md §9`.
@@ -149,7 +149,7 @@ Do these in order **before** kicking off Phase 0 subtasks:
    - Email (magic-link): on, confirm-email off for dev.
    - Google: paste Google OAuth client id + secret (create at console.cloud.google.com → APIs → Credentials → OAuth 2.0). Add redirect `https://<supabase-url>/auth/v1/callback`.
 4. **DeepSeek key** already in `.env.local` (`DEEPSEEK_API_KEY`). Used for word-definition LLM fallback.
-5. **Sentry** DSN + auth token already in `.env.local`.
+5. **Sentry** — not used; skip. Errors go to Vercel platform logs.
 6. **PostHog** project token already in `.env.local`.
 7. **Resend** API key already in `.env.local`. Verify a sending domain (or use onboarding domain in dev).
 9. **GitHub repo:** `gh repo create vocabmaxx --public --description "Vocabulary SRS — capture words, own them"`.
@@ -163,12 +163,12 @@ Tick each line yourself. Phase is not done until every box is checked.
 - [x] `pnpm build` → 0 warnings, 0 errors.
 - [x] `pnpm lint && pnpm typecheck` → green.
 - [x] `pnpm test:unit` → green (16 tests pass).
-- [x] DB schema applied via Supabase SQL editor → 5 tables, RLS on all 5 (verified via pg_tables).
+- [x] DB schema applied via Supabase SQL editor → 5 tables, RLS on 4 (`definition_cache` has public read policy, not owner RLS).
 - [x] Visit `/dashboard` unauth'd → bounced to `/auth/sign-in`.
 - [x] Sign in with Google → land on `/dashboard` showing "0 words due".
 - [x] Sign in with magic-link → email arrives → click → `/dashboard`.
 - [x] Sign out → `/dashboard` redirects to `/auth/sign-in`.
-- [~] Throw a test error from a button in dev → Sentry issue appears. (button added; `withSentryConfig` wrap deferred — verify manually)
+- [x] Throw a test error from a button in dev → error appears in Vercel logs. (Sentry removed; Vercel logs used instead)
 - [x] Visit `/` → PostHog pageview event fires.
 - [ ] Open a noop PR → CI green within 5 min, Vercel preview URL posted.
 - [x] Deploy to Vercel production → live URL renders `/` and supports sign-in.
@@ -282,7 +282,7 @@ None — pure code.
 - [ ] `curl` capture endpoint with common word → JSON definition.
 - [ ] Run twice in a row → second call hits cache (check `definition_cache` table grew by 1, not 2).
 - [ ] Rare word → `source: "llm"` in response.
-- [ ] Sentry shows zero errors for happy path.
+- [ ] Vercel logs show zero errors for happy path.
 
 ---
 
@@ -361,8 +361,8 @@ This is the first phase that ships pixels. Follow `docs/DESIGN.md §4` exactly:
 - [ ] `/capture` → type "alacrity" → row appears within 2s on dashboard.
 - [ ] Paste a paragraph → at least 3 candidates appear → uncheck one → save → only selected saved.
 - [ ] Drop a `.txt` with 20 lines → progress + summary modal; DB row count + 20 (minus dupes).
-- [ ] Lighthouse mobile on `/dashboard` ≥ 90.
-- [ ] No Sentry errors during the run.
+- [ ] Lighthouse mobile on `/dashboard` ≥ 90 (manual run — no `pnpm lighthouse` script).
+- [ ] No errors in Vercel logs during the run.
 
 ---
 
@@ -604,7 +604,7 @@ None.
 ### 9.1 Performance pass
 - **Docs to load:** `docs/TECH_SPEC.md §12` (performance contracts), `docs/ARCHITECTURE.md §11`.
 - **Acceptance:** Lighthouse mobile ≥ 95 on `/`, `/dashboard`, `/review`.
-- **Manual test:** `pnpm lighthouse` (script in `package.json`) → > 95 on FCP, LCP, CLS, TBT.
+- **Manual test:** Run Lighthouse from Chrome DevTools or `npx lighthouse` → > 95 on FCP, LCP, CLS, TBT. (No `pnpm lighthouse` package.json script exists — run manually.)
 - **Status:** `[ ]`
 
 ### 9.2 SEO + OG
@@ -624,7 +624,7 @@ None.
 3. Tag the v1.0.0 release: `gh release create v1.0.0`.
 
 ### Phase 9 — End-to-end verification
-- [ ] Lighthouse mobile on 3 pages → all ≥ 95.
+- [ ] Lighthouse mobile on 3 pages → all ≥ 95 (manual — Chrome DevTools or `npx lighthouse`).
 - [ ] `/sitemap.xml` valid, `/robots.txt` correct.
 - [ ] Open `/` link in Slack/Twitter → OG card preview renders.
 - [ ] Live demo URL in README clickable and working.

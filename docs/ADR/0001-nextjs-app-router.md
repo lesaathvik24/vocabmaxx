@@ -14,7 +14,7 @@ The framework decision shapes everything downstream: the deploy target, the rend
 
 ## Decision
 
-Use **Next.js 15 with the App Router** as the single framework for the entire web product.
+Use **Next.js 16 (16.2.7) with the App Router** as the single framework for the entire web product.
 
 Specifically:
 - App Router (not Pages Router) — modern, future-aligned.
@@ -55,7 +55,7 @@ Specifically:
 - **One repo, one deploy, one runtime.** No microservices.
 - **RSC** means a lot of "fetch + render" code is trivially server-side, no waterfalls.
 - **Vercel preview URLs** for every PR — recruiter-friendly demo links built in.
-- **Big ecosystem** — Supabase, Drizzle, shadcn, Sentry, PostHog all have first-class Next templates.
+- **Big ecosystem** — Supabase, Drizzle, shadcn, PostHog all have first-class Next templates.
 
 ### Negative
 - **Edge runtime quirks** — some Node APIs unavailable in Vercel Edge. Drizzle works on Node runtime; route handlers using DB must opt into Node runtime explicitly. Logged in `lib/db/client.ts`.

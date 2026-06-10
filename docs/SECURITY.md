@@ -57,7 +57,7 @@ If a route handler accidentally forgets to check auth (developer error), RLS sti
 `SUPABASE_SERVICE_ROLE_KEY` bypasses RLS. It is used in **two places only**:
 
 1. `definition_cache` writes (the cache is shared across users; insertions are server-side).
-2. The Vercel Cron handler `/api/cron/daily-digest` (iterates over all users to send emails).
+2. The Vercel Cron handler `/api/cron/daily-digest` — deferred to Phase 8; when implemented, it will iterate over all users to send digest emails.
 
 The key is never exposed in client bundles (no `NEXT_PUBLIC_` prefix) and never logged. Audit trail: see `lib/db/client.ts` — any non-anon Drizzle client lives there.
 
@@ -79,9 +79,10 @@ URL params and search params are also Zod-validated.
 
 ## 6. Rate limiting
 
-- `/api/capture` and `/api/words/import` are rate-limited at 60 req/min per session.
-- Implemented via Supabase Postgres + a `rate_limits` table (no Redis dependency in v1).
+- `/api/capture` and `/api/words/import` are rate-limited via an **in-memory token-bucket** (`lib/utils/rate-limit.ts`), applied per serverless instance.
+- This is best-effort: because Vercel functions are stateless, the counter is not shared across instances. It prevents runaway bursts within a single instance but is not a hard global cap.
 - Excess returns `429` with a `Retry-After` header.
+- Planned hardening: replace with a shared store (Upstash Redis or similar) for a true distributed rate limit.
 
 ## 7. Secret management
 
@@ -94,7 +95,7 @@ URL params and search params are also Zod-validated.
 | `DEEPSEEK_BASE_URL` | server only | env var, Vercel (optional, defaults to api.deepseek.com) |
 | `RESEND_API_KEY` | server only | env var, Vercel |
 | `CRON_SECRET` | server only | env var, Vercel; used to auth cron handler |
-| `SENTRY_DSN` | client + server | public (designed for it) |
+| `NEXT_PUBLIC_POSTHOG_KEY` | client + server | public (designed for it) |
 
 ### 7.1 Rotation policy
 
@@ -105,8 +106,8 @@ URL params and search params are also Zod-validated.
 ### 7.2 Leak prevention
 
 - `.env.local` is in `.gitignore`.
-- `gitleaks` pre-commit hook (`.husky/pre-commit`) scans staged files.
-- CI runs `gitleaks` on every PR.
+- Pre-commit hook (`.husky/pre-commit`) runs `pnpm lint && pnpm typecheck`.
+- CI runs `gitleaks` secret-scan on every PR.
 - No secret should ever appear in a commit message or PR description.
 
 ## 8. Supply chain
@@ -115,13 +116,13 @@ URL params and search params are also Zod-validated.
 - **Dependabot** enabled for security updates on the GitHub repo.
 - **No direct deps with < 1k weekly downloads** without manual review.
 - **Audit script:** `pnpm audit --prod` runs in CI; high-severity vulns fail the build.
-- **Browser extension** signed in CI before release; users install unpacked from GitHub Releases.
+- **Browser extension** deferred (Phase X); no extension signing in CI.
 
 ## 9. Logging & PII
 
 - **What we log:** request method, path, status, latency, user ID (UUID).
 - **What we do not log:** request bodies, definitions, examples, raw terms (vocab is sensitive — a user's vocab list reveals what they're learning).
-- **Sentry:** automatic PII scrubbing on; `beforeSend` strips bodies and headers except for the safe allowlist (`x-request-id`, etc.).
+- **Error logging:** errors are logged to Vercel platform logs only. No third-party error tracker is currently wired in.
 - **PostHog:** `disable_session_recording` on. We track event names + counts, not content.
 
 ## 10. Cookies
@@ -145,7 +146,7 @@ script-src 'self' 'unsafe-inline' https://*.posthog.com;
 style-src 'self' 'unsafe-inline';
 img-src 'self' data: https:;
 font-src 'self' data:;
-connect-src 'self' https://*.supabase.co https://api.deepseek.com https://*.posthog.com https://*.sentry.io;
+connect-src 'self' https://*.supabase.co https://api.deepseek.com https://*.posthog.com;
 frame-ancestors 'none';
 ```
 
@@ -160,9 +161,9 @@ frame-ancestors 'none';
 | SQL injection | Drizzle parameterizes; no raw `sql` template with user input. |
 | XSS via stored content | React escaping + `dangerouslySetInnerHTML` lint ban; definitions render as text only. |
 | Open redirect | `next` allowlist on auth callback. |
-| Brute-force capture API | Rate limit 60/min per session. |
-| Leaked service role key | Rotation policy + gitleaks + Dependabot for any tooling that touches it. |
-| Malicious extension impersonation | Extension publishes signed releases only; users install from GitHub Releases. |
+| Brute-force capture API | In-memory token-bucket rate limit per serverless instance (`lib/utils/rate-limit.ts`). |
+| Leaked service role key | Rotation policy + gitleaks in CI + Dependabot for any tooling that touches it. |
+| Malicious extension impersonation | Extension deferred (Phase X); not applicable in v1. |
 | LLM prompt injection (paragraph extract) | LLM output parsed via Zod schema; nothing executed from the LLM response. Only `term` strings used downstream, sanitized. |
 
 ## 14. Out-of-scope threats (v1)
@@ -179,7 +180,7 @@ These are explicitly **not** addressed in v1; revisit before a multi-user public
 
 See [`RUNBOOK.md`](RUNBOOK.md) §6 for the full procedure. Quick version:
 
-1. **Detect:** Sentry alert, user report, or unexpected metric.
+1. **Detect:** Vercel logs alert, user report, or unexpected PostHog metric.
 2. **Contain:** roll back Vercel deploy; rotate any suspected-leaked secret.
 3. **Eradicate:** patch the underlying cause; add a regression test.
 4. **Postmortem:** within 48h, add an ADR documenting cause + fix.

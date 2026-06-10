@@ -18,18 +18,18 @@
    │   Marketing pages            │                          │  Authenticated app pages         │
    │   app/(marketing)/           │                          │  app/(app)/                      │
    │   · /                        │                          │  · /dashboard                    │
-   │   · /pricing                 │                          │  · /capture                      │
-   │   · /about                   │                          │  · /review                       │
+   │                              │                          │  · /capture                      │
+   │                              │                          │  · /review                       │
    │                              │                          │  · /words                        │
    │   Server Components only,    │                          │  · /insights                     │
-   │   no auth, fully static      │                          │  · /settings                     │
+   │   no auth, fully static      │                          │  · /algorithm                    │
    └──────────────────────────────┘                          └────────────┬─────────────────────┘
                                                                           │
                   ┌───────────────────────────────────────────────────────┴────┐
                   │ Route handlers (app/api/*)                                 │
-                  │   POST /api/capture     POST /api/review/grade             │
-                  │   GET  /api/words       POST /api/words/import             │
-                  │   GET  /api/insights    GET  /api/export                   │
+                  │   POST /api/capture         POST /api/review/grade         │
+                  │   GET  /api/review/due      POST /api/words/import         │
+                  │   PATCH /api/words/{id}     DELETE /api/words/{id}         │
                   │                                                            │
                   │   Middleware: auth (Supabase SSR), rate-limit, Zod-parse   │
                   └───────────────────────────────────────────────────────┬────┘
@@ -56,15 +56,15 @@
                   └────────────────────────────────────────────────┘
 
    ┌───────────────────────────┐    ┌─────────────────────────┐    ┌──────────────────────────┐
-   │ Browser extension          │    │ Vercel Cron (daily)     │    │ Resend                   │
-   │ extension/  (Plasmo)       │───▶│ /api/cron/daily-digest  │───▶│ Daily-digest email       │
-   │ POST /api/capture          │    │                          │    │                          │
+   │ Browser extension (future)│    │ Vercel Cron (Phase 8)   │    │ Resend (Phase 8)         │
+   │ extension/ — deferred     │    │ /api/cron/daily-digest  │    │ Daily-digest email       │
+   │ Phase X                   │    │ (not yet implemented)   │    │                          │
    └───────────────────────────┘    └─────────────────────────┘    └──────────────────────────┘
 
-   ┌───────────────────────────┐    ┌─────────────────────────┐    ┌──────────────────────────┐
-   │ DeepSeek                   │    │ Sentry                  │    │ PostHog                  │
-   │ (server-side LLM calls)    │    │ (errors, performance)   │    │ (product analytics)      │
-   └───────────────────────────┘    └─────────────────────────┘    └──────────────────────────┘
+   ┌───────────────────────────┐    ┌──────────────────────────┐
+   │ DeepSeek                   │    │ PostHog                  │
+   │ (server-side LLM calls)    │    │ (product analytics)      │
+   └───────────────────────────┘    └──────────────────────────┘
 ```
 
 ## 2. Repo layout
@@ -73,11 +73,10 @@
 vocabmaxx/
 ├── app/                                Next.js App Router
 │   ├── (marketing)/                    Public, unauthenticated
-│   │   ├── page.tsx                    Landing
-│   │   ├── pricing/page.tsx
-│   │   └── about/page.tsx
+│   │   └── page.tsx                    Landing
 │   ├── (app)/                          Authenticated, gated by middleware
 │   │   ├── layout.tsx                  Sidebar + topbar shell
+│   │   ├── loading.tsx                 Skeleton for instant tab nav
 │   │   ├── dashboard/page.tsx
 │   │   ├── capture/page.tsx
 │   │   ├── review/page.tsx
@@ -85,17 +84,15 @@ vocabmaxx/
 │   │   │   ├── page.tsx                List
 │   │   │   └── [id]/page.tsx           Detail
 │   │   ├── insights/page.tsx
-│   │   └── settings/page.tsx
-│   ├── api/                            Route handlers
+│   │   ├── algorithm/page.tsx          SM-2 lab (shipped post Phase 5)
+│   │   └── settings/page.tsx           (Phase 8 — placeholder only)
+│   ├── api/                            Route handlers (6 implemented)
 │   │   ├── auth/[...]/route.ts         Supabase auth callbacks
 │   │   ├── capture/route.ts
+│   │   ├── review/due/route.ts
 │   │   ├── review/grade/route.ts
-│   │   ├── words/route.ts
-│   │   ├── words/[id]/route.ts
-│   │   ├── words/import/route.ts
-│   │   ├── insights/route.ts
-│   │   ├── export/route.ts
-│   │   └── cron/daily-digest/route.ts
+│   │   ├── words/[id]/route.ts         PATCH + DELETE
+│   │   └── words/import/route.ts
 │   ├── auth/
 │   │   ├── sign-in/page.tsx
 │   │   ├── sign-up/page.tsx
@@ -103,12 +100,13 @@ vocabmaxx/
 │   ├── layout.tsx                      Root layout
 │   └── globals.css
 ├── components/
-│   ├── ui/                             shadcn primitives (Button, Input, …)
+│   ├── ui/                             Base UI primitives (@base-ui/react)
 │   ├── layout/                         AppShell, Topbar, Sidebar
 │   ├── marketing/                      Hero, FeatureGrid, CTA, Footer
 │   ├── capture/                        AddWordInput, ParagraphExtractor, BulkUploader
-│   ├── review/                         FlipCard, GradeButtons, SessionDoneScreen
-│   ├── words/                          WordList, WordRow, WordDetail, WordEditor
+│   ├── review/                         FlipCard, GradeButtons, ReviewSession, SessionDoneScreen
+│   ├── words/                          WordsList, WordDetail, WordEditor
+│   ├── algorithm/                      AlgorithmLab
 │   └── insights/                       GrowthChart, RetentionGauge, ProblemWords
 ├── lib/
 │   ├── domain/                         Pure, no React imports
@@ -123,7 +121,7 @@ vocabmaxx/
 │   │   ├── srs.service.ts
 │   │   ├── import.service.ts
 │   │   ├── analytics.service.ts
-│   │   └── export.service.ts
+│   │   └── dashboard.service.ts
 │   ├── db/
 │   │   ├── schema.ts                   Drizzle schema
 │   │   ├── client.ts                   Drizzle client
@@ -137,34 +135,43 @@ vocabmaxx/
 │   │   ├── word.schema.ts
 │   │   └── review.schema.ts
 │   ├── analytics/
-│   │   └── posthog.ts
+│   │   └── posthog.tsx
+│   ├── hooks/                          Client-side data hooks
+│   │   ├── use-capture.ts
+│   │   ├── use-extract.ts
+│   │   └── use-bulk-import.ts
+│   ├── insights/                       Chart geometry + analytics helpers
+│   │   └── chart.ts
+│   ├── words/
+│   │   └── filter.ts                   Pure word list filter/search
+│   ├── review/
+│   │   └── session.ts                  Review session state machine
 │   └── utils/
 │       ├── result.ts                   Result<T, E> helpers
-│       ├── rate-limit.ts
-│       └── format.ts
+│       └── rate-limit.ts
 ├── drizzle/
 │   ├── 0000_init.sql
 │   ├── 0001_rls.sql
+│   ├── 0002_views.sql                  Optional analytics views
 │   └── meta/
 ├── tests/
 │   ├── unit/                           Vitest unit
 │   ├── integration/                    Vitest + local Postgres
 │   └── e2e/                            Playwright
-├── extension/                          Plasmo browser extension
+├── extension/                          Plasmo browser extension (deferred, Phase X)
 ├── public/
 │   ├── manifest.json
 │   └── icons/
 ├── docs/                               See README.md
 ├── .github/workflows/
-│   ├── ci.yml
-│   └── deploy.yml                      (no-op; Vercel handles deploys)
+│   └── ci.yml
 ├── .env.example
 ├── drizzle.config.ts
 ├── next.config.ts
-├── tailwind.config.ts
 ├── tsconfig.json
 ├── vitest.config.ts
 ├── playwright.config.ts
+├── eslint.config.mjs
 ├── package.json
 └── pnpm-lock.yaml
 ```
@@ -279,7 +286,7 @@ Email magic-link follows the same pattern, with Supabase emailing the link direc
 | Definition lookups | `definition_cache` Postgres table, keyed by `term` (lowercased) | Manual purge only. Definitions don't go stale. |
 | Word list | Next.js `revalidate` + React Query client cache | On capture, edit, delete. |
 | Review queue | React Query, refetched on grade | After each card graded. |
-| Insights | SQL views, ETag headers on response | Refreshed on every page load. |
+| Insights | In-app aggregation queries (`lib/db/queries/analytics.ts`) on every page load. `0002_views.sql` ships optional SQL views but they are not the live code path. No ETag headers. |
 
 ## 8. Error handling
 
@@ -297,7 +304,7 @@ type DefinitionError =
 ```
 
 ### Unexpected errors (5xx)
-Bubble to Next.js's `error.tsx`. Sentry captures with full stack + request context. User sees a friendly retry banner.
+Bubble to Next.js's `error.tsx`. Errors are logged to Vercel platform logs. User sees a friendly retry banner.
 
 **Rule:** never `catch (e) {}`. Either handle the specific case or let it bubble.
 
@@ -305,10 +312,9 @@ Bubble to Next.js's `error.tsx`. Sentry captures with full stack + request conte
 
 | Signal | Tool | Granularity |
 |---|---|---|
-| Errors (server + client) | Sentry | Per-issue with breadcrumbs |
+| Errors (server + client) | Vercel Logs | Per-deployment, per-function |
 | Web vitals | Vercel Analytics | LCP, FID, CLS per page |
 | Product events (capture, review-graded, import) | PostHog | Per-user-per-event |
-| Logs | Vercel Logs | Per-deployment |
 | DB performance | Supabase dashboard | Slow query log |
 
 Daily digest of error rate + capture rate posted to user's email (via Resend) — same channel as the daily review reminder.
@@ -318,7 +324,7 @@ Daily digest of error rate + capture rate posted to user's email (via Resend) �
 - **Branch model:** single `main` branch.
 - **PR previews:** every PR gets a Vercel preview URL.
 - **Production:** push to `main` → Vercel deploys.
-- **DB migrations:** Drizzle migrations checked in. CI runs `drizzle-kit migrate` against a temp DB; on `main`, runs against Supabase prod (via Supabase CLI service role token).
+- **DB migrations:** Drizzle migration SQL files are checked in under `drizzle/`. CI does **not** run migrations automatically — schema changes are applied manually via the Supabase SQL Editor or `pnpm db:push` with direct DB access.
 - **Rollback:** Vercel one-click rollback to previous deploy. DB rollbacks are manual via reverse migrations; see [`RUNBOOK.md`](RUNBOOK.md).
 
 ## 11. Performance budget

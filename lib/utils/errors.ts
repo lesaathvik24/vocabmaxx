@@ -12,6 +12,12 @@ const USER_MESSAGES: Record<string, string> = {
     invalid_input: 'Invalid input. Please check your request and try again.',
 }
 
+/**
+ * Map an error `kind` to a human-readable message. The parameter is
+ * intentionally `string` (not a kind union) because the client passes kinds
+ * deserialized from API JSON, which are `string` at runtime; the fallback
+ * guards unknown/forward-compatible kinds rather than masking a typo.
+ */
 export function toUserMessage(kind: string): string {
     return USER_MESSAGES[kind] ?? 'Something went wrong. Please try again.'
 }

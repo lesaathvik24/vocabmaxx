@@ -9,7 +9,7 @@ info:
     Success responses follow `{ "data": { ... } }`.
   contact:
     name: Lekhan Saathvik
-    url: https://github.com/lesaathvik24/vocabmaxx-saas
+    url: https://github.com/lesaathvik24/vocabmaxx
 
 servers:
   - url: https://vocabmaxx.com/api
@@ -24,12 +24,6 @@ tags:
     description: Spaced repetition review sessions
   - name: words
     description: CRUD on the vocabulary deck
-  - name: insights
-    description: Learning analytics and progress
-  - name: export
-    description: Data portability
-  - name: cron
-    description: Internal cron endpoints (not for public use)
 
 paths:
   /capture:
@@ -172,85 +166,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /words:
-    get:
-      tags: [words]
-      summary: List words in the deck
-      parameters:
-        - name: filter
-          in: query
-          schema:
-            type: string
-            enum: [all, due, mastered]
-            default: all
-          description: |
-            - `all`: every word
-            - `due`: `due_date <= now()`
-            - `mastered`: `interval_days > 30`
-        - name: search
-          in: query
-          schema:
-            type: string
-          description: Case-insensitive prefix match on `term`
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 50
-            maximum: 200
-        - name: offset
-          in: query
-          schema:
-            type: integer
-            default: 0
-      responses:
-        '200':
-          description: Word list
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      words:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/WordWithSRS'
-                      total:
-                        type: integer
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
   /words/{id}:
-    get:
-      tags: [words]
-      summary: Get a single word with full detail and review history
-      parameters:
-        - $ref: '#/components/parameters/WordId'
-      responses:
-        '200':
-          description: Word detail
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      word:
-                        $ref: '#/components/schemas/WordWithSRS'
-                      history:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/ReviewLog'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
     patch:
       tags: [words]
       summary: Edit a word's definition or examples
@@ -327,148 +243,6 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
-  /words/import/{jobId}:
-    get:
-      tags: [words]
-      summary: Poll the status of a bulk import job
-      parameters:
-        - name: jobId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Job status
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      job:
-                        $ref: '#/components/schemas/ImportJob'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /insights:
-    get:
-      tags: [insights]
-      summary: Get learning insights for the current user
-      parameters:
-        - name: windowDays
-          in: query
-          schema:
-            type: integer
-            default: 30
-            minimum: 7
-            maximum: 365
-      responses:
-        '200':
-          description: Insights data
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      growth:
-                        type: array
-                        description: Cumulative word count per day
-                        items:
-                          type: object
-                          properties:
-                            date:
-                              type: string
-                              format: date
-                            cumulative:
-                              type: integer
-                      retentionRate:
-                        type: number
-                        format: float
-                        description: Fraction of reviews rated Good or Easy (0..1)
-                      problemWords:
-                        type: array
-                        description: Words with highest Again rate
-                        items:
-                          type: object
-                          properties:
-                            word:
-                              $ref: '#/components/schemas/Word'
-                            againRate:
-                              type: number
-                              format: float
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
-  /export:
-    get:
-      tags: [export]
-      summary: Export all words in the specified format
-      parameters:
-        - name: format
-          in: query
-          required: true
-          schema:
-            type: string
-            enum: [json, csv, anki]
-      responses:
-        '200':
-          description: File download
-          headers:
-            Content-Disposition:
-              schema:
-                type: string
-                example: attachment; filename="vocabmaxx-export.json"
-          content:
-            application/json:
-              schema:
-                type: string
-            text/csv:
-              schema:
-                type: string
-            application/zip:
-              schema:
-                type: string
-                format: binary
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
-  /cron/daily-digest:
-    post:
-      tags: [cron]
-      summary: Send daily digest emails to users with due cards
-      description: |
-        Called by Vercel Cron. Not for public use.
-        Requires `Authorization: Bearer {CRON_SECRET}` header.
-      security:
-        - CronSecret: []
-      responses:
-        '200':
-          description: Emails dispatched
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      sent:
-                        type: integer
-                      skipped:
-                        type: integer
-        '401':
-          $ref: '#/components/responses/Unauthorized'
 
 components:
   parameters:
@@ -486,10 +260,6 @@ components:
       in: cookie
       name: sb-access-token
       description: Set automatically by Supabase Auth after sign-in
-    CronSecret:
-      type: http
-      scheme: bearer
-      description: The CRON_SECRET environment variable value
 
   responses:
     Unauthorized:
@@ -613,34 +383,6 @@ components:
             jobId:
               type: string
               format: uuid
-
-    ImportJob:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        status:
-          type: string
-          enum: [pending, running, done, failed]
-        totalTerms:
-          type: integer
-        addedCount:
-          type: integer
-        failedCount:
-          type: integer
-        errors:
-          type: array
-          items:
-            type: object
-            properties:
-              term:
-                type: string
-              reason:
-                type: string
-        createdAt:
-          type: string
-          format: date-time
 
     Word:
       type: object

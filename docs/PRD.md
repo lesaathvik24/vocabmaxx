@@ -94,7 +94,7 @@ No card authoring. No paywall on the useful features. No beginner framing. A too
 - **Definition acceptance:** % of generated definitions the user accepts without editing — target ≥ 90%.
 - **Definition source mix:** target dictionary hit rate ≥ 70%; LLM fallback only when needed.
 - **Latency:** P95 capture-to-saved < 2.0s on a 4G connection.
-- **Crash-free sessions:** ≥ 99.5% via Sentry.
+- **Crash-free sessions:** ≥ 99.5% (error monitoring deferred — tracked via Vercel logs).
 
 ### Reliability
 - **Uptime:** ≥ 99.9% (Vercel + Supabase combined SLAs).

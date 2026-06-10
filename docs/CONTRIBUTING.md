@@ -20,8 +20,8 @@ You do **not** need Xcode, Android Studio, or a JDK. The repo is web-only.
 
 ```bash
 # Clone
-gh repo clone lesaathvik24/vocabmaxx-saas
-cd vocabmaxx-saas
+gh repo clone lesaathvik24/vocabmaxx
+cd vocabmaxx
 
 # Install
 pnpm install
@@ -32,7 +32,10 @@ cp .env.example .env.local
 # SUPABASE_SERVICE_ROLE_KEY, DEEPSEEK_API_KEY (others optional in dev)
 
 # DB
-pnpm db:push                  # applies Drizzle schema + RLS migrations
+# pnpm db:push requires direct network access to the Supabase DB (IPv6-only on free tier).
+# If your network lacks IPv6, apply drizzle/0000_init.sql and drizzle/0001_rls.sql
+# manually via the Supabase SQL Editor instead.
+pnpm db:push
 
 # Run
 pnpm dev                      # http://localhost:3000
@@ -45,17 +48,17 @@ pnpm dev                      # http://localhost:3000
 ```bash
 pnpm dev            # Next dev server
 pnpm test           # all tests once
-pnpm test:watch     # unit tests in watch mode
+pnpm exec vitest    # unit tests in watch mode (no pnpm test:watch script)
 pnpm test:unit      # only unit
 pnpm test:integ     # integration (requires local DB)
 pnpm test:e2e       # Playwright against localhost:3000
 pnpm lint           # ESLint
 pnpm typecheck      # tsc --noEmit
-pnpm verify         # lint + typecheck + unit + integration — same as CI gate
-pnpm db:push        # apply schema changes
+pnpm verify         # lint + typecheck + unit + integration — same as local gate
+pnpm db:push        # apply schema changes (needs DB network access)
 pnpm db:generate    # generate Drizzle migration
 pnpm db:studio      # Drizzle Studio
-pnpm format         # Prettier
+pnpm format         # Prettier (runs with defaults — no .prettierrc file)
 ```
 
 ### 3.2 Two Supabase options
@@ -117,7 +120,7 @@ Conventional Commits, but lean:
 ```
 feat(capture): add paragraph extraction
 fix(srs): clamp ease factor floor at 1.3
-chore(deps): bump next to 15.x
+chore(deps): bump next to 16.x
 docs(arch): correct data flow diagram for /api/review/grade
 test(srs): cover repeated again sequence
 ```
@@ -137,7 +140,7 @@ Subject ≤ 72 chars. Body explains the WHY if non-obvious.
 
 - **Never** merge with red CI.
 - **Never** force-push to `main`. Force-pushes to feature branches OK before merge.
-- **Never** commit secrets. Pre-commit hook (`.husky/pre-commit`) runs `gitleaks` scan.
+- **Never** commit secrets. Pre-commit hook (`.husky/pre-commit`) runs `pnpm lint && pnpm typecheck`. `gitleaks` secret-scan runs in CI on every PR.
 
 ## 6. Testing requirements
 
@@ -152,10 +155,12 @@ Every PR introducing logic must include matching tests.
 | React component | Vitest + RTL | yes for stateful components |
 | Full feature flow | Playwright e2e | yes for each ROADMAP phase exit |
 
-**Coverage gates** (`pnpm test:coverage`):
+**Coverage gates** (run via `pnpm exec vitest --coverage`):
 - `lib/domain/`: 85% lines, 90% branches.
 - `lib/services/`: 80% lines.
 - Routes: 70% lines (e2e covers the rest).
+
+Note: there is no `pnpm test:coverage` package.json script; run coverage directly via `vitest`.
 
 **Mocking rule:** mock external IO only. Never mock domain modules.
 

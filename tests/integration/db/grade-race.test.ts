@@ -22,7 +22,7 @@ beforeEach(async () => {
 })
 
 describe('concurrent grade race', () => {
-    it('two simultaneous grades serialize: both logged, state advanced exactly twice', async () => {
+    it('two simultaneous grades serialize: exactly one advances, the other is not_due', async () => {
         const w = await wordsQ.insert({
             userId: USER_R,
             term: 'race',
@@ -38,17 +38,19 @@ describe('concurrent grade race', () => {
             srsService.recordReview(USER_R, w.id, Grade.Good, now),
         ])
 
-        expect(r1.ok).toBe(true)
-        expect(r2.ok).toBe(true)
+        // SELECT FOR UPDATE serializes the two transactions. The first advances the
+        // card's due date into the future; the second then sees it is no longer due
+        // and returns not_due — so a double-submit can never double-advance the card.
+        const results = [r1, r2]
+        expect(results.filter((r) => r.ok)).toHaveLength(1)
+        expect(results.filter((r) => !r.ok && r.error.kind === 'not_due')).toHaveLength(1)
 
         const logs = await reviewLogQ.listByWord(USER_R, w.id)
-        expect(logs).toHaveLength(2)
+        expect(logs).toHaveLength(1)
 
         const state = await srsQ.getByWordId(w.id)
-        // SELECT FOR UPDATE serializes the transactions: the second review sees
-        // reps=1 and applies the reps=2 → 6-day interval, never a lost update.
-        expect(state!.repetitions).toBe(2)
-        expect(state!.intervalDays).toBe(6)
+        expect(state!.repetitions).toBe(1)
+        expect(state!.intervalDays).toBe(1)
     })
 
     it('grading another user\'s word fails with word_not_found', async () => {

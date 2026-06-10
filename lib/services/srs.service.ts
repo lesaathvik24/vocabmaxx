@@ -28,6 +28,10 @@ export async function recordReview(
 
         if (!current) return err<SRSError>({ kind: 'word_not_found' })
 
+        if (current.dueDate.getTime() > now.getTime()) {
+            return err<SRSError>({ kind: 'not_due', nextDue: current.dueDate })
+        }
+
         const result = nextState(
             {
                 easeFactor: current.easeFactor,

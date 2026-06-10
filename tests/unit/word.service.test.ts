@@ -2,18 +2,20 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // Mock the DB query + srs modules so the service can be unit-tested without a database.
 vi.mock('@/lib/db/queries/words', () => ({
+    insertIfAbsent: vi.fn(),
+    findByUserAndTerm: vi.fn(),
     updateForUser: vi.fn(),
     listWithSrsByUser: vi.fn(),
     findByIdForUser: vi.fn(),
     deleteByIdForUser: vi.fn(),
     listByUser: vi.fn(),
-    findById: vi.fn(),
 }))
-vi.mock('@/lib/db/queries/srs', () => ({ getByWordId: vi.fn() }))
+vi.mock('@/lib/db/queries/srs', () => ({ getByWordId: vi.fn(), initialize: vi.fn() }))
 vi.mock('@/lib/db/queries/review-log', () => ({ listByWord: vi.fn() }))
 
 import * as wordService from '@/lib/services/word.service'
 import * as wordsQ from '@/lib/db/queries/words'
+import * as srsQ from '@/lib/db/queries/srs'
 import type { Word } from '@/lib/domain/word'
 
 function makeWord(overrides: Partial<Word> = {}): Word {
@@ -71,6 +73,54 @@ describe('word.service.update — validation', () => {
         const res = await wordService.update('w1', 'u1', { definition: 'x' })
         expect(res.ok).toBe(false)
         if (!res.ok) expect(res.error.kind).toBe('word_not_found')
+    })
+})
+
+describe('word.service.save', () => {
+    const input = {
+        userId: 'u1',
+        term: 'Ephemeral',
+        definition: 'lasting for only a short time',
+        examples: ['The ephemeral nature of fame.'],
+        source: 'dictionary' as const,
+    }
+
+    it('inserts, initialises SRS, and returns the saved word (normalised term)', async () => {
+        vi.mocked(wordsQ.findByUserAndTerm).mockResolvedValue(null)
+        vi.mocked(wordsQ.insertIfAbsent).mockResolvedValue(makeWord())
+        vi.mocked(srsQ.initialize).mockResolvedValue(undefined)
+        const res = await wordService.save(input)
+        expect(res.ok).toBe(true)
+        if (res.ok) expect(res.value.term).toBe('ephemeral')
+        expect(wordsQ.insertIfAbsent).toHaveBeenCalledWith(
+            expect.objectContaining({ term: 'ephemeral' }),
+        )
+        expect(srsQ.initialize).toHaveBeenCalledWith('w1', 'u1')
+    })
+
+    it('returns duplicate_term on the pre-insert fast path', async () => {
+        vi.mocked(wordsQ.findByUserAndTerm).mockResolvedValue(makeWord())
+        const res = await wordService.save(input)
+        expect(res.ok).toBe(false)
+        if (!res.ok) expect(res.error.kind).toBe('duplicate_term')
+        expect(wordsQ.insertIfAbsent).not.toHaveBeenCalled()
+    })
+
+    it('returns duplicate_term (not a 500) when a concurrent insert wins the race', async () => {
+        vi.mocked(wordsQ.findByUserAndTerm).mockResolvedValue(null)
+        vi.mocked(wordsQ.insertIfAbsent).mockResolvedValue(null) // onConflictDoNothing → no row
+        const res = await wordService.save(input)
+        expect(res.ok).toBe(false)
+        if (!res.ok) expect(res.error.kind).toBe('duplicate_term')
+        expect(srsQ.initialize).not.toHaveBeenCalled()
+    })
+
+    it('rejects an invalid word (empty definition) without inserting', async () => {
+        const res = await wordService.save({ ...input, definition: '   ' })
+        expect(res.ok).toBe(false)
+        if (!res.ok) expect(res.error.kind).toBe('invalid_term')
+        expect(wordsQ.findByUserAndTerm).not.toHaveBeenCalled()
+        expect(wordsQ.insertIfAbsent).not.toHaveBeenCalled()
     })
 })
 

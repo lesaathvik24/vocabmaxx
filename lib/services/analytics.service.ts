@@ -85,8 +85,10 @@ export async function retentionRate(
     deps: AnalyticsDeps = defaultDeps,
     now: Date = new Date(),
 ): Promise<number> {
+    // Same inclusive window semantics as vocabGrowth: the last `windowDays` days
+    // ending today (today minus windowDays-1), so both charts cover the same span.
     const start = new Date(now)
-    start.setUTCDate(start.getUTCDate() - windowDays)
+    start.setUTCDate(start.getUTCDate() - (windowDays - 1))
 
     const { total, passed } = await deps.reviewOutcomes(userId, start)
     if (total === 0) return 0

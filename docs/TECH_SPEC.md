@@ -325,12 +325,6 @@ Body: { wordId: string, grade: 0 | 3 | 4 | 5 }
 ### Words
 
 ```
-GET    /api/words?filter=all|due|mastered&search=str
-200:   { data: { words: WordWithSRS[] } }
-
-GET    /api/words/[id]
-200:   { data: { word: WordWithSRS, history: ReviewLog[] } }
-
 PATCH  /api/words/[id]
 Body:  { definition?: string, examples?: string[] }
 200:   { data: { word: Word } }
@@ -348,31 +342,17 @@ Body: { mode: 'extract', text: string }
 
 POST /api/words/import
 Body: { mode: 'save', terms: string[] }
-200:  { data: { jobId: string } }       // long-running, poll status
-
-GET  /api/words/import/[jobId]
-200: { data: { job: ImportJob } }
+200:  { data: { jobId: string, added: string[], failed: [...] } }
 ```
 
-### Insights / Export
+### Planned (Phase 8 — not yet implemented)
 
 ```
-GET /api/insights
-200: { data: { growth: [...], retention: number, problemWords: [...] } }
-
-GET /api/export?format=json|csv|anki
-200: file download (Content-Disposition)
+GET /api/export?format=json|csv|anki        — Phase 8.2
+POST /api/cron/daily-digest                 — Phase 8.3
 ```
 
-### Cron
-
-```
-POST /api/cron/daily-digest
-Headers: Authorization: Bearer ${CRON_SECRET}
-For each user with notif-prefs.daily=true:
-    count = listDue(user, now)
-    if count > 0: resend.send(email, dailyDigestTemplate({ count, sampleWords }))
-```
+These routes do not exist in the current codebase.
 
 ## 6. Zod schemas
 
@@ -462,12 +442,14 @@ Middleware in `middleware.ts` enforces auth on `/(app)/*` server-side; if no ses
 
 | Type | Tool | Where | When run |
 |---|---|---|---|
-| Unit (pure logic) | Vitest | `tests/unit/` | every commit, < 5s suite |
-| Integration (DB) | Vitest + Supabase CLI local Postgres | `tests/integration/` | every PR |
-| API contract | Vitest + MSW (no Next required) | `tests/integration/api/` | every PR |
-| Component | Vitest + React Testing Library | colocated `*.test.tsx` | every PR |
-| E2E | Playwright (Chromium + WebKit) | `tests/e2e/` | every PR |
+| Unit (pure logic) | Vitest | `tests/unit/` | every commit in CI, < 5s suite |
+| Integration (DB) | Vitest + Supabase CLI local Postgres | `tests/integration/` | local/manual only (not in CI) |
+| API contract | Vitest + MSW (no Next required) | `tests/integration/api/` | local/manual only |
+| Component | Vitest + React Testing Library | colocated `*.test.tsx` | local/manual only |
+| E2E | Playwright (Chromium + WebKit) | `tests/e2e/` | local/manual only |
 | Visual regression | _none in v1_ — Claude Design handoff handles visuals | | |
+
+CI pipeline runs: `pnpm lint`, `pnpm typecheck`, `pnpm test:unit`, and a `gitleaks` secret-scan job. Integration, E2E, and bundle-size checks are run locally / manually.
 
 **Coverage threshold:** 85% on `lib/domain/` and `lib/services/`. Views are not coverage-gated; they're covered by e2e.
 
@@ -482,12 +464,10 @@ jobs:
     lint:        pnpm lint
     typecheck:   pnpm typecheck
     unit:        pnpm test:unit
-    integration: spins up Supabase CLI + Postgres, runs pnpm test:integration
-    e2e:         Playwright against vercel preview URL (waits for deploy)
-    bundle-size: next build + bundle-analyzer comment on PR
+    secrets:     gitleaks secret-scan
 ```
 
-All green required to merge to `main`.
+All four jobs must be green to merge to `main`. Integration tests, E2E, and bundle-size checks are run locally.
 
 ## 11. Environment variables
 
@@ -498,12 +478,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=         # server-only, definition_cache writes + cron
 DEEPSEEK_API_KEY=                  # server-only, LLM fallback
 DEEPSEEK_BASE_URL=https://api.deepseek.com  # override for self-hosted / proxy
-DEEPSEEK_API_KEY=                  # word definition LLM fallback
-DEEPSEEK_BASE_URL=https://api.deepseek.com
-RESEND_API_KEY=                    # transactional email
-CRON_SECRET=                       # for /api/cron/* auth
-NEXT_PUBLIC_SENTRY_DSN=
-SENTRY_AUTH_TOKEN=
+RESEND_API_KEY=                    # transactional email (Phase 8)
+CRON_SECRET=                       # for /api/cron/* auth (Phase 8)
 NEXT_PUBLIC_POSTHOG_KEY=
 NEXT_PUBLIC_POSTHOG_HOST=
 ```
@@ -518,9 +494,8 @@ Server-only keys never end up in client bundle (no `NEXT_PUBLIC_` prefix).
 | `/api/capture` (LLM fallback) | 1.5s | 4.0s |
 | `/api/review/due` | 100ms | 300ms |
 | `/api/review/grade` | 80ms | 250ms |
-| `/api/words` (search) | 150ms | 500ms |
 
-Measured via Vercel Speed Insights, asserted via Sentry transactions sampled at 10%.
+Measured via Vercel Speed Insights. No automated transaction sampling is currently configured.
 
 ---
 

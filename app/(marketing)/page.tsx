@@ -17,7 +17,7 @@ const features = [
     {
         icon: Lock,
         title: 'Your vocabulary, in your pocket. Forever.',
-        body: 'Search it. Export it. Walk away with it. No lock-in, no ads, no "premium tier." Built for the long game.',
+        body: 'Search it. Export it (JSON/CSV). Walk away with it. Own it in your own database. No ads, no "premium tier." Built for the long game.',
     },
 ]
 

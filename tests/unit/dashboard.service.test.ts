@@ -1,17 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { getDashboardData, repsToStatus } from '@/lib/services/dashboard.service'
 import type { DashboardDeps } from '@/lib/services/dashboard.service'
-import type { Word } from '@/lib/domain/word'
+import type { WordListRow } from '@/lib/db/queries/words'
 
-function makeDeps(): DashboardDeps {
+function makeDeps(over: Partial<DashboardDeps> = {}): DashboardDeps {
     return {
-        listWords: vi.fn(),
-        countWords: vi.fn(),
-        countDue: vi.fn(),
+        listRecent: vi.fn().mockResolvedValue([]),
+        countWords: vi.fn().mockResolvedValue(0),
+        countDue: vi.fn().mockResolvedValue(0),
+        reviewOutcomes: vi.fn().mockResolvedValue({ total: 0, passed: 0 }),
+        dailyReviewCounts: vi.fn().mockResolvedValue([]),
+        reviewDayKeys: vi.fn().mockResolvedValue([]),
+        ...over,
     }
 }
 
-function makeWord(overrides: Partial<Word> = {}): Word {
+function makeRow(over: Partial<WordListRow> = {}): WordListRow {
     return {
         id: 'w1',
         userId: 'u1',
@@ -20,54 +24,75 @@ function makeWord(overrides: Partial<Word> = {}): Word {
         examples: ['The ephemeral nature of fame.'],
         source: 'dictionary',
         addedAt: new Date('2024-01-01'),
-        ...overrides,
+        repetitions: 0,
+        dueDate: new Date('2024-01-01'),
+        ...over,
     }
 }
 
+const NOW = new Date('2026-06-10T12:00:00Z')
+
 beforeEach(() => vi.clearAllMocks())
 
-describe('repsToStatus', () => {
+describe('repsToStatus (re-exported from lib/words/filter)', () => {
     it('0 reps → new', () => expect(repsToStatus(0)).toBe('new'))
     it('1 reps → learning', () => expect(repsToStatus(1)).toBe('learning'))
-    it('3 reps → learning', () => expect(repsToStatus(3)).toBe('learning'))
     it('4 reps → review', () => expect(repsToStatus(4)).toBe('review'))
-    it('7 reps → review', () => expect(repsToStatus(7)).toBe('review'))
     it('8 reps → mastered', () => expect(repsToStatus(8)).toBe('mastered'))
 })
 
 describe('getDashboardData', () => {
-    it('maps word rows to recentWords shape', async () => {
-        const deps = makeDeps()
-        vi.mocked(deps.listWords).mockResolvedValue([makeWord()])
-        vi.mocked(deps.countWords).mockResolvedValue(1)
-        vi.mocked(deps.countDue).mockResolvedValue(3)
-
-        const data = await getDashboardData('u1', deps)
-        expect(data.recentWords).toHaveLength(1)
-        expect(data.recentWords[0].term).toBe('ephemeral')
-        expect(data.recentWords[0].source).toBe('dictionary')
+    it('maps rows to recentWords with real status derived from repetitions', async () => {
+        const deps = makeDeps({
+            listRecent: vi.fn().mockResolvedValue([
+                makeRow({ id: 'a', term: 'alpha', repetitions: 0 }),
+                makeRow({ id: 'b', term: 'bravo', repetitions: 9 }),
+            ]),
+        })
+        const data = await getDashboardData('u1', deps, NOW)
+        expect(data.recentWords).toHaveLength(2)
+        expect(data.recentWords[0]).toMatchObject({ term: 'alpha', status: 'new' })
+        expect(data.recentWords[1]).toMatchObject({ term: 'bravo', status: 'mastered' })
+        expect(deps.listRecent).toHaveBeenCalledWith('u1', { limit: 10 })
     })
 
-    it('stats.learned and stats.due populated correctly', async () => {
-        const deps = makeDeps()
-        vi.mocked(deps.listWords).mockResolvedValue([])
-        vi.mocked(deps.countWords).mockResolvedValue(42)
-        vi.mocked(deps.countDue).mockResolvedValue(7)
-
-        const data = await getDashboardData('u1', deps)
+    it('populates learned/due and a 7-day history', async () => {
+        const deps = makeDeps({
+            countWords: vi.fn().mockResolvedValue(42),
+            countDue: vi.fn().mockResolvedValue(7),
+        })
+        const data = await getDashboardData('u1', deps, NOW)
         expect(data.stats.learned).toBe(42)
         expect(data.stats.due).toBe(7)
         expect(data.stats.weekGoal).toBe(10)
         expect(data.stats.history).toHaveLength(7)
     })
 
-    it('calls listWords with limit 10', async () => {
-        const deps = makeDeps()
-        vi.mocked(deps.listWords).mockResolvedValue([])
-        vi.mocked(deps.countWords).mockResolvedValue(0)
-        vi.mocked(deps.countDue).mockResolvedValue(0)
+    it('computes retention from review outcomes', async () => {
+        const deps = makeDeps({
+            reviewOutcomes: vi.fn().mockResolvedValue({ total: 10, passed: 8 }),
+        })
+        const data = await getDashboardData('u1', deps, NOW)
+        expect(data.stats.retention).toBeCloseTo(0.8)
+    })
 
-        await getDashboardData('u1', deps)
-        expect(deps.listWords).toHaveBeenCalledWith('u1', { limit: 10 })
+    it('derives weekDone as the sum of the daily history', async () => {
+        const deps = makeDeps({
+            dailyReviewCounts: vi.fn().mockResolvedValue([
+                { day: '2026-06-09', count: 3 },
+                { day: '2026-06-10', count: 2 },
+            ]),
+        })
+        const data = await getDashboardData('u1', deps, NOW)
+        expect(data.stats.weekDone).toBe(5)
+        expect(data.stats.history[6]).toBe(2) // today
+    })
+
+    it('computes the streak from distinct review days', async () => {
+        const deps = makeDeps({
+            reviewDayKeys: vi.fn().mockResolvedValue(['2026-06-08', '2026-06-09', '2026-06-10']),
+        })
+        const data = await getDashboardData('u1', deps, NOW)
+        expect(data.stats.streakDays).toBe(3)
     })
 })
