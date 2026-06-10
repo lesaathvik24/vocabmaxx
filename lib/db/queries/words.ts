@@ -1,5 +1,5 @@
 import 'server-only'
-import { and, desc, eq } from 'drizzle-orm'
+import { and, count, desc, eq } from 'drizzle-orm'
 import { db } from '../client'
 import { words } from '../schema'
 import type { Word } from '@/lib/domain/word'
@@ -40,13 +40,19 @@ export async function findByUserAndTerm(userId: string, term: string): Promise<W
     return row ? rowToWord(row) : null
 }
 
-export async function listByUser(userId: string): Promise<Word[]> {
-    const rows = await db
+export async function listByUser(userId: string, opts?: { limit?: number }): Promise<Word[]> {
+    const q = db
         .select()
         .from(words)
         .where(eq(words.userId, userId))
         .orderBy(desc(words.addedAt))
+    const rows = opts?.limit ? await q.limit(opts.limit) : await q
     return rows.map(rowToWord)
+}
+
+export async function countByUser(userId: string): Promise<number> {
+    const [row] = await db.select({ value: count() }).from(words).where(eq(words.userId, userId))
+    return row?.value ?? 0
 }
 
 export async function deleteById(id: string): Promise<void> {

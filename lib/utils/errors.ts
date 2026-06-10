@@ -8,6 +8,7 @@ const USER_MESSAGES: Record<string, string> = {
     invalid_term: 'Please enter a valid English word (letters only).',
     word_not_found: 'Word not found in your collection.',
     not_due: 'This word is not due for review yet.',
+    invalid_input: 'Invalid input. Please check your request and try again.',
 }
 
 export function toUserMessage(kind: string): string {

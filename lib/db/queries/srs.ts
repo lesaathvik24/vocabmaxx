@@ -1,5 +1,5 @@
 import 'server-only'
-import { and, asc, eq, lte } from 'drizzle-orm'
+import { and, asc, count, eq, lte } from 'drizzle-orm'
 import { db } from '../client'
 import { srsState, words } from '../schema'
 import type { WordWithSRS } from '@/lib/domain/word'
@@ -18,6 +18,14 @@ export async function initialize(wordId: string, userId: string, now: Date = new
 export async function getByWordId(wordId: string) {
     const [row] = await db.select().from(srsState).where(eq(srsState.wordId, wordId)).limit(1)
     return row ?? null
+}
+
+export async function countDue(userId: string, asOf: Date): Promise<number> {
+    const [row] = await db
+        .select({ value: count() })
+        .from(srsState)
+        .where(and(eq(srsState.userId, userId), lte(srsState.dueDate, asOf)))
+    return row?.value ?? 0
 }
 
 export async function findDue(userId: string, asOf: Date): Promise<WordWithSRS[]> {

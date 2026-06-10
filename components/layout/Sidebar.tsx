@@ -1,0 +1,119 @@
+'use client'
+
+import Link from 'next/link'
+import type { Route } from 'next'
+import { usePathname } from 'next/navigation'
+import {
+    LayoutDashboard,
+    Layers,
+    PlusCircle,
+    BookOpen,
+    BarChart3,
+    Sliders,
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { Badge } from '@/components/ui/badge'
+
+interface NavItem {
+    id: string
+    label: string
+    href: Route
+    icon: React.ElementType
+    badge?: 'due'
+}
+
+const NAV: NavItem[] = [
+    { id: 'dashboard', label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { id: 'review', label: 'Review', href: '/review', icon: Layers, badge: 'due' },
+    { id: 'capture', label: 'Capture', href: '/capture', icon: PlusCircle },
+    { id: 'words', label: 'Words', href: '/words', icon: BookOpen },
+    { id: 'insights', label: 'Insights', href: '/insights', icon: BarChart3 },
+]
+
+interface SidebarProps {
+    dueCount: number
+    onClose?: () => void
+}
+
+export function Sidebar({ dueCount, onClose }: SidebarProps) {
+    const pathname = usePathname()
+
+    return (
+        <nav
+            className="flex h-full w-64 flex-col bg-card border-r border-border"
+            aria-label="Primary navigation"
+        >
+            {/* Brand */}
+            <div className="flex items-center gap-3 px-5 py-5 border-b border-border">
+                <div
+                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-accent-foreground font-display font-bold text-sm flex-shrink-0"
+                    aria-hidden="true"
+                >
+                    V
+                </div>
+                <div>
+                    <div className="font-display font-semibold text-sm leading-tight">VocabMaxx</div>
+                    <div className="text-xs text-muted-foreground leading-tight">Everyday vocabulary</div>
+                </div>
+            </div>
+
+            {/* Nav */}
+            <div className="flex-1 overflow-y-auto px-3 py-4">
+                <p className="px-3 mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Practice
+                </p>
+                <ul className="space-y-0.5">
+                    {NAV.map((item) => {
+                        const Icon = item.icon
+                        const active = pathname.startsWith(item.href)
+                        return (
+                            <li key={item.id}>
+                                <Link
+                                    href={item.href}
+                                    aria-current={active ? 'page' : undefined}
+                                    onClick={onClose}
+                                    className={cn(
+                                        'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors min-h-[44px]',
+                                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                                        active
+                                            ? 'bg-accent-soft text-accent'
+                                            : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                                    )}
+                                >
+                                    <Icon size={19} aria-hidden="true" />
+                                    <span className="flex-1">{item.label}</span>
+                                    {item.badge === 'due' && dueCount > 0 && (
+                                        <Badge
+                                            variant="secondary"
+                                            className="ml-auto h-5 min-w-5 px-1.5 text-[11px] bg-accent text-accent-foreground"
+                                        >
+                                            {dueCount}
+                                        </Badge>
+                                    )}
+                                </Link>
+                            </li>
+                        )
+                    })}
+                </ul>
+            </div>
+
+            {/* Footer */}
+            <div className="border-t border-border px-3 py-3 space-y-0.5">
+                <Link
+                    href="/settings"
+                    onClick={onClose}
+                    className={cn(
+                        'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors min-h-[44px]',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                        pathname.startsWith('/settings')
+                            ? 'bg-accent-soft text-accent'
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                    )}
+                >
+                    <Sliders size={19} aria-hidden="true" />
+                    <span>Settings</span>
+                </Link>
+            </div>
+        </nav>
+    )
+}

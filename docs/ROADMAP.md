@@ -295,54 +295,54 @@ None — pure code.
 - **Files:** `app/(app)/layout.tsx`, `components/layout/AppShell.tsx`.
 - **Acceptance:** consistent shell on all `/(app)/*` routes; mobile collapses sidebar.
 - **Subagent:** Atelier.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ### 4.1b Sidebar + Topbar
 - **Docs to load:** `docs/DESIGN.md §3, §6` (a11y).
 - **Files:** `components/layout/Sidebar.tsx`, `components/layout/Topbar.tsx`.
 - **Acceptance:** keyboard-navigable, current route highlighted.
 - **Automated tests:** `tests/e2e/shell.spec.ts` — sidebar links navigate.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ### 4.2 Dashboard
 - **Docs to load:** `docs/DESIGN.md §5` (loading / empty / error states), `docs/TECH_SPEC.md §4` (SRSService.due).
 - **Files:** `app/(app)/dashboard/page.tsx`, `components/dashboard/DueBanner.tsx`, `components/dashboard/RecentCaptures.tsx`.
 - **Acceptance:** due-count banner + last 10 captures, with empty state.
 - **Subagent:** Atelier.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ### 4.3 Single-word capture UI
 - **Docs to load:** `docs/DESIGN.md §5`, `docs/TECH_SPEC.md §5` (Capture endpoint shape).
 - **Files:** `app/(app)/capture/page.tsx`, `components/capture/AddWordInput.tsx`.
 - **Acceptance:** auto-focused input; Enter submits; loading + toast states.
 - **Automated tests:** Playwright `tests/e2e/capture-single.spec.ts`.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ### 4.4a Paragraph extract — LLM prompt + API
 - **Docs to load:** `docs/TECH_SPEC.md §7` (paragraph extraction prompt), `§5` (Import endpoint mode=extract).
 - **Files:** `app/api/words/import/route.ts` (extract branch), `lib/services/import.service.ts` (extract method).
 - **Acceptance:** POST paragraph → array of candidate terms.
 - **Automated tests:** integration test with MSW for LLM call.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ### 4.4b Paragraph extract — UI
 - **Docs to load:** `docs/DESIGN.md §5`.
 - **Files:** `components/capture/ParagraphExtractor.tsx`.
 - **Acceptance:** paste text → candidate list with checkboxes → "Save selected" calls capture in bulk.
 - **Automated tests:** Playwright happy path.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ### 4.5a Bulk import — API
 - **Docs to load:** `docs/TECH_SPEC.md §5` (Import endpoint mode=save).
 - **Files:** `app/api/words/import/route.ts` (save branch), `lib/services/import.service.ts` (save method).
 - **Acceptance:** accepts array of terms, returns summary `{added, skipped, failed}`.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ### 4.5b Bulk import — UI
 - **Docs to load:** `docs/DESIGN.md §5`.
 - **Files:** `components/capture/BulkUploader.tsx`.
 - **Acceptance:** drop `.txt` → progress modal → summary at end.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ### Phase 4 — Claude Design usage
 This is the first phase that ships pixels. Follow `docs/DESIGN.md §4` exactly:
@@ -373,7 +373,7 @@ This is the first phase that ships pixels. Follow `docs/DESIGN.md §4` exactly:
 - **Files:** `components/review/FlipCard.tsx`.
 - **Acceptance:** flips on tap/keypress; respects `prefers-reduced-motion`.
 - **Subagent:** Atelier.
-- **Status:** `[ ]`
+- **Status:** `[~]` (component scaffolded in Phase 4 port; review page wiring deferred to 5.1c)
 
 ### 5.1b GradeButtons component
 - **Docs to load:** `docs/TECH_SPEC.md §3` (Grade enum), `docs/DESIGN.md §3`.

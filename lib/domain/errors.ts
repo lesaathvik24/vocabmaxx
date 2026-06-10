@@ -19,6 +19,18 @@ export type SRSError =
     | { kind: 'word_not_found' }
     | { kind: 'not_due'; nextDue: Date }
 
+export type ImportError =
+    | { kind: 'invalid_input'; message: string }
+    | { kind: 'malformed_llm_response'; raw: string }
+    | { kind: 'network_failure'; cause: string }
+    | { kind: 'rate_limited' }
+
+export type LLMError =
+    | { kind: 'malformed_llm_response'; raw: string }
+    | { kind: 'network_failure'; cause: string }
+    | { kind: 'rate_limited' }
+    | { kind: 'no_fallback_available' }
+
 export class InvalidWordError extends Error {
     readonly kind = 'invalid_word' as const
     constructor(message: string) {
