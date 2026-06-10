@@ -1,9 +1,14 @@
+import { BookOpen } from 'lucide-react'
+import { ComingSoon } from '@/components/layout/ComingSoon'
+
 export const metadata = { title: 'Word detail' }
 
 export default function WordDetailPage() {
     return (
-        <div className="flex items-center justify-center min-h-[50vh]">
-            <p className="text-muted-foreground text-sm">Word detail — coming in Phase 6.</p>
-        </div>
+        <ComingSoon
+            icon={BookOpen}
+            title="Word pages coming soon"
+            body="Definition, examples, and SRS stats per word — plus edit and delete. Just around the corner."
+        />
     )
 }

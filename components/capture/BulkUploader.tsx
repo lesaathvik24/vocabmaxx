@@ -24,10 +24,12 @@ interface ProgressState {
     result: { added: number; skipped: number; failed: number } | null
 }
 
+const LIST_MARKER = /^\s*(\d+[.)]\s+|[-*•]\s+)/
+
 function parseTerms(raw: string): string[] {
     return raw
         .split('\n')
-        .map((l) => l.trim())
+        .map((l) => l.replace(LIST_MARKER, '').trim())
         .filter((l) => l.length > 0)
 }
 
@@ -115,7 +117,7 @@ export function BulkUploader({ onUpload }: BulkUploaderProps) {
                     <p className="text-xs text-muted-foreground mt-1">or click to choose</p>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                    One word per line. Duplicates are skipped automatically.
+                    One word per line. Numbers and bullets (1. - *) are stripped automatically.
                 </p>
             </div>
             <input

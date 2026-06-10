@@ -35,13 +35,7 @@ describe('importService.extract', () => {
 
     it('dedupes and lowercases candidates', async () => {
         const deps = makeExtractDeps()
-        vi.mocked(deps.llmExtract).mockResolvedValue(
-            ok([
-                { term: 'Ephemeral', context: 'ctx', confidence: 0.9 },
-                { term: 'ephemeral', context: 'ctx2', confidence: 0.8 },
-                { term: 'Lucid', context: 'ctx3', confidence: 0.7 },
-            ]),
-        )
+        vi.mocked(deps.llmExtract).mockResolvedValue(ok(['Ephemeral', 'ephemeral', 'Lucid']))
         const r = await extract('some paragraph text', deps)
         expect(r.ok).toBe(true)
         if (r.ok) {
@@ -54,13 +48,7 @@ describe('importService.extract', () => {
     it('caps at 15 candidates', async () => {
         const deps = makeExtractDeps()
         vi.mocked(deps.llmExtract).mockResolvedValue(
-            ok(
-                Array.from({ length: 20 }, (_, i) => ({
-                    term: `word${i}`,
-                    context: 'ctx',
-                    confidence: 0.9,
-                })),
-            ),
+            ok(Array.from({ length: 20 }, (_, i) => `word${i}`)),
         )
         const r = await extract('text', deps)
         expect(r.ok).toBe(true)

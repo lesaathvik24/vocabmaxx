@@ -40,7 +40,7 @@ export async function extract(
         return err({ kind: 'malformed_llm_response', raw: e.raw })
     }
 
-    const terms = [...new Set(result.value.map(c => c.term.toLowerCase()))].slice(0, 15)
+    const terms = [...new Set(result.value.map(t => t.toLowerCase()))].slice(0, 15)
     return ok(terms)
 }
 

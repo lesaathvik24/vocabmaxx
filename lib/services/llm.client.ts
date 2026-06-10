@@ -8,25 +8,20 @@ const MAX_TOKENS = 200
 const EXTRACT_MAX_TOKENS = 600
 
 const definitionLLMSchema = z.object({
-    definition: z.string().min(1).max(500),
-    examples: z.array(z.string().min(1).max(300)).length(2),
+    valid: z.boolean(),
+    definition: z.string().max(500).optional(),
+    examples: z.array(z.string().max(300)).max(3).optional(),
 })
 
 const extractLLMSchema = z.object({
-    terms: z.array(
-        z.object({
-            term: z.string().min(1),
-            context: z.string().min(1),
-            confidence: z.number().min(0).max(1),
-        }),
-    ),
+    terms: z.array(z.string().min(1).max(64)),
 })
 
 const DEFINITION_SYSTEM =
-    'You are a vocabulary tutor for an advanced English speaker. Given a single word, output strict JSON with one concise definition (max 25 words) and exactly two natural usage examples from contexts like podcasts, journalism, or conversation. Schema: {"definition":string,"examples":[string,string]}. Output JSON only — no markdown, no preamble.'
+    'You are a vocabulary tutor for an advanced English speaker. Given a single word, return strict JSON. Schema: {"valid": boolean, "definition": string, "examples": [string, string]}. If the input is a real English word (including rare, archaic, technical, or coined-but-recognised terms): set valid=true, provide a concise definition (max 25 words) and exactly two natural usage examples from contexts like podcasts, journalism, or conversation. If the input is gibberish, a typo, a random keyboard mash, or not an English word: set valid=false and omit definition/examples. Output JSON only — no markdown, no preamble, no "I cannot" prose.'
 
 const EXTRACT_SYSTEM =
-    'Given a paragraph of English text, identify the advanced or unusual vocabulary likely unfamiliar to a B2-level reader. Return strict JSON. For each term include the lowercased form, the surrounding sentence as context, and a confidence score 0..1. Schema: {"terms":[{"term":string,"context":string,"confidence":number}]}. Output JSON only — no markdown, no preamble.'
+    'You extract advanced vocabulary from English paragraphs for a B2+ learner. Return strict JSON ONLY in this exact schema: {"terms": ["word1", "word2", ...]}. Rules: 5-15 items. Each item is a single lowercased word (1-2 words max, no phrases > 2 words, no proper nouns, no common words). No commentary, no markdown, no preamble. If the paragraph is empty or has no advanced vocabulary, return {"terms": []}.'
 
 export async function fetchLLMDefinition(term: string): Promise<Result<DefinitionResult, DefinitionError>> {
     if (!process.env.DEEPSEEK_API_KEY) return err({ kind: 'no_fallback_available' })
@@ -48,24 +43,39 @@ export async function fetchLLMDefinition(term: string): Promise<Result<Definitio
     const validated = definitionLLMSchema.safeParse(parsed)
     if (!validated.success) return err({ kind: 'malformed_llm_response', raw: result.value.slice(0, 200) })
 
-    return ok({ definition: validated.data.definition, examples: validated.data.examples, source: 'llm' })
+    if (!validated.data.valid) return err({ kind: 'not_a_word' })
+
+    const { definition, examples } = validated.data
+    if (!definition || !examples || examples.length < 2) {
+        return err({ kind: 'malformed_llm_response', raw: result.value.slice(0, 200) })
+    }
+
+    return ok({ definition, examples: [examples[0], examples[1]], source: 'llm' })
 }
 
-export interface ExtractedCandidate {
-    term: string
-    context: string
-    confidence: number
-}
-
-export async function extractCandidates(text: string): Promise<Result<ExtractedCandidate[], LLMError>> {
+export async function extractCandidates(text: string): Promise<Result<string[], LLMError>> {
     const apiKey = process.env.DEEPSEEK_API_KEY
     if (!apiKey) return err({ kind: 'no_fallback_available' })
 
-    const result = await callDeepSeek({
-        system: EXTRACT_SYSTEM,
-        user: text,
-        maxTokens: EXTRACT_MAX_TOKENS,
-    })
+    const first = await tryExtract(text)
+    if (first.ok) return first
+
+    // One retry with stricter system prompt — handles real-world paragraphs where DeepSeek's
+    // initial output drifts from the schema (extra fields, wrapped in markdown, etc.)
+    if (first.error.kind === 'malformed_llm_response') {
+        const retry = await tryExtract(text, true)
+        if (retry.ok) return retry
+        return first
+    }
+    return first
+}
+
+async function tryExtract(text: string, strict = false): Promise<Result<string[], LLMError>> {
+    const system = strict
+        ? `${EXTRACT_SYSTEM} CRITICAL: your previous attempt was rejected. Output ONLY the JSON object {"terms":[...]} with no other characters before or after.`
+        : EXTRACT_SYSTEM
+
+    const result = await callDeepSeek({ system, user: text, maxTokens: EXTRACT_MAX_TOKENS })
     if (!result.ok) return err(result.error)
 
     let parsed: unknown
@@ -78,12 +88,8 @@ export async function extractCandidates(text: string): Promise<Result<ExtractedC
     const validated = extractLLMSchema.safeParse(parsed)
     if (!validated.success) return err({ kind: 'malformed_llm_response', raw: result.value.slice(0, 200) })
 
-    const filtered = validated.data.terms
-        .filter(t => t.confidence > 0.5)
-        .slice(0, 20)
-        .map(t => ({ term: t.term.toLowerCase(), context: t.context, confidence: t.confidence }))
-
-    return ok(filtered)
+    const terms = [...new Set(validated.data.terms.map(t => t.trim().toLowerCase()).filter(Boolean))].slice(0, 15)
+    return ok(terms)
 }
 
 async function callDeepSeek({

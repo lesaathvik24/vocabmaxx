@@ -5,6 +5,7 @@ export const err = <E>(error: E): Result<never, E> => ({ ok: false, error })
 
 export type DefinitionError =
     | { kind: 'not_found' }
+    | { kind: 'not_a_word' }
     | { kind: 'no_fallback_available' }
     | { kind: 'malformed_llm_response'; raw: string }
     | { kind: 'network_failure'; cause: string }

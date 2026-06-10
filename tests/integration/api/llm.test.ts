@@ -23,7 +23,7 @@ describe('llm.client.fetchLLMDefinition', () => {
     it('success: parses strict JSON envelope into DefinitionResult', async () => {
         server.use(
             http.post(ENDPOINT, () =>
-                chat(JSON.stringify({ definition: 'rare word', examples: ['ex one', 'ex two'] })),
+                chat(JSON.stringify({ valid: true, definition: 'rare word', examples: ['ex one', 'ex two'] })),
             ),
         )
         const r = await fetchLLMDefinition('rare')
@@ -35,6 +35,13 @@ describe('llm.client.fetchLLMDefinition', () => {
         }
     })
 
+    it('valid=false: returns not_a_word', async () => {
+        server.use(http.post(ENDPOINT, () => chat(JSON.stringify({ valid: false }))))
+        const r = await fetchLLMDefinition('hufwueriugrniurejogt')
+        expect(r.ok).toBe(false)
+        if (!r.ok) expect(r.error.kind).toBe('not_a_word')
+    })
+
     it('429: returns rate_limited', async () => {
         server.use(http.post(ENDPOINT, () => new HttpResponse(null, { status: 429 })))
         const r = await fetchLLMDefinition('rare')
@@ -44,7 +51,7 @@ describe('llm.client.fetchLLMDefinition', () => {
 
     it('schema mismatch (wrong number of examples): malformed_llm_response', async () => {
         server.use(
-            http.post(ENDPOINT, () => chat(JSON.stringify({ definition: 'd', examples: ['only-one'] }))),
+            http.post(ENDPOINT, () => chat(JSON.stringify({ valid: true, definition: 'd', examples: ['only-one'] }))),
         )
         const r = await fetchLLMDefinition('rare')
         expect(r.ok).toBe(false)

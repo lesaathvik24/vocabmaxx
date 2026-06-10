@@ -9,6 +9,7 @@ import { BulkUploader } from '@/components/capture/BulkUploader'
 import { useCapture } from '@/lib/hooks/use-capture'
 import { useExtract } from '@/lib/hooks/use-extract'
 import { useBulkImport } from '@/lib/hooks/use-bulk-import'
+import { toUserMessage } from '@/lib/utils/errors'
 
 export function CapturePageClient() {
     const router = useRouter()
@@ -22,7 +23,8 @@ export function CapturePageClient() {
             router.refresh()
             return { ok: true }
         } catch (err) {
-            return { ok: false, error: err instanceof Error ? err.message : 'Unknown error' }
+            const kind = err instanceof Error ? err.message : 'unknown'
+            return { ok: false, error: toUserMessage(kind) }
         }
     }
 

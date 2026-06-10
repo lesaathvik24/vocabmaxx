@@ -25,6 +25,7 @@ export async function POST(req: Request) {
         const e = defResult.error
         if (e.kind === 'invalid_term') return NextResponse.json({ error: e }, { status: 400 })
         if (e.kind === 'not_found') return NextResponse.json({ error: e }, { status: 404 })
+        if (e.kind === 'not_a_word') return NextResponse.json({ error: e }, { status: 422 })
         if (e.kind === 'no_fallback_available') return NextResponse.json({ error: e }, { status: 400 })
         if (e.kind === 'malformed_llm_response') return NextResponse.json({ error: { kind: e.kind } }, { status: 502 })
         if (e.kind === 'network_failure') return NextResponse.json({ error: { kind: e.kind } }, { status: 503 })

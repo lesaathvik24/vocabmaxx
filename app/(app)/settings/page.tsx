@@ -1,9 +1,14 @@
+import { Sliders } from 'lucide-react'
+import { ComingSoon } from '@/components/layout/ComingSoon'
+
 export const metadata = { title: 'Settings' }
 
 export default function SettingsPage() {
     return (
-        <div className="flex items-center justify-center min-h-[50vh]">
-            <p className="text-muted-foreground text-sm">Settings — coming in Phase 8.</p>
-        </div>
+        <ComingSoon
+            icon={Sliders}
+            title="Settings unlock soon"
+            body="Profile, theme, notifications, export, and your danger zone — landing in the next drop. Theme toggle is already live in the top bar."
+        />
     )
 }

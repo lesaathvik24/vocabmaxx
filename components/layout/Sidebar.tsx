@@ -10,9 +10,11 @@ import {
     BookOpen,
     BarChart3,
     Sliders,
+    X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
+import { UserMenu } from './UserMenu'
 
 interface NavItem {
     id: string
@@ -32,10 +34,11 @@ const NAV: NavItem[] = [
 
 interface SidebarProps {
     dueCount: number
+    userEmail: string
     onClose?: () => void
 }
 
-export function Sidebar({ dueCount, onClose }: SidebarProps) {
+export function Sidebar({ dueCount, userEmail, onClose }: SidebarProps) {
     const pathname = usePathname()
 
     return (
@@ -51,10 +54,20 @@ export function Sidebar({ dueCount, onClose }: SidebarProps) {
                 >
                     V
                 </div>
-                <div>
+                <div className="flex-1 min-w-0">
                     <div className="font-display font-semibold text-sm leading-tight">VocabMaxx</div>
                     <div className="text-xs text-muted-foreground leading-tight">Everyday vocabulary</div>
                 </div>
+                {onClose && (
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        aria-label="Close navigation"
+                        className="-mr-1 flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                        <X size={18} aria-hidden="true" />
+                    </button>
+                )}
             </div>
 
             {/* Nav */}
@@ -98,7 +111,7 @@ export function Sidebar({ dueCount, onClose }: SidebarProps) {
             </div>
 
             {/* Footer */}
-            <div className="border-t border-border px-3 py-3 space-y-0.5">
+            <div className="border-t border-border px-3 py-3 space-y-1">
                 <Link
                     href="/settings"
                     onClick={onClose}
@@ -113,6 +126,7 @@ export function Sidebar({ dueCount, onClose }: SidebarProps) {
                     <Sliders size={19} aria-hidden="true" />
                     <span>Settings</span>
                 </Link>
+                <UserMenu email={userEmail} />
             </div>
         </nav>
     )

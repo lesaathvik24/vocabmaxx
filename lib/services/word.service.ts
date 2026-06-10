@@ -13,10 +13,13 @@ export interface SaveWordInput {
 }
 
 export async function save(input: SaveWordInput): Promise<Result<Word, CaptureError>> {
-    const existing = await wordsQ.findByUserAndTerm(input.userId, input.term)
+    const normalisedTerm = input.term.trim().toLowerCase()
+    if (!normalisedTerm) return err({ kind: 'invalid_term' })
+
+    const existing = await wordsQ.findByUserAndTerm(input.userId, normalisedTerm)
     if (existing) return err({ kind: 'duplicate_term' })
 
-    const word = await wordsQ.insert(input)
+    const word = await wordsQ.insert({ ...input, term: normalisedTerm })
     await srsQ.initialize(word.id, input.userId)
     return ok(word)
 }

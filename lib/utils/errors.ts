@@ -1,5 +1,6 @@
 const USER_MESSAGES: Record<string, string> = {
     not_found: 'No definition found for that word.',
+    not_a_word: "That doesn't look like an English word — check the spelling?",
     no_fallback_available: 'Definition lookup is unavailable right now.',
     malformed_llm_response: 'Received an unexpected response. Please try again.',
     network_failure: 'A network error occurred. Check your connection.',
