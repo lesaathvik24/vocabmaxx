@@ -538,45 +538,64 @@ None.
 
 ### 8.1a Settings — profile + theme
 - **Docs to load:** `docs/DESIGN.md §2` (tokens).
-- **Files:** `app/(app)/settings/page.tsx` (profile + theme sections).
-- **Acceptance:** profile fields editable; theme picker persists to user prefs.
-- **Status:** `[ ]`
+- **Files:** `app/(app)/settings/page.tsx`, `components/settings/SettingsForm.tsx`,
+  `lib/services/preferences.service.ts`, `lib/db/queries/preferences.ts`,
+  `lib/validation/preferences.schema.ts`, `app/api/preferences/route.ts`,
+  `drizzle/0003_user_preferences.sql` (new `user_preferences` table + RLS).
+- **Acceptance:** profile fields editable; theme picker persists to user prefs. ✅
+- **Status:** `[x]` (shipped 2026-06-10, branch `claude/learning-app-perf-features-5msa7s`).
 
 ### 8.1b Settings — notifications + danger zone
-- **Docs to load:** `docs/SECURITY.md §15` (account deletion).
-- **Files:** same page (notifications + delete-account sections).
-- **Acceptance:** delete account behind a typed-confirm; data fully deleted (cascade).
-- **Status:** `[ ]`
+- **Docs to load:** `docs/SECURITY.md §15` (account deletion); RUNBOOK §8 (account mgmt).
+- **Files:** `components/settings/SettingsForm.tsx` (notifications section),
+  `components/settings/DeleteAccountDialog.tsx`, `lib/services/account.service.ts`,
+  `lib/auth/admin.ts`, `app/api/account/route.ts`.
+- **Acceptance:** delete account behind a typed-confirm; data fully deleted (cascade). ✅
+- **Status:** `[x]` (shipped 2026-06-10).
 
 ### 8.2a Export — JSON + CSV
 - **Docs to load:** `docs/TECH_SPEC.md §4` (ExportService), `§5` (Export endpoint).
-- **Files:** `lib/services/export.service.ts` (json+csv methods), `app/api/export/route.ts`.
-- **Acceptance:** round-trip CSV → import → identical row count.
-- **Automated tests:** unit tests for each format.
-- **Status:** `[ ]`
+- **Files:** `lib/services/export.service.ts` (json+csv methods), `app/api/export/route.ts`,
+  `lib/db/queries/words.ts` (`listForExport`).
+- **Acceptance:** round-trip CSV → import → identical row count. ✅
+- **Automated tests:** `tests/unit/export.service.test.ts` (15 cases). ✅
+- **Status:** `[x]` (shipped 2026-06-10).
 
 ### 8.2b Export — Anki `.apkg`
 - **Docs to load:** `docs/TECH_SPEC.md §4` (ExportService), plus Anki .apkg spec (sqlite zip).
 - **Files:** `lib/services/export.service.ts` (anki method).
 - **Acceptance:** generated `.apkg` opens in Anki desktop without errors.
-- **Status:** `[ ]`
+- **Status:** `[~]` **deferred** (user decision 2026-06-10 — needs native sqlite+zip deps, manual-only
+  acceptance). `/api/export?format=anki` returns 501. Revival notes in `webusage.md` "8.2b".
 
 ### 8.3 Daily digest cron
 - **Docs to load:** `docs/TECH_SPEC.md §5` (Cron section), `docs/RUNBOOK.md` (deploy/cron).
-- **Files:** `app/api/cron/daily-digest/route.ts`, `lib/services/email.service.ts`, `vercel.json` (cron spec).
-- **Acceptance:** Vercel Cron fires → Resend sends digest.
-- **Manual test:** set preferred time = now+2min → wait → email arrives.
-- **Status:** `[ ]`
+- **Files:** `app/api/cron/daily-digest/route.ts`, `lib/services/email.service.ts`,
+  `lib/services/digest.service.ts`, `vercel.json` (cron spec).
+- **Acceptance:** Vercel Cron fires → Resend sends digest. ✅ (logic shipped + tested; live send
+  pending Resend domain verification — see manual checks).
+- **Manual test:** set `digest_hour` = current UTC hour with words due → POST the cron route → email arrives.
+- **Status:** `[x]` (shipped 2026-06-10; live-send verification is a manual check).
 
 ### Phase 8 — Setup actions (you)
-1. **Resend domain verification** must be complete before digest cron is enabled in prod.
-2. **Vercel cron** requires a Pro plan for sub-daily intervals; daily is on Hobby.
+1. **Apply `drizzle/0003_user_preferences.sql`** via Supabase SQL Editor (the `db:push` path
+   fails over IPv6 from some networks; the SQL Editor is HTTPS and works). Idempotent.
+2. **Env vars** (Vercel prod): `EMAIL_FROM` (verified Resend sender), `NEXT_PUBLIC_APP_URL`;
+   confirm `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `CRON_SECRET` are set.
+3. **Resend domain verification** must be complete before the digest is enabled in prod.
+4. **Vercel cron** requires a Pro plan for sub-daily intervals; daily (`0 14 * * *`) is on Hobby.
 
 ### Phase 8 — End-to-end verification
-- [ ] Export each format → re-import the CSV → row counts match.
-- [ ] Open `.apkg` in Anki → deck imports cleanly with N cards.
-- [ ] Delete account → re-sign-in fails; words/srs_state/review_log rows for that user are gone.
-- [ ] Wait for cron → digest email lands with correct due-count.
+- [ ] Apply `0003_user_preferences.sql` in Supabase SQL Editor (required first).
+- [ ] Settings → edit profile + theme → reload → both persist to the account.
+- [ ] Export each format → re-import the CSV → row counts match. (`anki` → 501, expected.)
+- [~] Open `.apkg` in Anki → deck imports cleanly (deferred — 8.2b).
+- [ ] Delete a throwaway account → re-sign-in fails; words/srs_state/review_log/user_preferences
+      rows for that user are gone (cascade).
+- [ ] POST the cron route with the CRON_SECRET bearer → digest email lands with correct due-count;
+      wrong/absent bearer → 401.
+
+> Full per-task build notes + the complete manual-check list: `webusage.md` → "Phase 8".
 
 ---
 

@@ -119,6 +119,36 @@ export async function listWithSrsByUser(userId: string): Promise<WordListRow[]> 
     }))
 }
 
+export interface ExportRow extends Word {
+    easeFactor: number | null
+    intervalDays: number | null
+    repetitions: number | null
+    dueDate: Date | null
+    lastReviewedAt: Date | null
+}
+
+/**
+ * Every word a user owns, joined with its full SRS state, for data export.
+ * Left join so words without an srs_state row still export (SRS fields null).
+ */
+export async function listForExport(userId: string): Promise<ExportRow[]> {
+    const rows = await db
+        .select()
+        .from(words)
+        .leftJoin(srsState, eq(srsState.wordId, words.id))
+        .where(eq(words.userId, userId))
+        .orderBy(desc(words.addedAt))
+
+    return rows.map(({ words: w, srs_state: s }) => ({
+        ...rowToWord(w),
+        easeFactor: s?.easeFactor ?? null,
+        intervalDays: s?.intervalDays ?? null,
+        repetitions: s?.repetitions ?? null,
+        dueDate: s?.dueDate ?? null,
+        lastReviewedAt: s?.lastReviewedAt ?? null,
+    }))
+}
+
 export async function countByUser(userId: string): Promise<number> {
     const [row] = await db.select({ value: count() }).from(words).where(eq(words.userId, userId))
     return row?.value ?? 0

@@ -1,4 +1,4 @@
-import { pgTable, pgSchema, uuid, text, timestamp, integer, doublePrecision, jsonb, pgEnum, index, uniqueIndex } from 'drizzle-orm/pg-core'
+import { pgTable, pgSchema, uuid, text, timestamp, integer, doublePrecision, boolean, jsonb, pgEnum, index, uniqueIndex } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 
 export const definitionSourceEnum = pgEnum('definition_source', ['dictionary', 'llm'])
@@ -53,6 +53,18 @@ export const importJobs = pgTable('import_jobs', {
     failedCount: integer('failed_count').notNull().default(0),
     errors: jsonb('errors').$type<{ term: string; reason: string }[]>().notNull().default(sql`'[]'::jsonb`),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
+export const userPreferences = pgTable('user_preferences', {
+    userId: uuid('user_id')
+        .primaryKey()
+        .references(() => authUsers.id, { onDelete: 'cascade' }),
+    displayName: text('display_name'),
+    theme: text('theme').notNull().default('dark'), // 'light' | 'dark'
+    dailyDigest: boolean('daily_digest').notNull().default(false),
+    digestHour: integer('digest_hour').notNull().default(14), // UTC hour 0-23
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 })
 
 export const definitionCache = pgTable('definition_cache', {
