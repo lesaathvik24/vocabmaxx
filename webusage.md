@@ -175,4 +175,34 @@ interval/ease/due evolve. e.g. from the initial state: Good → 1d, Good → 6d,
 
 Integration tests (`pnpm test:integ`) were not run here as they require a live test
 Supabase (`SUPABASE_TEST_DB_URL`) not available in this sandbox.
+
+---
+
+## Follow-up — Vercel build failure on `/auth/sign-in` (fixed)
+
+**Symptom.** Vercel build failed:
+`Error occurred prerendering page "/auth/sign-in"` →
+`@supabase/ssr: Your project's URL and API key are required to create a Supabase client!`
+
+**Root cause.** `app/auth/sign-in/page.tsx` and `app/auth/sign-up/page.tsx` render
+`components/auth/AuthCard.tsx`, a client component that calls `createClient()` (→
+`createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, …ANON_KEY!)`) **at render
+time**. These two pages had no dynamic flag, so Next.js tried to **statically
+prerender** them at build. During static export the `NEXT_PUBLIC_*` values weren't
+present, so the client constructor threw and aborted the build.
+
+**Fix.** Added `export const dynamic = 'force-dynamic'` to both auth pages so they are
+server-rendered on demand instead of prerendered at build — matching the `(app)` pages.
+After the change `pnpm build` completes locally and the route table shows
+`/auth/sign-in` and `/auth/sign-up` as `ƒ (Dynamic)`.
+
+**Files changed:** `app/auth/sign-in/page.tsx`, `app/auth/sign-up/page.tsx`.
+
+**Important Vercel env note.** `NEXT_PUBLIC_*` vars are inlined into the client bundle
+**at build time**. This branch deploys to Vercel's **Preview** environment, so make sure
+`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `DATABASE_URL`, and the
+other keys from `.env.local` are configured for **Preview** (not only Production) — the
+likely reason the env was missing at build. With the dynamic fix the build will no
+longer crash even if a var is briefly missing, but the auth UI needs the
+`NEXT_PUBLIC_*` values present at build to function in the browser.
 </content>
