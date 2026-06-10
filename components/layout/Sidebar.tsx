@@ -37,10 +37,11 @@ const NAV: NavItem[] = [
 interface SidebarProps {
     dueCount: number
     userEmail: string
+    displayName?: string | null
     onClose?: () => void
 }
 
-export function Sidebar({ dueCount, userEmail, onClose }: SidebarProps) {
+export function Sidebar({ dueCount, userEmail, displayName, onClose }: SidebarProps) {
     const pathname = usePathname()
 
     return (
@@ -128,7 +129,7 @@ export function Sidebar({ dueCount, userEmail, onClose }: SidebarProps) {
                     <Sliders size={19} aria-hidden="true" />
                     <span>Settings</span>
                 </Link>
-                <UserMenu email={userEmail} />
+                <UserMenu email={userEmail} displayName={displayName} />
             </div>
         </nav>
     )

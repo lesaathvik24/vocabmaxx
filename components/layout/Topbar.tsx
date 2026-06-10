@@ -15,9 +15,10 @@ import { cn } from '@/lib/utils'
 interface TopbarProps {
     dueCount: number
     userEmail: string
+    displayName?: string | null
 }
 
-export function Topbar({ dueCount, userEmail }: TopbarProps) {
+export function Topbar({ dueCount, userEmail, displayName }: TopbarProps) {
     const { theme, setTheme } = useTheme()
     const [mounted, setMounted] = useState(false)
     const [sheetOpen, setSheetOpen] = useState(false)
@@ -47,7 +48,7 @@ export function Topbar({ dueCount, userEmail }: TopbarProps) {
                     <Menu size={20} aria-hidden="true" />
                 </SheetTrigger>
                 <SheetContent side="left" className="p-0 w-64" showCloseButton={false}>
-                    <Sidebar dueCount={dueCount} userEmail={userEmail} onClose={() => setSheetOpen(false)} />
+                    <Sidebar dueCount={dueCount} userEmail={userEmail} displayName={displayName} onClose={() => setSheetOpen(false)} />
                 </SheetContent>
             </Sheet>
 

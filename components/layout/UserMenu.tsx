@@ -7,16 +7,24 @@ import { createClient } from '@/lib/auth/client'
 
 interface UserMenuProps {
     email: string
+    displayName?: string | null
 }
 
-function initials(email: string): string {
+function initials(name: string): string {
+    const parts = name.trim().split(/\s+/).filter(Boolean)
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+    return 'U'
+}
+
+function initialsFromEmail(email: string): string {
     const local = email.split('@')[0] ?? ''
     const parts = local.split(/[._-]/).filter(Boolean)
     if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
     return local.slice(0, 2).toUpperCase() || 'U'
 }
 
-export function UserMenu({ email }: UserMenuProps) {
+export function UserMenu({ email, displayName }: UserMenuProps) {
     const router = useRouter()
     const [signingOut, setSigningOut] = useState(false)
 
@@ -35,13 +43,16 @@ export function UserMenu({ email }: UserMenuProps) {
                 className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-soft text-accent text-xs font-semibold flex-shrink-0"
                 aria-hidden="true"
             >
-                {initials(email)}
+                {displayName ? initials(displayName) : initialsFromEmail(email)}
             </div>
             <div className="min-w-0 flex-1">
-                <div className="truncate text-xs font-semibold leading-tight" title={email}>
-                    {email}
+                <div
+                    className="truncate text-xs font-semibold leading-tight"
+                    title={displayName ?? email}
+                >
+                    {displayName ?? email}
                 </div>
-                <div className="text-[11px] text-muted-foreground leading-tight">Free · beta</div>
+                <div className="text-[11px] text-muted-foreground leading-tight">{email}</div>
             </div>
             <button
                 type="button"
