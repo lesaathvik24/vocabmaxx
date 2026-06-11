@@ -10,6 +10,8 @@ interface SessionDoneScreenProps {
     /** Whether the just-finished session was a practice (cram) run. */
     practice?: boolean
     onExit: () => void
+    /** Restart the same session in-place (used by practice "Keep reviewing"). */
+    onRestart: () => void
 }
 
 function formatDuration(ms: number): string {
@@ -22,7 +24,7 @@ function formatDuration(ms: number): string {
 const captureHref: Route = '/capture'
 const practiceHref = '/review?mode=practice' as Route
 
-export function SessionDoneScreen({ count, durationMs, practice = false, onExit }: SessionDoneScreenProps) {
+export function SessionDoneScreen({ count, durationMs, practice = false, onExit, onRestart }: SessionDoneScreenProps) {
     return (
         <div className="flex flex-col items-center gap-6 py-12 px-6 text-center">
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-success/10 text-success">
@@ -41,15 +43,26 @@ export function SessionDoneScreen({ count, durationMs, practice = false, onExit 
                 <Button variant="outline" size="lg" onClick={onExit} className="min-h-[44px]">
                     Back to dashboard
                 </Button>
-                <Link
-                    href={practiceHref}
-                    className={cn(
-                        buttonVariants({ variant: 'outline', size: 'lg' }),
-                        'gap-2 min-h-[44px]',
-                    )}
-                >
-                    <RotateCcw size={18} aria-hidden="true" /> Keep reviewing
-                </Link>
+                {practice ? (
+                    <Button
+                        variant="outline"
+                        size="lg"
+                        onClick={onRestart}
+                        className="gap-2 min-h-[44px]"
+                    >
+                        <RotateCcw size={18} aria-hidden="true" /> Keep reviewing
+                    </Button>
+                ) : (
+                    <Link
+                        href={practiceHref}
+                        className={cn(
+                            buttonVariants({ variant: 'outline', size: 'lg' }),
+                            'gap-2 min-h-[44px]',
+                        )}
+                    >
+                        <RotateCcw size={18} aria-hidden="true" /> Keep reviewing
+                    </Link>
+                )}
                 <Link
                     href={captureHref}
                     className={cn(

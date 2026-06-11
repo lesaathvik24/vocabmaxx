@@ -6,7 +6,6 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 
 interface ParagraphExtractorProps {
@@ -144,7 +143,7 @@ export function ParagraphExtractor({ onExtract, onSaveSelected }: ParagraphExtra
                         </div>
                     </div>
 
-                    <ScrollArea className="max-h-72 rounded-lg border border-border">
+                    <div className="max-h-72 overflow-y-auto rounded-lg border border-border">
                         <ul className="p-2 space-y-1">
                             {candidates.map((term) => (
                                 <li key={term}>
@@ -160,7 +159,7 @@ export function ParagraphExtractor({ onExtract, onSaveSelected }: ParagraphExtra
                                 </li>
                             ))}
                         </ul>
-                    </ScrollArea>
+                    </div>
 
                     <Button
                         onClick={handleSave}

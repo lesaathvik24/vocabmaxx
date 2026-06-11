@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
@@ -67,13 +67,27 @@ export function ReviewSession({ initialCards, practice = false }: ReviewSessionP
         [session, practice],
     )
 
-    if (isDone(session)) {
+    const done = isDone(session)
+
+    // Refresh server components (e.g. sidebar due badge) once a real review
+    // session finishes and grades have been persisted.
+    useEffect(() => {
+        if (done && !practice) router.refresh()
+    }, [done, practice, router])
+
+    const handleRestart = useCallback(() => {
+        startedAt.current = Date.now()
+        setSession(createSession(initialCards))
+    }, [initialCards])
+
+    if (done) {
         return (
             <SessionDoneScreen
                 count={session.reviewedCount}
                 durationMs={Date.now() - startedAt.current}
                 practice={practice}
                 onExit={() => router.push('/dashboard')}
+                onRestart={handleRestart}
             />
         )
     }
