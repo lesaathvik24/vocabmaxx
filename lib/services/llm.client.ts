@@ -17,8 +17,15 @@ const extractLLMSchema = z.object({
     terms: z.array(z.string().min(1).max(64)),
 })
 
+const correctionLLMSchema = z.object({
+    correction: z.string().max(64).nullable(),
+})
+
 const DEFINITION_SYSTEM =
     'You are a vocabulary tutor for an advanced English speaker. Given a single word, return strict JSON. Schema: {"valid": boolean, "definition": string, "examples": [string, string]}. If the input is a real English word (including rare, archaic, technical, or coined-but-recognised terms): set valid=true, provide a concise definition (max 25 words) and exactly two natural usage examples from contexts like podcasts, journalism, or conversation. If the input is gibberish, a typo, a random keyboard mash, or not an English word: set valid=false and omit definition/examples. Output JSON only — no markdown, no preamble, no "I cannot" prose.'
+
+const CORRECTION_SYSTEM =
+    'You are a forgiving spelling corrector for an English vocabulary app. The user typed a string that is NOT a recognized English word. If it is plausibly a misspelling of a single real English word, return that word — be generous with edit distance and phonetic guesses (e.g. "exaacerbait" -> "exacerbate", "definately" -> "definitely", "rythm" -> "rhythm", "acommodate" -> "accommodate"). Return strict JSON ONLY: {"correction": string | null}. Set correction to the single most likely intended word, lowercased, letters only. If it is random keyboard mash, an abbreviation, or you cannot map it to a real English word with reasonable confidence, return {"correction": null}. No markdown, no preamble.'
 
 const EXTRACT_SYSTEM =
     'You extract advanced vocabulary from English paragraphs for a B2+ learner. Return strict JSON ONLY in this exact schema: {"terms": ["word1", "word2", ...]}. Rules: 5-15 items. Each item is a single lowercased word (1-2 words max, no phrases > 2 words, no proper nouns, no common words). No commentary, no markdown, no preamble. If the paragraph is empty or has no advanced vocabulary, return {"terms": []}.'
@@ -51,6 +58,34 @@ export async function fetchLLMDefinition(term: string): Promise<Result<Definitio
     }
 
     return ok({ definition, examples: [examples[0], examples[1]], source: 'llm' })
+}
+
+/**
+ * Ask the LLM for the most likely intended spelling of a term that failed
+ * definition lookup. Returns the suggested word, or null when the model can't
+ * confidently map the input to a real word. Errors surface as LLMError.
+ */
+export async function suggestSpelling(term: string): Promise<Result<string | null, LLMError>> {
+    if (!process.env.DEEPSEEK_API_KEY) return err({ kind: 'no_fallback_available' })
+
+    const result = await callDeepSeek({
+        system: CORRECTION_SYSTEM,
+        user: term,
+        maxTokens: 20,
+    })
+    if (!result.ok) return err(result.error)
+
+    let parsed: unknown
+    try {
+        parsed = JSON.parse(result.value)
+    } catch {
+        return err({ kind: 'malformed_llm_response', raw: result.value.slice(0, 200) })
+    }
+
+    const validated = correctionLLMSchema.safeParse(parsed)
+    if (!validated.success) return err({ kind: 'malformed_llm_response', raw: result.value.slice(0, 200) })
+
+    return ok(validated.data.correction)
 }
 
 export async function extractCandidates(text: string): Promise<Result<string[], LLMError>> {

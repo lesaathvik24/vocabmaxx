@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach, beforeEach } from 'vitest'
 import { setupServer } from 'msw/node'
 import { http, HttpResponse } from 'msw'
-import { fetchLLMDefinition } from '@/lib/services/llm.client'
+import { fetchLLMDefinition, suggestSpelling } from '@/lib/services/llm.client'
 
 const ENDPOINT = 'https://api.deepseek.com/chat/completions'
 
@@ -75,6 +75,58 @@ describe('llm.client.fetchLLMDefinition', () => {
             }),
         )
         const r = await fetchLLMDefinition('rare')
+        expect(r.ok).toBe(false)
+        if (!r.ok) expect(r.error.kind).toBe('no_fallback_available')
+        expect(called).toBe(false)
+    })
+})
+
+describe('llm.client.suggestSpelling', () => {
+    it('parses a correction from the JSON envelope', async () => {
+        server.use(http.post(ENDPOINT, () => chat(JSON.stringify({ correction: 'exacerbate' }))))
+        const r = await suggestSpelling('exaacerbait')
+        expect(r.ok).toBe(true)
+        if (r.ok) expect(r.value).toBe('exacerbate')
+    })
+
+    it('returns null correction when the model declines', async () => {
+        server.use(http.post(ENDPOINT, () => chat(JSON.stringify({ correction: null }))))
+        const r = await suggestSpelling('asdfghjkl')
+        expect(r.ok).toBe(true)
+        if (r.ok) expect(r.value).toBeNull()
+    })
+
+    it('schema mismatch: malformed_llm_response', async () => {
+        server.use(http.post(ENDPOINT, () => chat(JSON.stringify({ wrong: 'shape' }))))
+        const r = await suggestSpelling('exaacerbait')
+        expect(r.ok).toBe(false)
+        if (!r.ok) expect(r.error.kind).toBe('malformed_llm_response')
+    })
+
+    it('non-JSON content body: malformed_llm_response', async () => {
+        server.use(http.post(ENDPOINT, () => chat('definitely not json')))
+        const r = await suggestSpelling('exaacerbait')
+        expect(r.ok).toBe(false)
+        if (!r.ok) expect(r.error.kind).toBe('malformed_llm_response')
+    })
+
+    it('429: returns rate_limited', async () => {
+        server.use(http.post(ENDPOINT, () => new HttpResponse(null, { status: 429 })))
+        const r = await suggestSpelling('exaacerbait')
+        expect(r.ok).toBe(false)
+        if (!r.ok) expect(r.error.kind).toBe('rate_limited')
+    })
+
+    it('missing API key: no_fallback_available without HTTP call', async () => {
+        delete process.env.DEEPSEEK_API_KEY
+        let called = false
+        server.use(
+            http.post(ENDPOINT, () => {
+                called = true
+                return chat('{}')
+            }),
+        )
+        const r = await suggestSpelling('exaacerbait')
         expect(r.ok).toBe(false)
         if (!r.ok) expect(r.error.kind).toBe('no_fallback_available')
         expect(called).toBe(false)

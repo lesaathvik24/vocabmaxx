@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { AddWordInput } from '@/components/capture/AddWordInput'
+import { AddWordInput, type CaptureOutcome } from '@/components/capture/AddWordInput'
 import { ParagraphExtractor } from '@/components/capture/ParagraphExtractor'
 import { BulkUploader } from '@/components/capture/BulkUploader'
 import { useCapture } from '@/lib/hooks/use-capture'
@@ -17,14 +17,17 @@ export function CapturePageClient() {
     const extractMutation = useExtract()
     const bulkImportMutation = useBulkImport()
 
-    async function handleCapture(term: string): Promise<{ ok: boolean; error?: string }> {
+    async function handleCapture(term: string): Promise<CaptureOutcome> {
         try {
-            await captureMutation.mutateAsync(term)
+            const result = await captureMutation.mutateAsync(term)
+            if (result.kind === 'suggestion') {
+                return { status: 'suggestion', suggestion: result.suggestion }
+            }
             router.refresh()
-            return { ok: true }
+            return { status: 'saved' }
         } catch (err) {
             const kind = err instanceof Error ? err.message : 'unknown'
-            return { ok: false, error: toUserMessage(kind) }
+            return { status: 'error', error: toUserMessage(kind) }
         }
     }
 

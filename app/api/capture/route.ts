@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { captureSchema } from '@/lib/validation/capture.schema'
 import { getUserForApi } from '@/lib/auth/api'
 import * as definitionService from '@/lib/services/definition.service'
+import * as spellcheckService from '@/lib/services/spellcheck.service'
 import * as wordService from '@/lib/services/word.service'
 import { take } from '@/lib/utils/rate-limit'
 import { toUserMessage } from '@/lib/utils/errors'
@@ -35,7 +36,12 @@ export async function POST(req: Request) {
         const e = defResult.error
         if (e.kind === 'invalid_term') return NextResponse.json({ error: e }, { status: 400 })
         if (e.kind === 'not_found') return NextResponse.json({ error: e }, { status: 404 })
-        if (e.kind === 'not_a_word') return NextResponse.json({ error: e }, { status: 422 })
+        if (e.kind === 'not_a_word') {
+            // Not a real word — offer a "did you mean …?" before giving up.
+            const suggestion = await spellcheckService.suggestCorrection(parsed.data.term)
+            if (suggestion) return NextResponse.json({ data: { suggestion } }, { status: 200 })
+            return NextResponse.json({ error: e }, { status: 422 })
+        }
         if (e.kind === 'no_fallback_available') return NextResponse.json({ error: e }, { status: 400 })
         if (e.kind === 'malformed_llm_response') return NextResponse.json({ error: { kind: e.kind } }, { status: 502 })
         if (e.kind === 'network_failure') return NextResponse.json({ error: { kind: e.kind } }, { status: 503 })
