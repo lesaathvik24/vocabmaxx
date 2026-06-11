@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import type { Route } from 'next'
 import { Menu, Sun, Moon, Plus } from 'lucide-react'
@@ -54,9 +55,10 @@ export function Topbar({ dueCount, userEmail, displayName }: TopbarProps) {
             {/* Brand (mobile only) */}
             <Link
                 href={dashboardHref}
-                className="md:hidden font-display font-semibold text-sm"
+                className="md:hidden flex items-center gap-2 font-display font-semibold text-sm"
                 aria-label="VocabMaxx home"
             >
+                <Image src="/logo.png" alt="" width={24} height={24} className="h-6 w-6 rounded-md" priority />
                 VocabMaxx
             </Link>
 

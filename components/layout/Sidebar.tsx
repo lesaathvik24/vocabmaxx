@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import type { Route } from 'next'
 import { usePathname } from 'next/navigation'
 import {
@@ -51,12 +52,15 @@ export function Sidebar({ dueCount, userEmail, displayName, onClose }: SidebarPr
         >
             {/* Brand */}
             <div className="flex items-center gap-3 px-5 py-5 border-b border-border">
-                <div
-                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-accent-foreground font-display font-bold text-sm flex-shrink-0"
+                <Image
+                    src="/logo.png"
+                    alt=""
+                    width={32}
+                    height={32}
+                    className="h-8 w-8 rounded-lg flex-shrink-0"
                     aria-hidden="true"
-                >
-                    V
-                </div>
+                    priority
+                />
                 <div className="flex-1 min-w-0">
                     <div className="font-display font-semibold text-sm leading-tight">VocabMaxx</div>
                     <div className="text-xs text-muted-foreground leading-tight">Everyday vocabulary</div>

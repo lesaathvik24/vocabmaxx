@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Loader2, Mail, ArrowRight, CheckCircle2 } from 'lucide-react'
 import { createClient } from '@/lib/auth/client'
 import { Button } from '@/components/ui/button'
@@ -114,9 +115,14 @@ export function AuthCard({ mode }: AuthCardProps) {
             {/* Top nav */}
             <nav className="flex items-center justify-between px-6 py-4">
                 <Link href="/" className="flex items-center gap-2.5">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-accent-foreground font-display font-bold text-sm">
-                        V
-                    </div>
+                    <Image
+                        src="/logo.png"
+                        alt="VocabMaxx"
+                        width={32}
+                        height={32}
+                        className="h-8 w-8 rounded-lg"
+                        priority
+                    />
                     <span className="font-display font-semibold text-base tracking-tight">VocabMaxx</span>
                 </Link>
                 <Link

@@ -605,13 +605,13 @@ None.
 - **Docs to load:** `docs/TECH_SPEC.md §12` (performance contracts), `docs/ARCHITECTURE.md §11`.
 - **Acceptance:** Lighthouse mobile ≥ 95 on `/`, `/dashboard`, `/review`.
 - **Manual test:** Run Lighthouse from Chrome DevTools or `npx lighthouse` → > 95 on FCP, LCP, CLS, TBT. (No `pnpm lighthouse` package.json script exists — run manually.)
-- **Status:** `[ ]`
+- **Status:** `[~]` — code side done: `/` prerenders **static** (`○` in `next build`), fonts use `display: swap`, no client JS bundle gates first paint on the landing page. The numeric Lighthouse ≥ 95 verification is a manual gate (needs a running prod build + Chrome) and has not been run in-session.
 
 ### 9.2 SEO + OG
 - **Docs to load:** `docs/DESIGN.md §9` (marketing).
-- **Files:** `app/sitemap.ts`, `app/robots.ts`, `app/opengraph-image.tsx`.
+- **Files:** `app/sitemap.ts`, `app/robots.ts`, `app/opengraph-image.tsx`, `lib/site.ts`, `app/layout.tsx` (metadata).
 - **Acceptance:** OG card renders for marketing pages; sitemap valid.
-- **Status:** `[ ]`
+- **Status:** `[x]` — completed 2026-06-11. `app/sitemap.ts` (/, /auth/sign-up, /auth/sign-in), `app/robots.ts` (allows `/`, disallows app + `/api/` routes, points at sitemap), dynamic `app/opengraph-image.tsx` (1200×630, `next/og`, brand dark/teal palette), shared `lib/site.ts` (url/name/description from `NEXT_PUBLIC_APP_URL`), and full `metadataBase` + `openGraph` + `twitter` (`summary_large_image`) tags in `app/layout.tsx`. All three (`/sitemap.xml`, `/robots.txt`, `/opengraph-image`) prerender static in `next build`.
 
 ### 9.3 README + LinkedIn post
 - **Files:** `README.md` (top-level).

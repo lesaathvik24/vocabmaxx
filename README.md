@@ -41,6 +41,20 @@ Translation: **Anki is a mature general-purpose SRS that asks you to be a card a
 
 ---
 
+## "But every flashcard app has AI now."
+
+True. Quizlet has Q-Chat, RemNote has AI cards, there are a dozen "AI Anki" add-ons. Most of them bolt an LLM onto every card and call it a feature. VocabMaxx treats the LLM as the **last resort, not the front door** — and that single decision is the whole difference:
+
+- **Dictionary-first, LLM-fallback — not LLM-everything.** A free dictionary answers most captures in ~200ms for **$0 and zero hallucination risk**. The DeepSeek LLM only fires when the dictionary has no usable example. "AI-first" apps pay latency, money, and hallucination tax on *every* card, including the word "cat." [(ADR 0005)](docs/ADR/0005-hybrid-definition-pipeline.md)
+- **The model fills the card once — it isn't a chatbot you babysit.** Capture is a one-shot, deterministic pipeline: the LLM returns JSON, Zod validates the shape, a branded `ValidWord` type gates what reaches your DB. A bad/oversized/malformed response is rejected at the boundary, not persisted. No "regenerate," no prompt-wrangling, no chat history to lose.
+- **Definitions are cached globally, so AI cost trends to zero.** The first person ever to capture `alacrity` pays the fallback (~$0.0001); every future user gets it free from cache. Per-user token burn → ~0. No "AI credits," no metered paywall, no "you've hit your monthly AI limit."
+- **The AI's output is yours, in your Postgres, exportable.** AI flashcard apps lock the generated cards inside their product. Here the card lands in your own database the instant it's created — JSON/CSV export live today.
+- **Swappable by design.** The definition provider sits behind a service seam ([ADR 0007](docs/ADR/0007-deepseek-over-anthropic.md)); DeepSeek today, any model tomorrow, no rewrite. The LLM is an implementation detail, not the product.
+
+The product isn't "AI for flashcards." It's **the shortest possible path from a word you just heard to a card you own** — and AI is one cheap, bounded, cached step inside that path.
+
+---
+
 ## What's under the hood
 
 - **Hybrid definition pipeline.** Free dictionary first (~200ms), DeepSeek LLM only when the dictionary doesn't have a good example. Per-word cost is fractions of a cent. Definitions are cached **globally** — the first user to capture a word pays, every future user is free. [(ADR 0005)](docs/ADR/0005-hybrid-definition-pipeline.md) [(ADR 0007)](docs/ADR/0007-deepseek-over-anthropic.md)
@@ -85,7 +99,7 @@ ADRs explaining every non-obvious choice live in [`docs/ADR/`](docs/ADR/) — 7 
 | 6 — Word list, detail, search | ✅ | List, filter/search, detail, edit, delete |
 | 7 — Insights | ✅ | Growth chart, retention gauge, problem words |
 | 8 — Settings, export, daily digest | ✅ | Settings form, account deletion, JSON / CSV export, Resend daily-digest cron |
-| 9 — Polish & launch | ⏳ next | Lighthouse ≥ 95, SEO, OG, ship; Anki `.apkg` export |
+| 9 — Polish & launch | 🔄 | SEO (`sitemap.xml`/`robots.txt`) + dynamic OG image ✅; perf pass + Lighthouse run + Anki `.apkg` + v1.0.0 tag remaining |
 
 **168 unit tests green, 0 `any` in `lib/domain/`.** Also shipped beyond the core phases: an interactive SM-2 [Algorithm lab](docs/ROADMAP.md) (`/algorithm`) and non-destructive practice mode. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the full phase breakdown.
 

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { Zap, Repeat, Lock, ArrowRight, Sparkles } from 'lucide-react'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -26,9 +27,14 @@ export default function MarketingPage() {
         <main className="min-h-screen flex flex-col bg-background text-foreground">
             <nav className="flex items-center justify-between px-6 py-4 border-b border-border">
                 <Link href="/" className="flex items-center gap-2.5">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-accent-foreground font-display font-bold text-sm">
-                        V
-                    </div>
+                    <Image
+                        src="/logo.png"
+                        alt="VocabMaxx"
+                        width={32}
+                        height={32}
+                        className="h-8 w-8 rounded-lg"
+                        priority
+                    />
                     <span className="font-display font-semibold text-base tracking-tight">VocabMaxx</span>
                 </Link>
                 <div className="flex items-center gap-2">

@@ -28,6 +28,13 @@ next-env.d.ts
 # os
 .DS_Store
 
+# personal / private notes (never push)
+/interview.md
+/.claude/
+
+# source logo drop (canonical copies live in public/ + app/)
+/logo.png
+
 # test
 /playwright-report/
 /test-results/

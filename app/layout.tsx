@@ -5,6 +5,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { PostHogProvider } from '@/lib/analytics/posthog'
 import { QueryProvider } from '@/lib/providers/query-provider'
 import { cn } from '@/lib/utils'
+import { siteUrl, siteName, siteDescription } from '@/lib/site'
 import './globals.css'
 
 const inter = Inter({
@@ -35,9 +36,35 @@ const jetbrainsMono = JetBrains_Mono({
     display: 'swap',
 })
 
+const title = 'VocabMaxx — capture words, own them'
+
 export const metadata: Metadata = {
-    title: { default: 'VocabMaxx', template: '%s — VocabMaxx' },
-    description: 'Capture words, own them. Spaced-repetition vocabulary builder.',
+    metadataBase: new URL(siteUrl),
+    title: { default: title, template: '%s — VocabMaxx' },
+    description: siteDescription,
+    applicationName: siteName,
+    keywords: [
+        'vocabulary builder',
+        'spaced repetition',
+        'SM-2',
+        'flashcards',
+        'SRS',
+        'Anki alternative',
+        'learn words',
+    ],
+    alternates: { canonical: '/' },
+    openGraph: {
+        type: 'website',
+        url: siteUrl,
+        siteName,
+        title,
+        description: siteDescription,
+    },
+    twitter: {
+        card: 'summary_large_image',
+        title,
+        description: siteDescription,
+    },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
