@@ -11,6 +11,7 @@ function makeDeps(over: Partial<DashboardDeps> = {}): DashboardDeps {
         reviewOutcomes: vi.fn().mockResolvedValue({ total: 0, passed: 0 }),
         dailyReviewCounts: vi.fn().mockResolvedValue([]),
         reviewDayKeys: vi.fn().mockResolvedValue([]),
+        sidequestStats: vi.fn().mockResolvedValue({ xp: 0, completed: 0, missed: 0 }),
         ...over,
     }
 }
@@ -60,10 +61,12 @@ describe('getDashboardData', () => {
         const deps = makeDeps({
             countWords: vi.fn().mockResolvedValue(42),
             countDue: vi.fn().mockResolvedValue(7),
+            sidequestStats: vi.fn().mockResolvedValue({ xp: 130, completed: 13, missed: 4 }),
         })
         const data = await getDashboardData('u1', deps, NOW)
         expect(data.stats.learned).toBe(42)
         expect(data.stats.due).toBe(7)
+        expect(data.stats.xp).toBe(130)
         expect(data.stats.weekGoal).toBe(10)
         expect(data.stats.history).toHaveLength(7)
     })

@@ -1,7 +1,7 @@
 import { describe, it, expect, afterAll } from 'vitest'
 import postgres from 'postgres'
 
-const EXPECTED_TABLES = ['words', 'srs_state', 'review_log', 'import_jobs', 'definition_cache']
+const EXPECTED_TABLES = ['words', 'srs_state', 'review_log', 'import_jobs', 'user_preferences', 'sidequests', 'definition_cache']
 
 describe.skipIf(!process.env.DATABASE_URL)('DB schema introspection', () => {
     const sql = postgres(process.env.DATABASE_URL!)
@@ -10,7 +10,7 @@ describe.skipIf(!process.env.DATABASE_URL)('DB schema introspection', () => {
         await sql.end()
     })
 
-    it('all 5 public tables exist', async () => {
+    it('all 7 public tables exist', async () => {
         const rows = await sql<{ tablename: string }[]>`
             SELECT tablename
             FROM pg_tables
@@ -22,7 +22,7 @@ describe.skipIf(!process.env.DATABASE_URL)('DB schema introspection', () => {
         }
     })
 
-    it('RLS is enabled on all 5 tables', async () => {
+    it('RLS is enabled on all 7 tables', async () => {
         const rows = await sql<{ tablename: string; rowsecurity: boolean }[]>`
             SELECT tablename, rowsecurity
             FROM pg_tables
@@ -36,8 +36,8 @@ describe.skipIf(!process.env.DATABASE_URL)('DB schema introspection', () => {
         }
     })
 
-    it('RLS policies exist on all 5 tables', async () => {
-        const USER_TABLES = ['words', 'srs_state', 'review_log', 'import_jobs'] as const
+    it('RLS policies exist on all user tables', async () => {
+        const USER_TABLES = ['words', 'srs_state', 'review_log', 'import_jobs', 'user_preferences', 'sidequests'] as const
         const rows = await sql<{ tablename: string; policyname: string }[]>`
             SELECT tablename, policyname
             FROM pg_policies

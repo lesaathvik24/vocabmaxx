@@ -23,6 +23,8 @@
    │                              │                          │  · /words                        │
    │   Server Components only,    │                          │  · /insights                     │
    │   no auth, fully static      │                          │  · /algorithm                    │
+   │                              │                          │  · /sidequests                   │
+   │                              │                          │  · /settings                     │
    └──────────────────────────────┘                          └────────────┬─────────────────────┘
                                                                           │
                   ┌───────────────────────────────────────────────────────┴────┐
@@ -30,6 +32,7 @@
                   │   POST /api/capture         POST /api/review/grade         │
                   │   GET  /api/review/due      POST /api/words/import         │
                   │   PATCH /api/words/{id}     DELETE /api/words/{id}         │
+                  │   POST /api/sidequests/submit                              │
                   │                                                            │
                   │   Middleware: auth (Supabase SSR), rate-limit, Zod-parse   │
                   └───────────────────────────────────────────────────────┬────┘
@@ -41,6 +44,8 @@
    │   · ImportService      (paragraph → LLM extraction → batch capture)      │
    │   · AnalyticsService   (growth, retention, problem-word queries)         │
    │   · ExportService      (JSON / CSV / Anki .apkg)                         │
+   │   · DashboardService   (aggregate stat tiles, incl. sidequest XP)        │
+   │   · SidequestService   (lazy-spawn missions, DeepSeek scenario + judge)  │
    └─────────────────────────────────────┬────────────────────────────────────┘
                                           │
                                 Drizzle ORM (lib/db/*)
@@ -52,6 +57,8 @@
                   │ ├── public.srs_state  [RLS via words.user_id]  │
                   │ ├── public.review_log [RLS on user_id]         │
                   │ ├── public.import_jobs[RLS on user_id]         │
+                  │ ├── public.user_preferences [RLS on user_id]   │
+                  │ ├── public.sidequests [RLS on user_id]         │
                   │ └── public.definition_cache [public read]      │
                   └────────────────────────────────────────────────┘
 
@@ -86,13 +93,14 @@ vocabmaxx/
 │   │   ├── insights/page.tsx
 │   │   ├── algorithm/page.tsx          SM-2 lab (shipped post Phase 5)
 │   │   └── settings/page.tsx           (Phase 8 — placeholder only)
-│   ├── api/                            Route handlers (6 implemented)
+│   ├── api/                            Route handlers
 │   │   ├── auth/[...]/route.ts         Supabase auth callbacks
 │   │   ├── capture/route.ts
 │   │   ├── review/due/route.ts
 │   │   ├── review/grade/route.ts
 │   │   ├── words/[id]/route.ts         PATCH + DELETE
-│   │   └── words/import/route.ts
+│   │   ├── words/import/route.ts
+│   │   └── sidequests/submit/route.ts  Judge a sidequest submission
 │   ├── auth/
 │   │   ├── sign-in/page.tsx
 │   │   ├── sign-up/page.tsx
@@ -121,7 +129,8 @@ vocabmaxx/
 │   │   ├── srs.service.ts
 │   │   ├── import.service.ts
 │   │   ├── analytics.service.ts
-│   │   └── dashboard.service.ts
+│   │   ├── dashboard.service.ts
+│   │   └── sidequest.service.ts        Lazy-spawn missions + DeepSeek judge
 │   ├── db/
 │   │   ├── schema.ts                   Drizzle schema
 │   │   ├── client.ts                   Drizzle client

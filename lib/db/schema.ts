@@ -3,6 +3,8 @@ import { sql } from 'drizzle-orm'
 
 export const definitionSourceEnum = pgEnum('definition_source', ['dictionary', 'llm'])
 export const importJobStatusEnum = pgEnum('import_job_status', ['pending', 'running', 'done', 'failed'])
+export const sidequestStatusEnum = pgEnum('sidequest_status', ['active', 'completed', 'missed'])
+export const sidequestChannelEnum = pgEnum('sidequest_channel', ['irl', 'text'])
 
 const authSchema = pgSchema('auth')
 export const authUsers = authSchema.table('users', {
@@ -66,6 +68,30 @@ export const userPreferences = pgTable('user_preferences', {
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 })
+
+export const sidequests = pgTable('sidequests', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').notNull().references(() => authUsers.id, { onDelete: 'cascade' }),
+    wordId: uuid('word_id').notNull().references(() => words.id, { onDelete: 'cascade' }),
+    term: text('term').notNull(),
+    definition: text('definition').notNull(),
+    scenario: text('scenario').notNull(),
+    channel: sidequestChannelEnum('channel').notNull(),
+    status: sidequestStatusEnum('status').notNull().default('active'),
+    submission: text('submission'),
+    verdictReason: text('verdict_reason'),
+    xpAwarded: integer('xp_awarded').notNull().default(0),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+}, t => ({
+    userStatusIdx: index('sidequests_user_status_idx').on(t.userId, t.status),
+    // At most one active quest per user. Enforced at the DB so the read-then-insert
+    // in the spawn path can't race two parallel renders into duplicate actives.
+    oneActivePerUser: uniqueIndex('sidequests_one_active_per_user')
+        .on(t.userId)
+        .where(sql`${t.status} = 'active'`),
+}))
 
 export const definitionCache = pgTable('definition_cache', {
     term: text('term').primaryKey(),

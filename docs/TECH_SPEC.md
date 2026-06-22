@@ -70,6 +70,34 @@ export const definitionCache = pgTable('definition_cache', {
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 })
 
+export const sidequestStatusEnum = pgEnum('sidequest_status', ['active', 'completed', 'missed'])
+export const sidequestChannelEnum = pgEnum('sidequest_channel', ['irl', 'text'])
+
+// Real-life usage missions for a user's own words. One ACTIVE quest per user
+// (lazy-spawned with a 10h deadline); missed quests linger as a reduced-XP
+// redemption backlog. DeepSeek generates the scenario and judges the submission.
+export const sidequests = pgTable('sidequests', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').notNull().references(() => authUsers.id, { onDelete: 'cascade' }),
+    wordId: uuid('word_id').notNull().references(() => words.id, { onDelete: 'cascade' }),
+    term: text('term').notNull(),              // denormalized snapshot (word may be deleted)
+    definition: text('definition').notNull(),
+    scenario: text('scenario').notNull(),
+    channel: sidequestChannelEnum('channel').notNull(),
+    status: sidequestStatusEnum('status').notNull().default('active'),
+    submission: text('submission'),
+    verdictReason: text('verdict_reason'),
+    xpAwarded: integer('xp_awarded').notNull().default(0),   // +10 on-time, +3 late
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+}, t => ({
+    userStatusIdx: index('sidequests_user_status_idx').on(t.userId, t.status),
+    // At most one active quest per user — prevents the spawn read-then-insert race.
+    oneActivePerUser: uniqueIndex('sidequests_one_active_per_user')
+        .on(t.userId).where(sql`${t.status} = 'active'`),
+}))
+
 // supabase auth users — referenced only, not managed by Drizzle
 export const authUsers = pgTable('users', {
     id: uuid('id').primaryKey(),
@@ -82,6 +110,7 @@ export const authUsers = pgTable('users', {
 - `ease_factor >= 1.3` enforced via `CHECK` (in `drizzle/0001_rls.sql`).
 - `grade IN (0, 3, 4, 5)` enforced via `CHECK`.
 - `examples` JSON-array length 1..3 enforced via `CHECK (jsonb_array_length(examples) BETWEEN 1 AND 3)`.
+- At most one `status = 'active'` sidequest per user, enforced via the partial unique index `sidequests_one_active_per_user` (`drizzle/0005`).
 
 ## 2. RLS policies
 
@@ -345,7 +374,26 @@ Body: { mode: 'save', terms: string[] }
 200:  { data: { jobId: string, added: string[], failed: [...] } }
 ```
 
-### Planned (Phase 8 — not yet implemented)
+### Sidequests
+
+```
+POST /api/sidequests/submit
+Body: { questId: string (uuid), sentence: string (1..500) }
+200:  { data: { correct: boolean, reason: string, xpAwarded: number } }
+400:  { error: { kind: 'invalid_input' } }
+404:  { error: { kind: 'quest_not_found' } }
+409:  { error: { kind: 'already_completed' } }
+429:  { error: { kind: 'rate_limited' } }       // paid judge call, token-bucket
+502:  { error: { kind: 'malformed_llm_response' } }
+503:  { error: { kind: 'network_failure' | 'no_fallback_available' } }
+```
+
+Quest spawning has **no GET route** — the `/sidequests` server component calls
+`sidequestService.getBoard()` directly, lazily creating the active quest on render.
+A judge tick is trusted only if the submitted sentence actually contains the word
+(`sentenceContainsWord`), defending against prompt-injection of the judge.
+
+### Planned (not yet implemented)
 
 ```
 GET /api/export?format=json|csv|anki        — Phase 8.2
@@ -420,6 +468,36 @@ Schema:
 ```
 
 Caps: max 20 terms returned. Filter by confidence > 0.5 before returning to client.
+
+### Sidequest scenario prompt (`generateScenario`)
+
+```
+System:
+Design a short real-life "sidequest" challenging a learner to USE a given word.
+Given the word + definition, return strict JSON: { "scenario": string, "channel": "irl" | "text" }.
+One sentence (≤ 30 words) describing a situation to naturally work the word into
+speech or writing. NEVER include an example sentence using the word.
+
+User: Word: {term}\nDefinition: {definition}
+```
+
+Parsed with `scenarioLLMSchema = z.object({ scenario: z.string().min(1).max(300), channel: z.enum(['irl','text']) })`.
+
+### Sidequest judge prompt (`judgeUsage`)
+
+```
+System:
+Judge whether a learner used a target word correctly and naturally in a submitted
+sentence. Given word + definition + sentence, return strict JSON:
+{ "correct": boolean, "reason": string }. correct=true only if the sentence contains
+the word (or a valid inflection) AND uses it consistently with the definition.
+reason is one short sentence (≤ 25 words) of feedback.
+
+User: Word: {term}\nDefinition: {definition}\nLearner's sentence: {sentence}
+```
+
+Parsed with `judgeLLMSchema = z.object({ correct: z.boolean(), reason: z.string().min(1).max(300) })`.
+The service additionally requires `sentenceContainsWord(sentence, term)` before honoring a `correct:true`.
 
 ## 8. Auth integration
 

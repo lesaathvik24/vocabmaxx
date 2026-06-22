@@ -3,7 +3,7 @@
 > **Anki is for flashcards. VocabMaxx is for actually owning the words you hear.**
 > Type a word. Get a clean definition + two real-world examples in 200ms. Forget it on your terms — the algorithm brings it back exactly when you'd otherwise lose it.
 
-[![CI](https://img.shields.io/badge/CI-passing-brightgreen)](.github/workflows/ci.yml) [![Tests](https://img.shields.io/badge/tests-168%20green-brightgreen)](#) [![TS](https://img.shields.io/badge/TypeScript-strict-blue)](tsconfig.json) [![License](https://img.shields.io/badge/license-MIT-black)](LICENSE)
+[![CI](https://img.shields.io/badge/CI-passing-brightgreen)](.github/workflows/ci.yml) [![Tests](https://img.shields.io/badge/tests-242%20green-brightgreen)](#) [![TS](https://img.shields.io/badge/TypeScript-strict-blue)](tsconfig.json) [![License](https://img.shields.io/badge/license-MIT-black)](LICENSE)
 
 **Live demo:** _private beta_ &nbsp;·&nbsp; **Docs:** [`docs/`](docs/) &nbsp;·&nbsp; **Roadmap:** [`docs/ROADMAP.md`](docs/ROADMAP.md)
 
@@ -60,8 +60,9 @@ The product isn't "AI for flashcards." It's **the shortest possible path from a 
 - **Hybrid definition pipeline.** Free dictionary first (~200ms), DeepSeek LLM only when the dictionary doesn't have a good example. Per-word cost is fractions of a cent. Definitions are cached **globally** — the first user to capture a word pays, every future user is free. [(ADR 0005)](docs/ADR/0005-hybrid-definition-pipeline.md) [(ADR 0007)](docs/ADR/0007-deepseek-over-anthropic.md)
 - **SM-2 spaced repetition.** The Anki algorithm, implemented as a pure function in 40 lines with 20 unit tests pinning every cell of the worked example. [(ADR 0006)](docs/ADR/0006-sm2-vs-fsrs.md)
 - **Row-Level Security end-to-end.** Postgres RLS, not just app-layer checks — even with a stolen anon key, you can't read someone else's vocab. Verified by integration tests that simulate two users' JWTs. [(SECURITY.md)](docs/SECURITY.md)
-- **Strict TypeScript + Zod at every boundary.** Illegal states unrepresentable via branded types (`ValidWord` is a `unique symbol` — type-only, no runtime field to leak into your DB) enforced on the capture path. 168 unit tests, zero `any` in the domain layer.
+- **Strict TypeScript + Zod at every boundary.** Illegal states unrepresentable via branded types (`ValidWord` is a `unique symbol` — type-only, no runtime field to leak into your DB) enforced on the capture path. 242 unit tests, zero `any` in the domain layer.
 - **Modular by construction.** Pure domain → service layer → API. Each layer testable in isolation. The capture pipeline has 7 unit tests with mocked deps that run in milliseconds, plus 16 integration tests against a real Supabase project.
+- **Sidequests — productive recall, not just recognition.** The app challenges you to *use* one of your own words in real life (out loud or in a message), then DeepSeek judges your sentence. Lazy-spawned one-at-a-time with a 10-hour window, XP rewards, and a reduced-XP redemption backlog for missed ones. A partial unique index guarantees one active quest per user; a word-presence check guards the judge against prompt-injection. [(ADR 0007)](docs/ADR/0007-deepseek-over-anthropic.md)
 
 ---
 
@@ -100,8 +101,9 @@ ADRs explaining every non-obvious choice live in [`docs/ADR/`](docs/ADR/) — 7 
 | 7 — Insights | ✅ | Growth chart, retention gauge, problem words |
 | 8 — Settings, export, daily digest | ✅ | Settings form, account deletion, JSON / CSV export, Resend daily-digest cron |
 | 9 — Polish & launch | 🔄 | SEO (`sitemap.xml`/`robots.txt`) + dynamic OG image ✅; perf pass + Lighthouse run + Anki `.apkg` + v1.0.0 tag remaining |
+| 10 — Sidequests | ✅ | Real-life usage missions: lazy-spawned word challenges, DeepSeek scenario + judge, 10h window, XP + redemption backlog, `/sidequests` + dashboard XP tile |
 
-**168 unit tests green, 0 `any` in `lib/domain/`.** Also shipped beyond the core phases: an interactive SM-2 [Algorithm lab](docs/ROADMAP.md) (`/algorithm`) and non-destructive practice mode. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the full phase breakdown.
+**242 unit tests green, 0 `any` in `lib/domain/`.** Also shipped beyond the core phases: an interactive SM-2 [Algorithm lab](docs/ROADMAP.md) (`/algorithm`) and non-destructive practice mode. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the full phase breakdown.
 
 ---
 
@@ -112,7 +114,7 @@ git clone https://github.com/lesaathvik24/vocabmaxx.git
 cd vocabmaxx
 pnpm install
 cp .env.example .env.local            # fill in Supabase + DeepSeek keys
-# apply drizzle/0000_next_wallow.sql + drizzle/0001_rls.sql via Supabase SQL Editor
+# apply every drizzle/*.sql in numeric order (0000 → 0005) via the Supabase SQL Editor
 pnpm dev                              # http://localhost:3000
 ```
 

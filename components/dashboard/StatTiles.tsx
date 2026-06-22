@@ -1,4 +1,4 @@
-import { BookOpen, Flame, Target, Layers } from 'lucide-react'
+import { BookOpen, Flame, Target, Layers, Sparkles } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export interface DashboardStats {
@@ -6,6 +6,7 @@ export interface DashboardStats {
     streakDays: number
     retention: number
     due: number
+    xp: number
     weekDone: number
     weekGoal: number
     history: number[]
@@ -49,14 +50,20 @@ function buildTiles(stats: DashboardStats): TileData[] {
             icon: Layers,
             colorClass: 'text-accent',
         },
+        {
+            num: String(stats.xp),
+            label: 'Sidequest XP',
+            icon: Sparkles,
+            colorClass: 'text-accent',
+        },
     ]
 }
 
 export function StatTiles({ stats, loading = false }: StatTilesProps) {
     if (loading) {
         return (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {Array.from({ length: 4 }).map((_, i) => (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                {Array.from({ length: 5 }).map((_, i) => (
                     <div key={i} className="rounded-2xl border border-border bg-card p-4 shadow-sm space-y-3">
                         <Skeleton className="h-8 w-16" />
                         <Skeleton className="h-4 w-24" />
@@ -71,7 +78,7 @@ export function StatTiles({ stats, loading = false }: StatTilesProps) {
     const tiles = buildTiles(stats)
 
     return (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
             {tiles.map((tile) => {
                 const Icon = tile.icon
                 return (

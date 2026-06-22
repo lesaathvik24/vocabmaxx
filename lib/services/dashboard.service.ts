@@ -2,6 +2,7 @@ import 'server-only'
 import * as wordsQ from '@/lib/db/queries/words'
 import * as srsQ from '@/lib/db/queries/srs'
 import * as analyticsQ from '@/lib/db/queries/analytics'
+import * as sidequestsQ from '@/lib/db/queries/sidequests'
 import { repsToStatus, type WordStatus } from '@/lib/words/filter'
 import { computeStreak, buildDailyHistory, dayKey } from '@/lib/insights/dashboard'
 
@@ -19,6 +20,7 @@ export interface DashboardStats {
     streakDays: number
     retention: number
     due: number
+    xp: number
     weekDone: number
     weekGoal: number
     history: number[]
@@ -41,6 +43,7 @@ export interface DashboardDeps {
     reviewOutcomes: typeof analyticsQ.reviewOutcomes
     dailyReviewCounts: typeof analyticsQ.dailyReviewCounts
     reviewDayKeys: typeof analyticsQ.reviewDayKeys
+    sidequestStats: typeof sidequestsQ.getStats
 }
 
 const defaultDeps: DashboardDeps = {
@@ -50,6 +53,7 @@ const defaultDeps: DashboardDeps = {
     reviewOutcomes: analyticsQ.reviewOutcomes,
     dailyReviewCounts: analyticsQ.dailyReviewCounts,
     reviewDayKeys: analyticsQ.reviewDayKeys,
+    sidequestStats: sidequestsQ.getStats,
 }
 
 function startOfUTCDay(now: Date, daysAgo: number): Date {
@@ -68,13 +72,14 @@ export async function getDashboardData(
     const retentionStart = startOfUTCDay(now, RETENTION_WINDOW - 1)
     const streakStart = startOfUTCDay(now, STREAK_WINDOW - 1)
 
-    const [recentRows, learned, due, outcomes, daily, dayKeys] = await Promise.all([
+    const [recentRows, learned, due, outcomes, daily, dayKeys, sidequestStats] = await Promise.all([
         deps.listRecent(userId, { limit: 10 }),
         deps.countWords(userId),
         deps.countDue(userId, now),
         deps.reviewOutcomes(userId, retentionStart),
         deps.dailyReviewCounts(userId, weekStart),
         deps.reviewDayKeys(userId, streakStart),
+        deps.sidequestStats(userId),
     ])
 
     const recentWords: RecentWord[] = recentRows.map((w) => ({
@@ -96,6 +101,7 @@ export async function getDashboardData(
             learned,
             due,
             retention,
+            xp: sidequestStats.xp,
             streakDays: computeStreak(dayKeys, dayKey(now)),
             weekDone,
             weekGoal: WEEK_GOAL,

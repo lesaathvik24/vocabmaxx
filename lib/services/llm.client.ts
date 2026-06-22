@@ -21,6 +21,16 @@ const correctionLLMSchema = z.object({
     correction: z.string().max(64).nullable(),
 })
 
+const scenarioLLMSchema = z.object({
+    scenario: z.string().min(1).max(300),
+    channel: z.enum(['irl', 'text']),
+})
+
+const judgeLLMSchema = z.object({
+    correct: z.boolean(),
+    reason: z.string().min(1).max(300),
+})
+
 const DEFINITION_SYSTEM =
     'You are a vocabulary tutor for an advanced English speaker. Given a single word, return strict JSON. Schema: {"valid": boolean, "definition": string, "examples": [string, string]}. If the input is a real English word (including rare, archaic, technical, or coined-but-recognised terms): set valid=true, provide a concise definition (max 25 words) and exactly two natural usage examples from contexts like podcasts, journalism, or conversation. If the input is gibberish, a typo, a random keyboard mash, or not an English word: set valid=false and omit definition/examples. Output JSON only — no markdown, no preamble, no "I cannot" prose.'
 
@@ -29,6 +39,12 @@ const CORRECTION_SYSTEM =
 
 const EXTRACT_SYSTEM =
     'You extract advanced vocabulary from English paragraphs for a B2+ learner. Return strict JSON ONLY in this exact schema: {"terms": ["word1", "word2", ...]}. Rules: 5-15 items. Each item is a single lowercased word (1-2 words max, no phrases > 2 words, no proper nouns, no common words). No commentary, no markdown, no preamble. If the paragraph is empty or has no advanced vocabulary, return {"terms": []}.'
+
+const SCENARIO_SYSTEM =
+    'You design a short real-life "sidequest" that challenges a vocabulary learner to USE a given word. You are given the word and its definition. Return strict JSON ONLY: {"scenario": string, "channel": "irl" | "text"}. The scenario is one sentence (max 30 words) describing a realistic situation in which to naturally work the word into something they say or write — e.g. "Work this word into a text to a friend about a movie you disliked." Pick channel "irl" for spoken/in-person missions and "text" for written/messaging missions. NEVER include an example sentence using the word — the learner must produce that themselves. No markdown, no preamble.'
+
+const JUDGE_SYSTEM =
+    'You judge whether a vocabulary learner used a target word correctly and naturally in a sentence they submitted. You are given the word, its definition, and the learner\'s sentence. Return strict JSON ONLY: {"correct": boolean, "reason": string}. Set correct=true only if the sentence actually contains the word (or a valid inflection of it) AND uses it in a way consistent with the definition and natural English. Set correct=false if the word is absent, misused, or the sentence is nonsense. The reason is one short sentence (max 25 words) of friendly, specific feedback. No markdown, no preamble.'
 
 export async function fetchLLMDefinition(term: string): Promise<Result<DefinitionResult, DefinitionError>> {
     if (!process.env.DEEPSEEK_API_KEY) return err({ kind: 'no_fallback_available' })
@@ -125,6 +141,59 @@ async function tryExtract(text: string, strict = false): Promise<Result<string[]
 
     const terms = [...new Set(validated.data.terms.map(t => t.trim().toLowerCase()).filter(Boolean))].slice(0, 15)
     return ok(terms)
+}
+
+export async function generateScenario(
+    term: string,
+    definition: string,
+): Promise<Result<{ scenario: string; channel: 'irl' | 'text' }, LLMError>> {
+    if (!process.env.DEEPSEEK_API_KEY) return err({ kind: 'no_fallback_available' })
+
+    const result = await callDeepSeek({
+        system: SCENARIO_SYSTEM,
+        user: `Word: ${term}\nDefinition: ${definition}`,
+        maxTokens: 120,
+    })
+    if (!result.ok) return err(result.error)
+
+    let parsed: unknown
+    try {
+        parsed = JSON.parse(result.value)
+    } catch {
+        return err({ kind: 'malformed_llm_response', raw: result.value.slice(0, 200) })
+    }
+
+    const validated = scenarioLLMSchema.safeParse(parsed)
+    if (!validated.success) return err({ kind: 'malformed_llm_response', raw: result.value.slice(0, 200) })
+
+    return ok(validated.data)
+}
+
+export async function judgeUsage(
+    term: string,
+    definition: string,
+    sentence: string,
+): Promise<Result<{ correct: boolean; reason: string }, LLMError>> {
+    if (!process.env.DEEPSEEK_API_KEY) return err({ kind: 'no_fallback_available' })
+
+    const result = await callDeepSeek({
+        system: JUDGE_SYSTEM,
+        user: `Word: ${term}\nDefinition: ${definition}\nLearner's sentence: ${sentence}`,
+        maxTokens: 120,
+    })
+    if (!result.ok) return err(result.error)
+
+    let parsed: unknown
+    try {
+        parsed = JSON.parse(result.value)
+    } catch {
+        return err({ kind: 'malformed_llm_response', raw: result.value.slice(0, 200) })
+    }
+
+    const validated = judgeLLMSchema.safeParse(parsed)
+    if (!validated.success) return err({ kind: 'malformed_llm_response', raw: result.value.slice(0, 200) })
+
+    return ok(validated.data)
 }
 
 async function callDeepSeek({

@@ -12,6 +12,7 @@ import {
     BarChart3,
     FlaskConical,
     Sliders,
+    Target,
     X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -29,6 +30,7 @@ interface NavItem {
 const NAV: NavItem[] = [
     { id: 'dashboard', label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { id: 'review', label: 'Review', href: '/review', icon: Layers, badge: 'due' },
+    { id: 'sidequests', label: 'Sidequests', href: '/sidequests', icon: Target },
     { id: 'capture', label: 'Capture', href: '/capture', icon: PlusCircle },
     { id: 'words', label: 'Words', href: '/words', icon: BookOpen },
     { id: 'insights', label: 'Insights', href: '/insights', icon: BarChart3 },

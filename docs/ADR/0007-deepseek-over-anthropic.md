@@ -43,6 +43,16 @@ Use **DeepSeek `deepseek-chat`** with `response_format: { type: "json_object" }`
 
 `llm.client.ts` rewritten end-to-end. No callers needed updating — the public surface (`fetchLLMDefinition: (term) => Promise<Result<DefinitionResult, DefinitionError>>`) is unchanged.
 
+## Scope (call sites)
+
+This provider choice now covers **three** DeepSeek call sites, all in `lib/services/llm.client.ts`, all sharing the same `callDeepSeek` transport (JSON mode, `temperature: 0`, Zod-validated, typed-error envelope):
+
+1. `fetchLLMDefinition` — definition fallback (original).
+2. `generateScenario` — Sidequests mission generation.
+3. `judgeUsage` — Sidequests submission grading.
+
+The cost/quality/rate-limit trade-offs below apply to all three. Scenario/judge calls are bounded (~120 max tokens each) and the judge route is token-bucket throttled. Prompts + schemas: `TECH_SPEC.md §7`.
+
 ## References
 
 - Implementation: `lib/services/llm.client.ts`.
