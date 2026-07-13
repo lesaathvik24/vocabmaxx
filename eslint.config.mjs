@@ -18,6 +18,13 @@ export default tseslint.config(
         },
     },
     {
+        // Service worker: plain JS running in the worker global scope, not the app bundle.
+        files: ['public/sw.js'],
+        languageOptions: {
+            globals: { self: 'readonly' },
+        },
+    },
+    {
         ignores: ['.next/**', 'node_modules/**', 'drizzle/**', 'postcss.config.js'],
     },
 )

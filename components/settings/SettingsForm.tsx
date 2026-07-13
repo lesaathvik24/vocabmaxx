@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
-import { Loader2 } from 'lucide-react'
+import { Loader2, BellRing } from 'lucide-react'
+import { enablePush, disablePush, getPushStatus, type PushStatus } from '@/lib/push/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -90,12 +91,13 @@ function NotificationsSection({
         <Card>
             <CardHeader>
                 <CardTitle>Notifications</CardTitle>
-                <CardDescription>A daily email digest of the words due for review.</CardDescription>
+                <CardDescription>Reminders when words are due for review.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="flex items-center justify-between gap-4">
+            <CardContent className="space-y-5">
+                <BrowserNotificationsRow />
+                <div className="flex items-center justify-between gap-4 border-t border-border pt-5">
                     <div>
-                        <p className="text-sm font-medium">Daily digest</p>
+                        <p className="text-sm font-medium">Daily email digest</p>
                         <p className="text-sm text-muted-foreground">
                             Email me when I have words due.
                         </p>
@@ -129,6 +131,78 @@ function NotificationsSection({
                 </div>
             </CardContent>
         </Card>
+    )
+}
+
+function BrowserNotificationsRow() {
+    const [status, setStatus] = useState<PushStatus | 'loading'>('loading')
+    const [busy, setBusy] = useState(false)
+
+    useEffect(() => {
+        getPushStatus()
+            .then(setStatus)
+            .catch(() => setStatus('unsupported'))
+    }, [])
+
+    async function enable() {
+        setBusy(true)
+        try {
+            await enablePush()
+            setStatus('subscribed')
+            toast.success('Browser notifications enabled on this device.')
+        } catch (e) {
+            setStatus(await getPushStatus().catch(() => 'unsupported' as const))
+            toast.error(e instanceof Error ? e.message : 'Could not enable notifications.')
+        } finally {
+            setBusy(false)
+        }
+    }
+
+    async function disable() {
+        setBusy(true)
+        try {
+            await disablePush()
+            setStatus('unsubscribed')
+            toast.success('Browser notifications disabled on this device.')
+        } finally {
+            setBusy(false)
+        }
+    }
+
+    const description = {
+        loading: 'Checking this device…',
+        unsupported: 'This browser does not support push notifications.',
+        unconfigured: 'Not available on this deployment.',
+        blocked: 'Blocked — allow notifications for this site in your browser settings.',
+        subscribed: 'This device gets a reminder when words are due.',
+        unsubscribed: 'Get a reminder on this device when words are due.',
+    }[status]
+
+    return (
+        <div className="flex items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+                <BellRing size={18} className="mt-0.5 text-muted-foreground" aria-hidden="true" />
+                <div>
+                    <p className="text-sm font-medium">Browser notifications</p>
+                    <p className="text-sm text-muted-foreground">{description}</p>
+                </div>
+            </div>
+            {status === 'subscribed' ? (
+                <Button variant="outline" onClick={disable} disabled={busy}>
+                    {busy && <Loader2 size={15} className="animate-spin" aria-hidden="true" />}
+                    Disable
+                </Button>
+            ) : (
+                <Button
+                    variant="accent"
+                    onClick={enable}
+                    disabled={busy || status === 'loading' || status === 'unsupported' || status === 'unconfigured' || status === 'blocked'}
+                >
+                    {busy && <Loader2 size={15} className="animate-spin" aria-hidden="true" />}
+                    Enable
+                </Button>
+            )}
+        </div>
     )
 }
 

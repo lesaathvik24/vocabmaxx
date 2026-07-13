@@ -5,10 +5,13 @@ import { dailyDigestTemplate } from '@/lib/services/email.service'
 function makeDeps(over: Partial<DigestDeps> = {}): DigestDeps {
     return {
         listRecipients: vi.fn().mockResolvedValue([]),
+        listPushRecipients: vi.fn().mockResolvedValue([]),
         countDue: vi.fn().mockResolvedValue(0),
         sampleDueTerms: vi.fn().mockResolvedValue([]),
         resolveEmail: vi.fn().mockResolvedValue('user@example.com'),
         sendDigest: vi.fn().mockResolvedValue({ ok: true }),
+        sendPush: vi.fn().mockResolvedValue({ sent: 0, failed: 0 }),
+        pushConfigured: vi.fn().mockReturnValue(true),
         ...over,
     }
 }
@@ -82,6 +85,50 @@ describe('runDailyDigest', () => {
         expect(result.failed).toBe(1)
         expect(result.sent).toBe(1)
         expect(result.considered).toBe(2)
+    })
+
+    it('pushes to subscribed users with words due, independent of email opt-in', async () => {
+        const sendPush = vi.fn().mockResolvedValue({ sent: 2, failed: 0 })
+        const result = await runDailyDigest(
+            now,
+            makeDeps({
+                listRecipients: vi.fn().mockResolvedValue([]),
+                listPushRecipients: vi.fn().mockResolvedValue([{ userId: 'u1' }, { userId: 'u2' }]),
+                countDue: vi.fn().mockResolvedValueOnce(3).mockResolvedValueOnce(0),
+                sampleDueTerms: vi.fn().mockResolvedValue(['a']),
+                sendPush,
+            }),
+        )
+        expect(sendPush).toHaveBeenCalledTimes(1)
+        expect(sendPush).toHaveBeenCalledWith('u1', 3, ['a'])
+        expect(result.pushConsidered).toBe(2)
+        expect(result.pushSent).toBe(2)
+    })
+
+    it('skips the push pass entirely when VAPID keys are not configured', async () => {
+        const listPushRecipients = vi.fn().mockResolvedValue([{ userId: 'u1' }])
+        const result = await runDailyDigest(
+            now,
+            makeDeps({ listPushRecipients, pushConfigured: vi.fn().mockReturnValue(false) }),
+        )
+        expect(listPushRecipients).not.toHaveBeenCalled()
+        expect(result.pushConsidered).toBe(0)
+    })
+
+    it('isolates a per-user push failure', async () => {
+        const result = await runDailyDigest(
+            now,
+            makeDeps({
+                listPushRecipients: vi.fn().mockResolvedValue([{ userId: 'u1' }, { userId: 'u2' }]),
+                countDue: vi.fn().mockResolvedValue(1),
+                sendPush: vi
+                    .fn()
+                    .mockRejectedValueOnce(new Error('push service down'))
+                    .mockResolvedValueOnce({ sent: 1, failed: 0 }),
+            }),
+        )
+        expect(result.pushFailed).toBe(1)
+        expect(result.pushSent).toBe(1)
     })
 
     it('counts a rejected send (ok:false) as failed', async () => {
