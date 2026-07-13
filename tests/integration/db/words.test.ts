@@ -26,7 +26,7 @@ describe('words queries', () => {
             term: 'alacrity',
             definition: 'brisk and cheerful readiness',
             examples: ['she accepted with alacrity'],
-            source: 'dictionary',
+            source: 'dictionary', phonetic: null, audioUrl: null,
         })
         expect(w.id).toMatch(/^[0-9a-f-]{36}$/)
         expect(w.term).toBe('alacrity')
@@ -39,7 +39,7 @@ describe('words queries', () => {
     })
 
     it('findByUserAndTerm scopes by user', async () => {
-        await words.insert({ userId: USER_A, term: 'shared', definition: 'd', examples: ['e'], source: 'dictionary' })
+        await words.insert({ userId: USER_A, term: 'shared', definition: 'd', examples: ['e'], source: 'dictionary', phonetic: null, audioUrl: null })
         const found = await words.findByUserAndTerm(USER_A, 'shared')
         const notFound = await words.findByUserAndTerm(USER_B, 'shared')
         expect(found?.term).toBe('shared')
@@ -47,30 +47,30 @@ describe('words queries', () => {
     })
 
     it('unique (userId, term) is enforced', async () => {
-        await words.insert({ userId: USER_A, term: 'dup', definition: 'd', examples: ['e'], source: 'dictionary' })
+        await words.insert({ userId: USER_A, term: 'dup', definition: 'd', examples: ['e'], source: 'dictionary', phonetic: null, audioUrl: null })
         await expect(
-            words.insert({ userId: USER_A, term: 'dup', definition: 'd2', examples: ['e2'], source: 'dictionary' }),
+            words.insert({ userId: USER_A, term: 'dup', definition: 'd2', examples: ['e2'], source: 'dictionary', phonetic: null, audioUrl: null }),
         ).rejects.toThrow()
     })
 
     it('insertIfAbsent returns null on a duplicate instead of throwing', async () => {
-        const first = await words.insertIfAbsent({ userId: USER_A, term: 'safedup', definition: 'd', examples: ['e'], source: 'dictionary' })
+        const first = await words.insertIfAbsent({ userId: USER_A, term: 'safedup', definition: 'd', examples: ['e'], source: 'dictionary', phonetic: null, audioUrl: null })
         expect(first).not.toBeNull()
-        const second = await words.insertIfAbsent({ userId: USER_A, term: 'safedup', definition: 'd2', examples: ['e2'], source: 'dictionary' })
+        const second = await words.insertIfAbsent({ userId: USER_A, term: 'safedup', definition: 'd2', examples: ['e2'], source: 'dictionary', phonetic: null, audioUrl: null })
         expect(second).toBeNull()
     })
 
     it('listByUser returns rows in descending addedAt', async () => {
-        await words.insert({ userId: USER_A, term: 'first', definition: 'd', examples: ['e'], source: 'dictionary' })
+        await words.insert({ userId: USER_A, term: 'first', definition: 'd', examples: ['e'], source: 'dictionary', phonetic: null, audioUrl: null })
         await new Promise(r => setTimeout(r, 10))
-        await words.insert({ userId: USER_A, term: 'second', definition: 'd', examples: ['e'], source: 'dictionary' })
+        await words.insert({ userId: USER_A, term: 'second', definition: 'd', examples: ['e'], source: 'dictionary', phonetic: null, audioUrl: null })
         const list = await words.listByUser(USER_A)
         expect(list).toHaveLength(2)
         expect(list[0].term).toBe('second')
     })
 
     it('deleteByIdForUser cascades srs_state and review_log', async () => {
-        const w = await words.insert({ userId: USER_A, term: 'cascade', definition: 'd', examples: ['e'], source: 'dictionary' })
+        const w = await words.insert({ userId: USER_A, term: 'cascade', definition: 'd', examples: ['e'], source: 'dictionary', phonetic: null, audioUrl: null })
         await raw`insert into srs_state (word_id, user_id, due_date) values (${w.id}::uuid, ${USER_A}::uuid, now())`
         await raw`insert into review_log (user_id, word_id, grade) values (${USER_A}::uuid, ${w.id}::uuid, 4)`
 

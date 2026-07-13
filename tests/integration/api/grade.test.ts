@@ -102,7 +102,7 @@ describe('GET /api/review/due', () => {
                 term: 'alacrity',
                 definition: 'eagerness',
                 examples: ['ex'],
-                source: 'dictionary',
+                source: 'dictionary', phonetic: null, audioUrl: null,
                 addedAt: new Date(),
                 srs: {
                     easeFactor: 2.5,

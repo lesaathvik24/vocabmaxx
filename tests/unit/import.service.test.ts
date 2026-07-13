@@ -76,12 +76,12 @@ describe('importService.saveBulk', () => {
     it('aggregates added, skipped, failed without throwing', async () => {
         const deps = makeSaveDeps()
         vi.mocked(deps.defFetch)
-            .mockResolvedValueOnce(ok({ term: 'alpha', def: { definition: 'd', examples: ['e'], source: 'dictionary' as const } }))
-            .mockResolvedValueOnce(ok({ term: 'beta', def: { definition: 'd', examples: ['e'], source: 'dictionary' as const } }))
+            .mockResolvedValueOnce(ok({ term: 'alpha', def: { definition: 'd', examples: ['e'], source: 'dictionary' as const, phonetic: null, audioUrl: null } }))
+            .mockResolvedValueOnce(ok({ term: 'beta', def: { definition: 'd', examples: ['e'], source: 'dictionary' as const, phonetic: null, audioUrl: null } }))
             .mockResolvedValueOnce(err({ kind: 'not_found' as const }))
 
         vi.mocked(deps.wordSave)
-            .mockResolvedValueOnce(ok({ id: '1', userId: 'u', term: 'alpha', definition: 'd', examples: ['e'], source: 'dictionary', addedAt: new Date() }))
+            .mockResolvedValueOnce(ok({ id: '1', userId: 'u', term: 'alpha', definition: 'd', examples: ['e'], source: 'dictionary', phonetic: null, audioUrl: null, addedAt: new Date() }))
             .mockResolvedValueOnce(err({ kind: 'duplicate_term' as const }))
 
         const r = await saveBulk('user1', ['alpha', 'beta', 'gamma'], deps)
@@ -96,7 +96,7 @@ describe('importService.saveBulk', () => {
 
     it('does not throw on individual save failure', async () => {
         const deps = makeSaveDeps()
-        vi.mocked(deps.defFetch).mockResolvedValue(ok({ term: 'word', def: { definition: 'd', examples: ['e'], source: 'llm' as const } }))
+        vi.mocked(deps.defFetch).mockResolvedValue(ok({ term: 'word', def: { definition: 'd', examples: ['e'], source: 'llm' as const, phonetic: null, audioUrl: null } }))
         vi.mocked(deps.wordSave).mockResolvedValue(err({ kind: 'network_failure' as const, cause: 'DB down' }))
 
         const r = await saveBulk('user1', ['word'], deps)

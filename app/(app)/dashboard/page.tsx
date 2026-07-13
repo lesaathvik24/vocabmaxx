@@ -1,5 +1,7 @@
 import { requireUser } from '@/lib/auth/server'
 import { getDashboardData } from '@/lib/services/dashboard.service'
+import * as preferencesService from '@/lib/services/preferences.service'
+import { FirstRunHero } from '@/components/dashboard/FirstRunHero'
 import { DueBanner } from '@/components/dashboard/DueBanner'
 import { StatTiles } from '@/components/dashboard/StatTiles'
 import { WeekProgress } from '@/components/dashboard/WeekProgress'
@@ -24,7 +26,27 @@ function formatDate(): string {
 
 export default async function DashboardPage() {
     const user = await requireUser()
-    const { recentWords, stats } = await getDashboardData(user.id)
+    const [{ recentWords, stats }, prefs] = await Promise.all([
+        getDashboardData(user.id),
+        preferencesService.get(user.id),
+    ])
+
+    const firstRun = recentWords.length === 0 && stats.learned === 0 && stats.due === 0
+    if (firstRun) {
+        return (
+            <div className="space-y-6">
+                <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        {formatDate()}
+                    </p>
+                    <h1 className="font-display font-semibold text-2xl sm:text-3xl mt-1">
+                        {greeting()}
+                    </h1>
+                </div>
+                <FirstRunHero displayName={prefs.displayName} />
+            </div>
+        )
+    }
 
     const capturedWords: CapturedWord[] = recentWords.map((w) => ({
         id: w.id,

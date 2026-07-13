@@ -46,7 +46,7 @@ export default function MarketingPage() {
                     </Link>
                     <Link
                         href="/auth/sign-up"
-                        className={cn(buttonVariants(), 'bg-accent text-accent-foreground hover:bg-accent/90 text-sm')}
+                        className={cn(buttonVariants({ variant: 'accent' }), 'text-sm')}
                     >
                         Get started
                     </Link>
@@ -73,8 +73,8 @@ export default function MarketingPage() {
                         <Link
                             href="/auth/sign-up"
                             className={cn(
-                                buttonVariants({ size: 'lg' }),
-                                'bg-accent text-accent-foreground hover:bg-accent/90 gap-2 h-12 px-7 text-base',
+                                buttonVariants({ variant: 'accent', size: 'lg' }),
+                                'gap-2 h-12 px-7 text-base',
                             )}
                         >
                             Start for free
@@ -127,8 +127,8 @@ export default function MarketingPage() {
                     <Link
                         href="/auth/sign-up"
                         className={cn(
-                            buttonVariants({ size: 'lg' }),
-                            'bg-accent text-accent-foreground hover:bg-accent/90 gap-2 h-12 px-7 text-base',
+                            buttonVariants({ variant: 'accent', size: 'lg' }),
+                            'gap-2 h-12 px-7 text-base',
                         )}
                     >
                         Capture your first word

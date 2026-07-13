@@ -8,7 +8,7 @@ const base = {
     term: 'ephemeral',
     definition: 'lasting for a very short time',
     examples: ['The ephemeral beauty of cherry blossoms.'],
-    source: 'dictionary' as const,
+    source: 'dictionary' as const, phonetic: null, audioUrl: null,
     addedAt: new Date('2024-01-01T00:00:00Z'),
 }
 

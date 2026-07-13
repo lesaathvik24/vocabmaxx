@@ -98,7 +98,8 @@ export function ParagraphExtractor({ onExtract, onSaveSelected }: ParagraphExtra
                     <Button
                         onClick={handleExtract}
                         disabled={!text.trim()}
-                        className="bg-accent text-accent-foreground hover:bg-accent/90 min-h-[44px]"
+                        variant="accent"
+                        className="min-h-[44px]"
                     >
                         Extract candidates
                     </Button>
@@ -164,7 +165,8 @@ export function ParagraphExtractor({ onExtract, onSaveSelected }: ParagraphExtra
                     <Button
                         onClick={handleSave}
                         disabled={selected.size === 0 || phase === 'saving'}
-                        className="bg-accent text-accent-foreground hover:bg-accent/90 min-h-[44px] gap-2"
+                        variant="accent"
+                        className="min-h-[44px] gap-2"
                     >
                         {phase === 'saving' ? (
                             <>

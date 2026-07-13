@@ -66,8 +66,8 @@ export function SessionDoneScreen({ count, durationMs, practice = false, onExit,
                 <Link
                     href={captureHref}
                     className={cn(
-                        buttonVariants({ size: 'lg' }),
-                        'gap-2 bg-accent text-accent-foreground hover:bg-accent/90 min-h-[44px]',
+                        buttonVariants({ variant: 'accent', size: 'lg' }),
+                        'gap-2 min-h-[44px]',
                     )}
                 >
                     <Sparkles size={18} aria-hidden="true" /> Capture a word

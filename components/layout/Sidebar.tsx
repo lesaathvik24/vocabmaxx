@@ -27,14 +27,34 @@ interface NavItem {
     badge?: 'due'
 }
 
-const NAV: NavItem[] = [
-    { id: 'dashboard', label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { id: 'review', label: 'Review', href: '/review', icon: Layers, badge: 'due' },
-    { id: 'sidequests', label: 'Sidequests', href: '/sidequests', icon: Target },
-    { id: 'capture', label: 'Capture', href: '/capture', icon: PlusCircle },
-    { id: 'words', label: 'Words', href: '/words', icon: BookOpen },
-    { id: 'insights', label: 'Insights', href: '/insights', icon: BarChart3 },
-    { id: 'algorithm', label: 'Algorithm lab', href: '/algorithm', icon: FlaskConical },
+interface NavGroup {
+    label: string
+    items: NavItem[]
+}
+
+const NAV_GROUPS: NavGroup[] = [
+    {
+        label: 'Learn',
+        items: [
+            { id: 'dashboard', label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+            { id: 'review', label: 'Review', href: '/review', icon: Layers, badge: 'due' },
+            { id: 'sidequests', label: 'Sidequests', href: '/sidequests', icon: Target },
+        ],
+    },
+    {
+        label: 'Library',
+        items: [
+            { id: 'capture', label: 'Capture', href: '/capture', icon: PlusCircle },
+            { id: 'words', label: 'Words', href: '/words', icon: BookOpen },
+        ],
+    },
+    {
+        label: 'Analyze',
+        items: [
+            { id: 'insights', label: 'Insights', href: '/insights', icon: BarChart3 },
+            { id: 'algorithm', label: 'Algorithm lab', href: '/algorithm', icon: FlaskConical },
+        ],
+    },
 ]
 
 interface SidebarProps {
@@ -80,43 +100,47 @@ export function Sidebar({ dueCount, userEmail, displayName, onClose }: SidebarPr
             </div>
 
             {/* Nav */}
-            <div className="flex-1 overflow-y-auto px-3 py-4">
-                <p className="px-3 mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Practice
-                </p>
-                <ul className="space-y-0.5">
-                    {NAV.map((item) => {
-                        const Icon = item.icon
-                        const active = pathname.startsWith(item.href)
-                        return (
-                            <li key={item.id}>
-                                <Link
-                                    href={item.href}
-                                    aria-current={active ? 'page' : undefined}
-                                    onClick={onClose}
-                                    className={cn(
-                                        'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors min-h-[44px]',
-                                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                                        active
-                                            ? 'bg-accent-soft text-accent'
-                                            : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                                    )}
-                                >
-                                    <Icon size={19} aria-hidden="true" />
-                                    <span className="flex-1">{item.label}</span>
-                                    {item.badge === 'due' && dueCount > 0 && (
-                                        <Badge
-                                            variant="secondary"
-                                            className="ml-auto h-5 min-w-5 px-1.5 text-[11px] bg-accent text-accent-foreground"
+            <div className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+                {NAV_GROUPS.map((group) => (
+                    <div key={group.label}>
+                        <p className="px-3 mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            {group.label}
+                        </p>
+                        <ul className="space-y-0.5">
+                            {group.items.map((item) => {
+                                const Icon = item.icon
+                                const active = pathname.startsWith(item.href)
+                                return (
+                                    <li key={item.id}>
+                                        <Link
+                                            href={item.href}
+                                            aria-current={active ? 'page' : undefined}
+                                            onClick={onClose}
+                                            className={cn(
+                                                'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors min-h-[44px]',
+                                                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                                                active
+                                                    ? 'bg-accent-soft text-accent'
+                                                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                                            )}
                                         >
-                                            {dueCount}
-                                        </Badge>
-                                    )}
-                                </Link>
-                            </li>
-                        )
-                    })}
-                </ul>
+                                            <Icon size={19} aria-hidden="true" />
+                                            <span className="flex-1">{item.label}</span>
+                                            {item.badge === 'due' && dueCount > 0 && (
+                                                <Badge
+                                                    variant="secondary"
+                                                    className="ml-auto h-5 min-w-5 px-1.5 text-[11px] bg-accent text-accent-foreground"
+                                                >
+                                                    {dueCount}
+                                                </Badge>
+                                            )}
+                                        </Link>
+                                    </li>
+                                )
+                            })}
+                        </ul>
+                    </div>
+                ))}
             </div>
 
             {/* Footer */}

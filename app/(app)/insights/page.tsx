@@ -1,6 +1,7 @@
 import { requireUser } from '@/lib/auth/server'
 import * as analytics from '@/lib/services/analytics.service'
 import * as analyticsQ from '@/lib/db/queries/analytics'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { GrowthChart } from '@/components/insights/GrowthChart'
 import { RetentionGauge } from '@/components/insights/RetentionGauge'
 import { ProblemWords } from '@/components/insights/ProblemWords'
@@ -26,12 +27,10 @@ export default async function InsightsPage() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="font-display font-semibold text-2xl sm:text-3xl">Insights</h1>
-                <p className="mt-1 text-sm text-muted-foreground">
-                    Your vocabulary growth, retention, and the words giving you the most trouble.
-                </p>
-            </div>
+            <PageHeader
+                title="Insights"
+                description="Your vocabulary growth, retention, and the words giving you the most trouble."
+            />
 
             <GrowthChart data={growth} />
 

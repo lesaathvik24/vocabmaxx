@@ -77,10 +77,7 @@ export function RecentCaptures({ words, loading = false }: RecentCapturesProps) 
                     </p>
                     <Link
                         href={captureHref}
-                        className={cn(
-                            buttonVariants({ size: 'sm' }),
-                            'mt-1 bg-accent text-accent-foreground hover:bg-accent/90',
-                        )}
+                        className={cn(buttonVariants({ variant: 'accent', size: 'sm' }), 'mt-1')}
                     >
                         Capture your first word
                     </Link>

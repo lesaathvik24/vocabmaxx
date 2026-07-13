@@ -170,7 +170,7 @@ export function BulkUploader({ onUpload }: BulkUploaderProps) {
                                         </div>
                                     ))}
                                 </div>
-                                <Button onClick={closeModal} className="w-full bg-accent text-accent-foreground hover:bg-accent/90 min-h-[44px]">
+                                <Button onClick={closeModal} variant="accent" className="w-full min-h-[44px]">
                                     Done
                                 </Button>
                             </div>

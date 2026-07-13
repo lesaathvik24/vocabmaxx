@@ -23,7 +23,7 @@ beforeEach(async () => {
 
 describe('srs queries + service', () => {
     it('initialize creates a default srs_state row due now', async () => {
-        const w = await wordsQ.insert({ userId: USER_A, term: 'init', definition: 'd', examples: ['e'], source: 'dictionary' })
+        const w = await wordsQ.insert({ userId: USER_A, term: 'init', definition: 'd', examples: ['e'], source: 'dictionary', phonetic: null, audioUrl: null })
         await srsQ.initialize(w.id, USER_A)
         const s = await srsQ.getByWordId(w.id)
         expect(s).not.toBeNull()
@@ -32,8 +32,8 @@ describe('srs queries + service', () => {
     })
 
     it('findDue returns only rows with due_date <= asOf', async () => {
-        const past = await wordsQ.insert({ userId: USER_A, term: 'past', definition: 'd', examples: ['e'], source: 'dictionary' })
-        const future = await wordsQ.insert({ userId: USER_A, term: 'future', definition: 'd', examples: ['e'], source: 'dictionary' })
+        const past = await wordsQ.insert({ userId: USER_A, term: 'past', definition: 'd', examples: ['e'], source: 'dictionary', phonetic: null, audioUrl: null })
+        const future = await wordsQ.insert({ userId: USER_A, term: 'future', definition: 'd', examples: ['e'], source: 'dictionary', phonetic: null, audioUrl: null })
         await raw`insert into srs_state (word_id, user_id, due_date) values (${past.id}::uuid, ${USER_A}::uuid, now() - interval '1 day')`
         await raw`insert into srs_state (word_id, user_id, due_date) values (${future.id}::uuid, ${USER_A}::uuid, now() + interval '10 day')`
 
@@ -43,7 +43,7 @@ describe('srs queries + service', () => {
     })
 
     it('recordReview updates state and appends a review_log in one transaction', async () => {
-        const w = await wordsQ.insert({ userId: USER_A, term: 'tx', definition: 'd', examples: ['e'], source: 'dictionary' })
+        const w = await wordsQ.insert({ userId: USER_A, term: 'tx', definition: 'd', examples: ['e'], source: 'dictionary', phonetic: null, audioUrl: null })
         // Initialise due before the grade time so the card is actually due when graded.
         await srsQ.initialize(w.id, USER_A, new Date('2024-05-01T00:00:00Z'))
 
@@ -62,7 +62,7 @@ describe('srs queries + service', () => {
     })
 
     it('recordReview returns word_not_found error when no srs row exists', async () => {
-        const w = await wordsQ.insert({ userId: USER_A, term: 'orphan', definition: 'd', examples: ['e'], source: 'dictionary' })
+        const w = await wordsQ.insert({ userId: USER_A, term: 'orphan', definition: 'd', examples: ['e'], source: 'dictionary', phonetic: null, audioUrl: null })
         const result = await srsService.recordReview(USER_A, w.id, Grade.Good, new Date())
         expect(result.ok).toBe(false)
         if (!result.ok) expect(result.error.kind).toBe('word_not_found')

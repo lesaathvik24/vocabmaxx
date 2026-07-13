@@ -50,7 +50,7 @@ describe('POST /api/capture', () => {
         mockedUser.mockResolvedValue({ id: 'u1' } as never)
         mockedFetch.mockResolvedValue({
             ok: true,
-            value: { term: 'ubiquitous', def: { definition: 'd', examples: ['e'], source: 'dictionary' } },
+            value: { term: 'ubiquitous', def: { definition: 'd', examples: ['e'], source: 'dictionary', phonetic: null, audioUrl: null } },
         })
         mockedSave.mockResolvedValue({
             ok: true,
@@ -60,7 +60,7 @@ describe('POST /api/capture', () => {
                 term: 'ubiquitous',
                 definition: 'd',
                 examples: ['e'],
-                source: 'dictionary',
+                source: 'dictionary', phonetic: null, audioUrl: null,
                 addedAt: new Date(),
             },
         })
@@ -75,7 +75,7 @@ describe('POST /api/capture', () => {
         mockedUser.mockResolvedValue({ id: 'u1' } as never)
         mockedFetch.mockResolvedValue({
             ok: true,
-            value: { term: 'dup', def: { definition: 'd', examples: ['e'], source: 'dictionary' } },
+            value: { term: 'dup', def: { definition: 'd', examples: ['e'], source: 'dictionary', phonetic: null, audioUrl: null } },
         })
         mockedSave.mockResolvedValue({ ok: false, error: { kind: 'duplicate_term' } })
 
