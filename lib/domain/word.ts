@@ -1,6 +1,13 @@
 import type { SRSState } from './srs'
 import { InvalidWordError } from './errors'
 
+/** One meaning of a word. A term like "flustered" has several. */
+export interface Sense {
+    partOfSpeech: string | null
+    definition: string
+    examples: string[]
+}
+
 export interface Word {
     id: string
     userId: string
@@ -10,6 +17,11 @@ export interface Word {
     source: 'dictionary' | 'llm'
     phonetic: string | null
     audioUrl: string | null
+    /**
+     * Every meaning we found, primary first. Null for words captured before
+     * multi-sense support — callers fall back to `definition` / `examples`.
+     */
+    senses: Sense[] | null
     addedAt: Date
 }
 
@@ -29,6 +41,7 @@ interface CreateWordInput {
     source: 'dictionary' | 'llm'
     phonetic: string | null
     audioUrl: string | null
+    senses: Sense[] | null
     addedAt: Date
 }
 
@@ -75,6 +88,7 @@ export function createWord(input: CreateWordInput): ValidWord {
         source: input.source,
         phonetic: input.phonetic,
         audioUrl: input.audioUrl,
+        senses: input.senses,
         addedAt: input.addedAt,
     } as ValidWord
 }

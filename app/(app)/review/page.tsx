@@ -43,6 +43,7 @@ export default async function ReviewPage({
             examples: w.examples,
             phonetic: w.phonetic,
             audioUrl: w.audioUrl,
+            senses: w.senses,
         }))
         return <ReviewSession initialCards={cards} practice />
     }
@@ -67,6 +68,7 @@ export default async function ReviewPage({
         examples: w.examples,
         phonetic: w.phonetic,
         audioUrl: w.audioUrl,
+        senses: w.senses,
     }))
 
     return <ReviewSession initialCards={cards} />

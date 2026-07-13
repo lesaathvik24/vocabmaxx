@@ -32,6 +32,7 @@ export default async function WordDetailPage({
             source={detail.word.source}
             phonetic={detail.word.phonetic}
             audioUrl={detail.word.audioUrl}
+            senses={detail.word.senses}
             addedAt={detail.word.addedAt.toISOString()}
             status={detail.status}
             due={detail.due}

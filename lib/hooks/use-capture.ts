@@ -1,6 +1,7 @@
 'use client'
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import type { Sense } from '@/lib/domain/word'
 
 export interface CapturedWord {
     id: string
@@ -10,6 +11,7 @@ export interface CapturedWord {
     source: string
     phonetic: string | null
     audioUrl: string | null
+    senses: Sense[] | null
     addedAt: string
 }
 

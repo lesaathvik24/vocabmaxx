@@ -18,7 +18,9 @@ import { cn } from '@/lib/utils'
 import { WordEditor } from './WordEditor'
 import { PronounceButton } from './PronounceButton'
 import { StatusBadge, DueBadge } from './StatusBadge'
+import { SenseList, toSenses } from './SenseList'
 import type { WordStatus } from '@/lib/words/filter'
+import type { Sense } from '@/lib/domain/word'
 
 export interface WordDetailProps {
     id: string
@@ -28,6 +30,7 @@ export interface WordDetailProps {
     source: string
     phonetic: string | null
     audioUrl: string | null
+    senses: Sense[] | null
     addedAt: string // ISO
     status: WordStatus
     due: boolean
@@ -55,6 +58,7 @@ function fmtDate(iso: string | null): string {
 
 export function WordDetail(props: WordDetailProps) {
     const router = useRouter()
+    const senses = toSenses(props.senses, props.definition, props.examples)
     const [editing, setEditing] = useState(false)
     const [confirmingDelete, setConfirmingDelete] = useState(false)
     const [deleting, setDeleting] = useState(false)
@@ -114,27 +118,11 @@ export function WordDetail(props: WordDetailProps) {
                 </div>
             </div>
 
-            <section className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-4">
-                <div>
-                    <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                        Definition
-                    </h2>
-                    <p className="mt-1 text-sm leading-relaxed">{props.definition}</p>
-                </div>
-                {props.examples.length > 0 && (
-                    <div>
-                        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                            Examples
-                        </h2>
-                        <ul className="mt-1 space-y-1.5">
-                            {props.examples.map((ex, i) => (
-                                <li key={i} className="text-sm leading-relaxed text-muted-foreground">
-                                    “{ex}”
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                )}
+            <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    {senses.length > 1 ? `Meanings (${senses.length})` : 'Meaning'}
+                </h2>
+                <SenseList senses={senses} className="mt-3" />
             </section>
 
             <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">

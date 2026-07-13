@@ -3,6 +3,8 @@
 import { useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { PronounceButton } from '@/components/words/PronounceButton'
+import { SenseList, toSenses } from '@/components/words/SenseList'
+import type { Sense } from '@/lib/domain/word'
 
 interface FlipCardProps {
     term: string
@@ -10,11 +12,12 @@ interface FlipCardProps {
     examples: string[]
     phonetic?: string | null
     audioUrl?: string | null
+    senses?: Sense[] | null
     flipped: boolean
     onFlip: () => void
 }
 
-export function FlipCard({ term, definition, examples, phonetic, audioUrl, flipped, onFlip }: FlipCardProps) {
+export function FlipCard({ term, definition, examples, phonetic, audioUrl, senses, flipped, onFlip }: FlipCardProps) {
     useEffect(() => {
         function onKey(e: KeyboardEvent) {
             if (e.key !== ' ' && e.key !== 'Enter') return
@@ -71,21 +74,11 @@ export function FlipCard({ term, definition, examples, phonetic, audioUrl, flipp
                         <p className="font-display font-semibold text-2xl">{term}</p>
                         <PronounceButton term={term} audioUrl={audioUrl} size="sm" />
                     </div>
-                    <p className="mt-3 font-serif text-base leading-relaxed text-foreground">
-                        {definition}
-                    </p>
-                    {examples.length > 0 && (
-                        <ul className="mt-4 space-y-1.5">
-                            {examples.map((ex, i) => (
-                                <li
-                                    key={i}
-                                    className="font-serif text-sm italic text-muted-foreground pl-3 border-l-2 border-border"
-                                >
-                                    {ex}
-                                </li>
-                            ))}
-                        </ul>
-                    )}
+                    <SenseList
+                        senses={toSenses(senses, definition, examples)}
+                        dense
+                        className="mt-3"
+                    />
                 </div>
             </div>
         </div>

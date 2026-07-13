@@ -9,8 +9,8 @@ import {
 } from '@/lib/review/session'
 
 const cards: ReviewCard[] = [
-    { id: 'a', term: 'alacrity', definition: 'eagerness', examples: ['ex a'], phonetic: null, audioUrl: null },
-    { id: 'b', term: 'brusque', definition: 'abrupt', examples: ['ex b'], phonetic: null, audioUrl: null },
+    { id: 'a', term: 'alacrity', definition: 'eagerness', examples: ['ex a'], phonetic: null, audioUrl: null, senses: null },
+    { id: 'b', term: 'brusque', definition: 'abrupt', examples: ['ex b'], phonetic: null, audioUrl: null, senses: null },
 ]
 
 describe('review session state machine', () => {

@@ -1,16 +1,26 @@
 import 'server-only'
 import { z } from 'zod'
 import { type Result, ok, err, type DefinitionError, type LLMError } from '@/lib/domain/errors'
+import type { Sense } from '@/lib/domain/word'
 import type { DefinitionResult } from './dict.client'
 
 const TIMEOUT_MS = 15_000
-const MAX_TOKENS = 200
+const MAX_TOKENS = 700
 const EXTRACT_MAX_TOKENS = 600
 
 const definitionLLMSchema = z.object({
     valid: z.boolean(),
-    definition: z.string().max(500).optional(),
-    examples: z.array(z.string().max(300)).max(3).optional(),
+    senses: z
+        .array(
+            z.object({
+                partOfSpeech: z.string().max(32).nullable().optional(),
+                definition: z.string().max(500),
+                examples: z.array(z.string().max(300)).min(1).max(2),
+            }),
+        )
+        .min(1)
+        .max(3)
+        .optional(),
 })
 
 const extractLLMSchema = z.object({
@@ -32,7 +42,7 @@ const judgeLLMSchema = z.object({
 })
 
 const DEFINITION_SYSTEM =
-    'You are a vocabulary tutor for an advanced English speaker. Given a single word, return strict JSON. Schema: {"valid": boolean, "definition": string, "examples": [string, string]}. If the input is a real English word (including rare, archaic, technical, or coined-but-recognised terms): set valid=true, provide a concise definition (max 25 words) and exactly two natural usage examples from contexts like podcasts, journalism, or conversation. If the input is gibberish, a typo, a random keyboard mash, or not an English word: set valid=false and omit definition/examples. Output JSON only — no markdown, no preamble, no "I cannot" prose.'
+    'You are a vocabulary tutor for an advanced English speaker. Given a single word, return strict JSON. Schema: {"valid": boolean, "senses": [{"partOfSpeech": string, "definition": string, "examples": [string, string]}]}. If the input is a real English word (including rare, archaic, technical, or coined-but-recognised terms): set valid=true and list its COMMON senses — 1 to 3 of them, ordered with the sense a modern speaker most likely means FIRST. Skip archaic or obsolete senses unless the word has no modern use. Each sense needs a concise definition (max 25 words) and exactly two natural usage examples from contexts like podcasts, journalism, or conversation; the examples must illustrate THAT sense. partOfSpeech is a lowercase word like "noun", "verb", "adjective". If the input is gibberish, a typo, a random keyboard mash, or not an English word: set valid=false and omit senses. Output JSON only — no markdown, no preamble, no "I cannot" prose.'
 
 const CORRECTION_SYSTEM =
     'You are a forgiving spelling corrector for an English vocabulary app. The user typed a string that is NOT a recognized English word. If it is plausibly a misspelling of a single real English word, return that word — be generous with edit distance and phonetic guesses (e.g. "exaacerbait" -> "exacerbate", "definately" -> "definitely", "rythm" -> "rhythm", "acommodate" -> "accommodate"). Return strict JSON ONLY: {"correction": string | null}. Set correction to the single most likely intended word, lowercased, letters only. If it is random keyboard mash, an abbreviation, or you cannot map it to a real English word with reasonable confidence, return {"correction": null}. No markdown, no preamble.'
@@ -68,12 +78,25 @@ export async function fetchLLMDefinition(term: string): Promise<Result<Definitio
 
     if (!validated.data.valid) return err({ kind: 'not_a_word' })
 
-    const { definition, examples } = validated.data
-    if (!definition || !examples || examples.length < 2) {
+    const rawSenses = validated.data.senses
+    if (!rawSenses || rawSenses.length === 0) {
         return err({ kind: 'malformed_llm_response', raw: result.value.slice(0, 200) })
     }
 
-    return ok({ definition, examples: [examples[0], examples[1]], source: 'llm', phonetic: null, audioUrl: null })
+    const senses: Sense[] = rawSenses.map((s) => ({
+        partOfSpeech: s.partOfSpeech ?? null,
+        definition: s.definition,
+        examples: s.examples,
+    }))
+
+    return ok({
+        definition: senses[0].definition,
+        examples: senses[0].examples,
+        senses,
+        source: 'llm',
+        phonetic: null,
+        audioUrl: null,
+    })
 }
 
 /**

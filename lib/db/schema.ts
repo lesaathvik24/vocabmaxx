@@ -1,5 +1,6 @@
 import { pgTable, pgSchema, uuid, text, timestamp, integer, doublePrecision, boolean, jsonb, pgEnum, index, uniqueIndex } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
+import type { Sense } from '@/lib/domain/word'
 
 export const definitionSourceEnum = pgEnum('definition_source', ['dictionary', 'llm'])
 export const importJobStatusEnum = pgEnum('import_job_status', ['pending', 'running', 'done', 'failed'])
@@ -20,6 +21,7 @@ export const words = pgTable('words', {
     source: definitionSourceEnum('source').notNull(),
     phonetic: text('phonetic'),
     audioUrl: text('audio_url'),
+    senses: jsonb('senses').$type<Sense[]>(),
     addedAt: timestamp('added_at', { withTimezone: true }).defaultNow().notNull(),
 }, t => ({
     termUserUnique: uniqueIndex('words_user_term_idx').on(t.userId, t.term),
@@ -102,6 +104,7 @@ export const definitionCache = pgTable('definition_cache', {
     source: definitionSourceEnum('source').notNull(),
     phonetic: text('phonetic'),
     audioUrl: text('audio_url'),
+    senses: jsonb('senses').$type<Sense[]>(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 })
 

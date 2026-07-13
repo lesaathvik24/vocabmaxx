@@ -2,7 +2,7 @@ import 'server-only'
 import * as wordsQ from '@/lib/db/queries/words'
 import * as srsQ from '@/lib/db/queries/srs'
 import * as reviewLogQ from '@/lib/db/queries/review-log'
-import { type Word, assertWordFields, createWord } from '@/lib/domain/word'
+import { type Word, type Sense, assertWordFields, createWord } from '@/lib/domain/word'
 import type { Grade } from '@/lib/domain/grade'
 import { type Result, ok, err, type CaptureError } from '@/lib/domain/errors'
 import { repsToStatus, type WordStatus } from '@/lib/words/filter'
@@ -15,6 +15,7 @@ export interface SaveWordInput {
     source: 'dictionary' | 'llm'
     phonetic: string | null
     audioUrl: string | null
+    senses: Sense[] | null
 }
 
 export async function save(input: SaveWordInput): Promise<Result<Word, CaptureError>> {
@@ -39,6 +40,7 @@ export async function save(input: SaveWordInput): Promise<Result<Word, CaptureEr
         source: input.source,
         phonetic: input.phonetic,
         audioUrl: input.audioUrl,
+        senses: input.senses,
     })
     if (!inserted) return err({ kind: 'duplicate_term' })
 

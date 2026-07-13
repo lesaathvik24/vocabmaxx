@@ -1,3 +1,5 @@
+import type { Sense } from '@/lib/domain/word'
+
 export interface ReviewCard {
     id: string
     term: string
@@ -5,6 +7,7 @@ export interface ReviewCard {
     examples: string[]
     phonetic: string | null
     audioUrl: string | null
+    senses: Sense[] | null
 }
 
 export interface ReviewSessionState {

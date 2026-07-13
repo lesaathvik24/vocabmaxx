@@ -6,6 +6,7 @@ import { BookOpen, Sparkles } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { PronounceButton } from '@/components/words/PronounceButton'
+import { SenseList, toSenses } from '@/components/words/SenseList'
 import type { CapturedWord } from '@/lib/hooks/use-capture'
 
 interface CapturedWordCardProps {
@@ -33,20 +34,11 @@ export function CapturedWordCard({ word, onAddAnother }: CapturedWordCardProps) 
             </div>
             {word.phonetic && <p className="mt-0.5 text-sm text-muted-foreground">{word.phonetic}</p>}
 
-            <p className="mt-3 font-serif text-base leading-relaxed">{word.definition}</p>
-
-            {word.examples.length > 0 && (
-                <ul className="mt-3 space-y-1.5">
-                    {word.examples.map((ex, i) => (
-                        <li
-                            key={i}
-                            className="border-l-2 border-accent/30 pl-3 font-serif text-sm italic text-muted-foreground"
-                        >
-                            {ex}
-                        </li>
-                    ))}
-                </ul>
-            )}
+            <SenseList
+                senses={toSenses(word.senses, word.definition, word.examples)}
+                dense
+                className="mt-3"
+            />
 
             <div className="mt-4 flex flex-wrap gap-2">
                 <Link

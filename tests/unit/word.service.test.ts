@@ -25,7 +25,7 @@ function makeWord(overrides: Partial<Word> = {}): Word {
         term: 'ephemeral',
         definition: 'lasting for only a short time',
         examples: ['The ephemeral nature of fame.'],
-        source: 'dictionary', phonetic: null, audioUrl: null,
+        source: 'dictionary', phonetic: null, audioUrl: null, senses: null,
         addedAt: new Date('2024-01-01'),
         ...overrides,
     }
@@ -82,7 +82,7 @@ describe('word.service.save', () => {
         term: 'Ephemeral',
         definition: 'lasting for only a short time',
         examples: ['The ephemeral nature of fame.'],
-        source: 'dictionary' as const, phonetic: null, audioUrl: null,
+        source: 'dictionary' as const, phonetic: null, audioUrl: null, senses: null,
     }
 
     it('inserts, initialises SRS, and returns the saved word (normalised term)', async () => {

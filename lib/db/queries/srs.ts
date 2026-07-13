@@ -45,6 +45,7 @@ export async function findDue(userId: string, asOf: Date): Promise<WordWithSRS[]
         source: w.source,
         phonetic: w.phonetic,
         audioUrl: w.audioUrl,
+        senses: w.senses,
         addedAt: w.addedAt,
         srs: {
             easeFactor: s.easeFactor,

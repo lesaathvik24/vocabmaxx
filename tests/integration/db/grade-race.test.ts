@@ -28,7 +28,7 @@ describe('concurrent grade race', () => {
             term: 'race',
             definition: 'd',
             examples: ['e'],
-            source: 'dictionary', phonetic: null, audioUrl: null,
+            source: 'dictionary', phonetic: null, audioUrl: null, senses: null,
         })
         await srsQ.initialize(w.id, USER_R)
 
@@ -62,7 +62,7 @@ describe('concurrent grade race', () => {
                 term: 'mine',
                 definition: 'd',
                 examples: ['e'],
-                source: 'dictionary', phonetic: null, audioUrl: null,
+                source: 'dictionary', phonetic: null, audioUrl: null, senses: null,
             })
             await srsQ.initialize(w.id, USER_R)
 

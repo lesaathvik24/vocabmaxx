@@ -4,6 +4,46 @@
 
 ---
 
+## State as of 2026-07-14 (pronunciation, push, UX, multi-sense)
+
+### Shipped this session
+
+| Feature | Notes |
+|---|---|
+| **Pronunciation** | `phonetic` + `audio_url` on `words` / `definition_cache`. `PronounceButton` plays the dictionary clip, falling back to browser `speechSynthesis` so *every* word is playable (incl. LLM-sourced and pre-existing rows). Mounted on flashcard (both faces), word detail, words list, capture card. CSP gained `media-src` for the audio CDN. |
+| **Post-capture card** | `CapturedWordCard` — meaning, examples, phonetic + play, source badge, View word / Add another. Replaces the bare toast. |
+| **Quick capture** | `QuickCaptureProvider` + dialog, bound to **⌘K/Ctrl+K**. Topbar CTA and mobile FAB open it instead of navigating to `/capture`. |
+| **Web push** | `push_subscriptions` table, `public/sw.js`, `POST`/`DELETE /api/push/subscribe`, `push.service.ts`. Per-device opt-in in Settings, independent of the email digest. The daily cron fans out "N words due" pushes; click → `/review`. Dead endpoints (404/410) pruned on send. Skipped entirely when VAPID keys are absent. |
+| **UX consistency pass** | `accent` button variant (replaced 10+ hand-rolled teal CTAs); shared `PageHeader`, `EmptyState`, `StatusBadge`; sidebar grouped Learn/Library/Analyze; first-run dashboard hero for empty accounts; dead `ComingSoon` deleted. |
+| **Multi-sense definitions** | `senses jsonb` on `words` / `definition_cache`. See below — this fixed a real correctness bug. |
+
+### The multi-sense fix (why it exists)
+
+dictionaryapi.dev lists senses in **etymological**, not frequency, order. The old parser took the *first* definition it saw and separately harvested examples from *any* sense — so `flustered` returned the archaic **"to make hot and rosy, as with drinking"** paired with examples illustrating a completely different meaning.
+
+Now: `collectSenses` flattens every (part-of-speech, definition, examples) triple; `rankSenses` scores them (**+10** carries a usage example — the dictionary only illustrates senses people actually use; **−20** tagged archaic/obsolete/dated/rare; **−2** otherwise parenthetically qualified; ties fall back to dictionary order). The primary sense **must carry its own examples**, so definition and examples always describe the same meaning. All senses are stored and rendered (`SenseList`), primary first. The LLM path likewise returns 1–3 common senses, modern first.
+
+**Cache heals itself:** `definition-cache.lookup` treats a `dictionary` row with null `senses` as a *miss*, so stale pre-fix rows are refetched and overwritten (`write` is now an upsert). No cache wipe needed.
+
+### Migrations
+
+`drizzle/0006_pronunciation_push.sql` and `0007_multi_sense.sql` — **both already applied to prod.**
+
+> ⚠️ **`pnpm db:push` is broken** — drizzle-kit 0.31 crashes introspecting CHECK constraints (`Cannot read properties of undefined (reading 'replace')`). Apply migration SQL directly with a small `postgres`-client node script instead.
+
+### Env / deploy
+
+`NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` are in `.env.local` **and must be set on Vercel** (the public key is inlined at build time — a redeploy is required after adding it). VAPID is free; nothing in push costs money.
+
+Vercel Hobby allows one cron/day, so `vercel.json` fires `0 14 * * *` — the per-user `digestHour` preference is therefore only honoured for users who chose 14:00 UTC. Hourly (`0 * * * *`) needs Pro.
+
+### Known gaps
+
+- **Integration tests are not runnable**: the Supabase `testing` project (`ufiizhzljxrntjeluuhv`) is **paused**, and restoring it is paywalled on the free plan. Either create a fresh free project and repoint `SUPABASE_TEST_DB_URL`, or skip. Unit tests (217), lint, typecheck and build all pass.
+- Next feature the user wants: **speak-back** — record the user pronouncing a word and grade it (this session shipped listen-only).
+
+---
+
 ## State as of 2026-06-10 (post final-review remediation)
 
 ### What's done
@@ -22,7 +62,7 @@
 | Phase 8 — Settings, account deletion, JSON/CSV export, daily digest cron | ✅ | real `SettingsForm` + `DeleteAccountDialog`; `GET /api/export?format=json\|csv` (Anki → 501); `DELETE /api/account`; `GET`/`PATCH /api/preferences`; `GET`/`POST /api/cron/daily-digest` (Vercel Cron `0 14 * * *`) |
 | **Beyond core:** `/algorithm` SM-2 lab, practice mode | ✅ | |
 
-**168 unit tests green.** `pnpm lint`, `pnpm typecheck` clean on a fresh checkout. Integration tests (`pnpm test:integ`) require a live Supabase test project and were **not** re-run in the remediation worktree — run them before merging.
+**168 unit tests green** *(217 as of 2026-07-14)*. `pnpm lint`, `pnpm typecheck` clean on a fresh checkout. Integration tests (`pnpm test:integ`) require a live Supabase test project — see the 2026-07-14 "Known gaps" above; that project is currently paused.
 
 ### What's NOT done yet
 

@@ -57,6 +57,7 @@ export async function POST(req: Request) {
         source: defResult.value.def.source,
         phonetic: defResult.value.def.phonetic,
         audioUrl: defResult.value.def.audioUrl,
+        senses: defResult.value.def.senses,
     })
     if (!saveResult.ok) {
         if (saveResult.error.kind === 'duplicate_term') {

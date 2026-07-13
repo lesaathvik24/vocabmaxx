@@ -7,7 +7,7 @@ const USER_A = '33333333-3333-3333-3333-aaaaaaaaaaaa'
 const USER_B = '33333333-3333-3333-3333-bbbbbbbbbbbb'
 
 async function seedWord(userId: string, term: string, addedAt: Date): Promise<string> {
-    const w = await words.insert({ userId, term, definition: `${term} def`, examples: ['e'], source: 'dictionary', phonetic: null, audioUrl: null })
+    const w = await words.insert({ userId, term, definition: `${term} def`, examples: ['e'], source: 'dictionary', phonetic: null, audioUrl: null, senses: null })
     await raw`update words set added_at = ${addedAt.toISOString()} where id = ${w.id}::uuid`
     return w.id
 }

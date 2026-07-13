@@ -2,7 +2,7 @@ import 'server-only'
 import { and, count, desc, eq } from 'drizzle-orm'
 import { db } from '../client'
 import { words, srsState } from '../schema'
-import type { Word } from '@/lib/domain/word'
+import type { Word, Sense } from '@/lib/domain/word'
 
 export interface WordListRow extends Word {
     repetitions: number
@@ -17,6 +17,7 @@ export interface InsertWordInput {
     source: 'dictionary' | 'llm'
     phonetic: string | null
     audioUrl: string | null
+    senses: Sense[] | null
 }
 
 /**
@@ -34,6 +35,7 @@ export async function insert(input: InsertWordInput): Promise<Word> {
             source: input.source,
             phonetic: input.phonetic,
             audioUrl: input.audioUrl,
+            senses: input.senses,
         })
         .returning()
     return rowToWord(row)
@@ -55,6 +57,7 @@ export async function insertIfAbsent(input: InsertWordInput): Promise<Word | nul
             source: input.source,
             phonetic: input.phonetic,
             audioUrl: input.audioUrl,
+            senses: input.senses,
         })
         .onConflictDoNothing({ target: [words.userId, words.term] })
         .returning()
@@ -201,6 +204,7 @@ function rowToWord(r: WordRow): Word {
         source: r.source,
         phonetic: r.phonetic,
         audioUrl: r.audioUrl,
+        senses: r.senses,
         addedAt: r.addedAt,
     }
 }

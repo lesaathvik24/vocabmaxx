@@ -23,7 +23,7 @@ function makeRow(over: Partial<WordListRow> = {}): WordListRow {
         term: 'ephemeral',
         definition: 'lasting for only a short time',
         examples: ['The ephemeral nature of fame.'],
-        source: 'dictionary', phonetic: null, audioUrl: null,
+        source: 'dictionary', phonetic: null, audioUrl: null, senses: null,
         addedAt: new Date('2024-01-01'),
         repetitions: 0,
         dueDate: new Date('2024-01-01'),

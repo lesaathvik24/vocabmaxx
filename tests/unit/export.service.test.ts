@@ -18,7 +18,7 @@ function makeRow(overrides: Partial<ExportRow> = {}): ExportRow {
         term: 'ephemeral',
         definition: 'lasting a very short time',
         examples: ['an ephemeral fashion', 'ephemeral pleasures'],
-        source: 'dictionary', phonetic: null, audioUrl: null,
+        source: 'dictionary', phonetic: null, audioUrl: null, senses: null,
         addedAt: new Date('2026-06-01T10:00:00Z'),
         easeFactor: 2.5,
         intervalDays: 3,

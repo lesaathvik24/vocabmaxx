@@ -11,8 +11,8 @@ beforeAll(async () => {
     await createAuthUser(USER_B, 'b-rls@test.vocabmaxx.local')
     await raw`delete from words where user_id = any(${[USER_A, USER_B]}::uuid[])`
 
-    const a = await wordsQ.insert({ userId: USER_A, term: 'alpha', definition: 'a-def', examples: ['ex'], source: 'dictionary', phonetic: null, audioUrl: null })
-    const b = await wordsQ.insert({ userId: USER_B, term: 'bravo', definition: 'b-def', examples: ['ex'], source: 'dictionary', phonetic: null, audioUrl: null })
+    const a = await wordsQ.insert({ userId: USER_A, term: 'alpha', definition: 'a-def', examples: ['ex'], source: 'dictionary', phonetic: null, audioUrl: null, senses: null })
+    const b = await wordsQ.insert({ userId: USER_B, term: 'bravo', definition: 'b-def', examples: ['ex'], source: 'dictionary', phonetic: null, audioUrl: null, senses: null })
     await srsQ.initialize(a.id, USER_A)
     await srsQ.initialize(b.id, USER_B)
     await raw`insert into review_log (user_id, word_id, grade) values (${USER_A}::uuid, ${a.id}::uuid, 4)`
