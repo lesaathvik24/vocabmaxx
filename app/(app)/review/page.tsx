@@ -6,6 +6,7 @@ import * as srsService from '@/lib/services/srs.service'
 import * as wordService from '@/lib/services/word.service'
 import { ReviewSession } from '@/components/review/ReviewSession'
 import { buttonVariants } from '@/components/ui/button'
+import { EmptyState } from '@/components/ui/empty-state'
 import { cn } from '@/lib/utils'
 import type { ReviewCard } from '@/lib/review/session'
 
@@ -40,6 +41,8 @@ export default async function ReviewPage({
             term: w.term,
             definition: w.definition,
             examples: w.examples,
+            phonetic: w.phonetic,
+            audioUrl: w.audioUrl,
         }))
         return <ReviewSession initialCards={cards} practice />
     }
@@ -62,6 +65,8 @@ export default async function ReviewPage({
         term: w.term,
         definition: w.definition,
         examples: w.examples,
+        phonetic: w.phonetic,
+        audioUrl: w.audioUrl,
     }))
 
     return <ReviewSession initialCards={cards} />
@@ -79,30 +84,32 @@ function CaughtUp({
     showPractice: boolean
 }) {
     return (
-        <div className="flex flex-col items-center justify-center text-center min-h-[60vh] px-6">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-success/10 text-success mb-5">
-                <CheckCircle2 size={28} aria-hidden="true" />
-            </div>
-            <h1 className="font-display font-semibold text-2xl tracking-tight">{title}</h1>
-            <p className="mt-2 max-w-md text-sm text-muted-foreground leading-relaxed">{body}</p>
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-                {showPractice && (
+        <EmptyState
+            variant="page"
+            tone="success"
+            icon={<CheckCircle2 size={28} aria-hidden="true" />}
+            title={title}
+            body={body}
+            actions={
+                <>
+                    {showPractice && (
+                        <Link
+                            href={practiceHref}
+                            className={cn(buttonVariants({ variant: 'outline' }), 'gap-2')}
+                        >
+                            <RotateCcw size={16} aria-hidden="true" />
+                            Practice anyway
+                        </Link>
+                    )}
                     <Link
-                        href={practiceHref}
-                        className={cn(buttonVariants({ variant: 'outline' }), 'gap-2')}
+                        href={captureHref}
+                        className={cn(buttonVariants({ variant: 'accent' }), 'gap-2')}
                     >
-                        <RotateCcw size={16} aria-hidden="true" />
-                        Practice anyway
+                        {showPractice ? <Sparkles size={16} aria-hidden="true" /> : <BookOpen size={16} aria-hidden="true" />}
+                        Capture a word
                     </Link>
-                )}
-                <Link
-                    href={captureHref}
-                    className={cn(buttonVariants(), 'bg-accent text-accent-foreground hover:bg-accent/90 gap-2')}
-                >
-                    {showPractice ? <Sparkles size={16} aria-hidden="true" /> : <BookOpen size={16} aria-hidden="true" />}
-                    Capture a word
-                </Link>
-            </div>
-        </div>
+                </>
+            }
+        />
     )
 }

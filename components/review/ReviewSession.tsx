@@ -121,6 +121,8 @@ export function ReviewSession({ initialCards, practice = false }: ReviewSessionP
                 term={card.term}
                 definition={card.definition}
                 examples={card.examples}
+                phonetic={card.phonetic}
+                audioUrl={card.audioUrl}
                 flipped={session.flipped}
                 onFlip={handleFlip}
             />

@@ -13,6 +13,8 @@ export interface SaveWordInput {
     definition: string
     examples: string[]
     source: 'dictionary' | 'llm'
+    phonetic: string | null
+    audioUrl: string | null
 }
 
 export async function save(input: SaveWordInput): Promise<Result<Word, CaptureError>> {
@@ -35,6 +37,8 @@ export async function save(input: SaveWordInput): Promise<Result<Word, CaptureEr
         definition: fields.definition,
         examples: fields.examples,
         source: input.source,
+        phonetic: input.phonetic,
+        audioUrl: input.audioUrl,
     })
     if (!inserted) return err({ kind: 'duplicate_term' })
 
@@ -60,16 +64,10 @@ export async function listWithStatus(
     now: Date = new Date(),
 ): Promise<WordWithStatus[]> {
     const rows = await wordsQ.listWithSrsByUser(userId)
-    return rows.map((r) => ({
-        id: r.id,
-        userId: r.userId,
-        term: r.term,
-        definition: r.definition,
-        examples: r.examples,
-        source: r.source,
-        addedAt: r.addedAt,
-        status: repsToStatus(r.repetitions),
-        due: r.dueDate.getTime() <= now.getTime(),
+    return rows.map(({ repetitions, dueDate, ...word }) => ({
+        ...word,
+        status: repsToStatus(repetitions),
+        due: dueDate.getTime() <= now.getTime(),
     }))
 }
 

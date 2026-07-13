@@ -2,16 +2,19 @@
 
 import { useEffect } from 'react'
 import { cn } from '@/lib/utils'
+import { PronounceButton } from '@/components/words/PronounceButton'
 
 interface FlipCardProps {
     term: string
     definition: string
     examples: string[]
+    phonetic?: string | null
+    audioUrl?: string | null
     flipped: boolean
     onFlip: () => void
 }
 
-export function FlipCard({ term, definition, examples, flipped, onFlip }: FlipCardProps) {
+export function FlipCard({ term, definition, examples, phonetic, audioUrl, flipped, onFlip }: FlipCardProps) {
     useEffect(() => {
         function onKey(e: KeyboardEvent) {
             if (e.key !== ' ' && e.key !== 'Enter') return
@@ -49,7 +52,11 @@ export function FlipCard({ term, definition, examples, flipped, onFlip }: FlipCa
             >
                 {/* Front */}
                 <div className="flip-face w-full h-full rounded-2xl border border-border bg-card shadow-sm flex flex-col items-center justify-center p-8 select-none">
-                    <p className="font-display font-semibold text-3xl text-center">{term}</p>
+                    <div className="flex items-center gap-2">
+                        <p className="font-display font-semibold text-3xl text-center">{term}</p>
+                        <PronounceButton term={term} audioUrl={audioUrl} />
+                    </div>
+                    {phonetic && <p className="mt-1 text-sm text-muted-foreground">{phonetic}</p>}
                     <p className="mt-6 text-xs text-muted-foreground flex items-center gap-1.5">
                         <kbd className="inline-flex h-5 items-center rounded border border-border bg-muted px-1.5 font-mono text-[10px]">
                             Space
@@ -60,7 +67,10 @@ export function FlipCard({ term, definition, examples, flipped, onFlip }: FlipCa
 
                 {/* Back */}
                 <div className="flip-face flip-face-back w-full h-full rounded-2xl border border-border bg-card shadow-sm flex flex-col p-6 overflow-y-auto select-none">
-                    <p className="font-display font-semibold text-2xl">{term}</p>
+                    <div className="flex items-center gap-2">
+                        <p className="font-display font-semibold text-2xl">{term}</p>
+                        <PronounceButton term={term} audioUrl={audioUrl} size="sm" />
+                    </div>
                     <p className="mt-3 font-serif text-base leading-relaxed text-foreground">
                         {definition}
                     </p>

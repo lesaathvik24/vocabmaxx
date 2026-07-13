@@ -18,6 +18,8 @@ export const words = pgTable('words', {
     definition: text('definition').notNull(),
     examples: jsonb('examples').$type<string[]>().notNull(),
     source: definitionSourceEnum('source').notNull(),
+    phonetic: text('phonetic'),
+    audioUrl: text('audio_url'),
     addedAt: timestamp('added_at', { withTimezone: true }).defaultNow().notNull(),
 }, t => ({
     termUserUnique: uniqueIndex('words_user_term_idx').on(t.userId, t.term),
@@ -98,5 +100,19 @@ export const definitionCache = pgTable('definition_cache', {
     definition: text('definition').notNull(),
     examples: jsonb('examples').$type<string[]>().notNull(),
     source: definitionSourceEnum('source').notNull(),
+    phonetic: text('phonetic'),
+    audioUrl: text('audio_url'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 })
+
+export const pushSubscriptions = pgTable('push_subscriptions', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').notNull().references(() => authUsers.id, { onDelete: 'cascade' }),
+    endpoint: text('endpoint').notNull(),
+    p256dh: text('p256dh').notNull(),
+    auth: text('auth').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, t => ({
+    endpointUnique: uniqueIndex('push_subscriptions_endpoint_idx').on(t.endpoint),
+    userIdx: index('push_subscriptions_user_idx').on(t.userId),
+}))

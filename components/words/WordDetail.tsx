@@ -16,6 +16,8 @@ import {
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import { WordEditor } from './WordEditor'
+import { PronounceButton } from './PronounceButton'
+import { StatusBadge, DueBadge } from './StatusBadge'
 import type { WordStatus } from '@/lib/words/filter'
 
 export interface WordDetailProps {
@@ -24,6 +26,8 @@ export interface WordDetailProps {
     definition: string
     examples: string[]
     source: string
+    phonetic: string | null
+    audioUrl: string | null
     addedAt: string // ISO
     status: WordStatus
     due: boolean
@@ -35,13 +39,6 @@ export interface WordDetailProps {
         lastReviewedAt: string | null // ISO
     } | null
     history: { grade: number; reviewedAt: string }[]
-}
-
-const STATUS_STYLES: Record<WordStatus, string> = {
-    new: 'bg-muted text-muted-foreground',
-    learning: 'bg-warning/15 text-warning',
-    review: 'bg-accent-soft text-accent',
-    mastered: 'bg-success/15 text-success',
 }
 
 const GRADE_META: Record<number, { label: string; cls: string }> = {
@@ -93,21 +90,12 @@ export function WordDetail(props: WordDetailProps) {
                 <div className="space-y-2">
                     <div className="flex items-center gap-2">
                         <h1 className="font-display font-semibold text-3xl tracking-tight">{props.term}</h1>
-                        <span
-                            className={cn(
-                                'rounded-full px-2 py-0.5 text-[11px] font-medium capitalize',
-                                STATUS_STYLES[props.status],
-                            )}
-                        >
-                            {props.status}
-                        </span>
-                        {props.due && (
-                            <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[11px] font-medium text-accent">
-                                Due
-                            </span>
-                        )}
+                        <PronounceButton term={props.term} audioUrl={props.audioUrl} />
+                        <StatusBadge status={props.status} />
+                        {props.due && <DueBadge />}
                     </div>
                     <p className="text-xs text-muted-foreground">
+                        {props.phonetic && <span className="mr-2 text-sm text-muted-foreground">{props.phonetic}</span>}
                         Captured {fmtDate(props.addedAt)} · via {props.source}
                     </p>
                 </div>

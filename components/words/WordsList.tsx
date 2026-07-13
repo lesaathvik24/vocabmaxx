@@ -3,9 +3,11 @@
 import { useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Search, Trash2, Loader2 } from 'lucide-react'
+import { Search, Trash2, Loader2, BookOpen, Plus } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/ui/empty-state'
+import { useQuickCapture } from '@/components/capture/QuickCaptureProvider'
 import {
     Dialog,
     DialogContent,
@@ -16,12 +18,16 @@ import {
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import { filterWords, type WordStatus, type WordFilter } from '@/lib/words/filter'
+import { PronounceButton } from './PronounceButton'
+import { StatusBadge, DueBadge } from './StatusBadge'
 
 export interface WordRow {
     id: string
     term: string
     definition: string
     source: string
+    phonetic: string | null
+    audioUrl: string | null
     addedAt: string // ISO
     status: WordStatus
     due: boolean
@@ -44,15 +50,9 @@ const FILTERS: { id: WordFilter; label: string }[] = [
     { id: 'mastered', label: 'Mastered' },
 ]
 
-const STATUS_STYLES: Record<WordStatus, string> = {
-    new: 'bg-muted text-muted-foreground',
-    learning: 'bg-warning/15 text-warning',
-    review: 'bg-accent-soft text-accent',
-    mastered: 'bg-success/15 text-success',
-}
-
 export function WordsList({ words }: WordsListProps) {
     const router = useRouter()
+    const { openQuickCapture } = useQuickCapture()
     const [query, setQuery] = useState('')
     const [filter, setFilter] = useState<WordFilter>('all')
     const [pending, setPending] = useState<WordRow | null>(null)
@@ -124,11 +124,25 @@ export function WordsList({ words }: WordsListProps) {
             </div>
 
             {filtered.length === 0 ? (
-                <p className="py-12 text-center text-sm text-muted-foreground">
-                    {words.length === 0
-                        ? 'No words captured yet.'
-                        : 'No words match your search or filter.'}
-                </p>
+                words.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-border bg-card">
+                        <EmptyState
+                            icon={<BookOpen size={28} aria-hidden="true" />}
+                            title="No words yet"
+                            body="Everything you capture lands here — searchable, reviewable, yours."
+                            actions={
+                                <Button variant="accent" onClick={openQuickCapture} className="gap-2">
+                                    <Plus size={16} aria-hidden="true" />
+                                    Capture your first word
+                                </Button>
+                            }
+                        />
+                    </div>
+                ) : (
+                    <p className="py-12 text-center text-sm text-muted-foreground">
+                        No words match your search or filter.
+                    </p>
+                )
             ) : filtered.length > VIRTUALIZE_THRESHOLD ? (
                 <VirtualRows rows={filtered} onDelete={setPending} onOpen={(id) => router.push(`/words/${id}`)} />
             ) : (
@@ -207,19 +221,9 @@ function WordRowItem({
                 <p className="truncate text-sm font-medium">{word.term}</p>
                 <p className="truncate text-xs text-muted-foreground">{word.definition}</p>
             </div>
-            <span
-                className={cn(
-                    'hidden flex-shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium capitalize sm:inline-flex',
-                    STATUS_STYLES[word.status],
-                )}
-            >
-                {word.status}
-            </span>
-            {word.due && (
-                <span className="flex-shrink-0 rounded-full bg-accent/15 px-2 py-0.5 text-[11px] font-medium text-accent">
-                    Due
-                </span>
-            )}
+            <PronounceButton term={word.term} audioUrl={word.audioUrl} size="sm" className="flex-shrink-0" />
+            <StatusBadge status={word.status} className="hidden flex-shrink-0 sm:inline-flex" />
+            {word.due && <DueBadge className="flex-shrink-0" />}
             <Button
                 variant="ghost"
                 size="icon-sm"

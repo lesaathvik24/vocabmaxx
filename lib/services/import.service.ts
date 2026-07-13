@@ -90,6 +90,8 @@ export async function saveBulk(
             definition: defResult.value.def.definition,
             examples: defResult.value.def.examples,
             source: defResult.value.def.source,
+            phonetic: defResult.value.def.phonetic,
+            audioUrl: defResult.value.def.audioUrl,
         })
 
         if (!saveResult.ok) {

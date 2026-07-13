@@ -3,6 +3,8 @@ export interface ReviewCard {
     term: string
     definition: string
     examples: string[]
+    phonetic: string | null
+    audioUrl: string | null
 }
 
 export interface ReviewSessionState {

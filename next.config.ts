@@ -19,6 +19,8 @@ const nextConfig: NextConfig = {
               `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://*.posthog.com`,
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https:",
+              // Dictionary pronunciation audio (dictionaryapi.dev proxies Wiktionary media).
+              "media-src 'self' https://api.dictionaryapi.dev https://*.wiktionary.org https://upload.wikimedia.org",
               "font-src 'self' data:",
               "connect-src 'self' https://*.supabase.co https://api.deepseek.com https://*.posthog.com",
               "frame-ancestors 'none'",

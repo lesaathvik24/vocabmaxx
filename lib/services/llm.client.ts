@@ -73,7 +73,7 @@ export async function fetchLLMDefinition(term: string): Promise<Result<Definitio
         return err({ kind: 'malformed_llm_response', raw: result.value.slice(0, 200) })
     }
 
-    return ok({ definition, examples: [examples[0], examples[1]], source: 'llm' })
+    return ok({ definition, examples: [examples[0], examples[1]], source: 'llm', phonetic: null, audioUrl: null })
 }
 
 /**

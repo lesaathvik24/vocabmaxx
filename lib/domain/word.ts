@@ -8,6 +8,8 @@ export interface Word {
     definition: string
     examples: string[]
     source: 'dictionary' | 'llm'
+    phonetic: string | null
+    audioUrl: string | null
     addedAt: Date
 }
 
@@ -25,6 +27,8 @@ interface CreateWordInput {
     definition: string
     examples: string[]
     source: 'dictionary' | 'llm'
+    phonetic: string | null
+    audioUrl: string | null
     addedAt: Date
 }
 
@@ -69,6 +73,8 @@ export function createWord(input: CreateWordInput): ValidWord {
         definition,
         examples,
         source: input.source,
+        phonetic: input.phonetic,
+        audioUrl: input.audioUrl,
         addedAt: input.addedAt,
     } as ValidWord
 }

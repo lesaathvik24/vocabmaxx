@@ -15,6 +15,8 @@ export interface InsertWordInput {
     definition: string
     examples: string[]
     source: 'dictionary' | 'llm'
+    phonetic: string | null
+    audioUrl: string | null
 }
 
 /**
@@ -30,6 +32,8 @@ export async function insert(input: InsertWordInput): Promise<Word> {
             definition: input.definition,
             examples: input.examples,
             source: input.source,
+            phonetic: input.phonetic,
+            audioUrl: input.audioUrl,
         })
         .returning()
     return rowToWord(row)
@@ -49,6 +53,8 @@ export async function insertIfAbsent(input: InsertWordInput): Promise<Word | nul
             definition: input.definition,
             examples: input.examples,
             source: input.source,
+            phonetic: input.phonetic,
+            audioUrl: input.audioUrl,
         })
         .onConflictDoNothing({ target: [words.userId, words.term] })
         .returning()
@@ -130,13 +136,7 @@ export async function listWithSrsByUser(
     const rows = opts?.limit ? await base.limit(opts.limit) : await base
 
     return rows.map(({ words: w, srs_state: s }) => ({
-        id: w.id,
-        userId: w.userId,
-        term: w.term,
-        definition: w.definition,
-        examples: w.examples,
-        source: w.source,
-        addedAt: w.addedAt,
+        ...rowToWord(w),
         repetitions: s?.repetitions ?? 0,
         dueDate: s?.dueDate ?? w.addedAt,
     }))
@@ -199,6 +199,8 @@ function rowToWord(r: WordRow): Word {
         definition: r.definition,
         examples: r.examples,
         source: r.source,
+        phonetic: r.phonetic,
+        audioUrl: r.audioUrl,
         addedAt: r.addedAt,
     }
 }
