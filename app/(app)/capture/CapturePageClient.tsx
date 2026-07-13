@@ -1,12 +1,14 @@
 'use client'
 
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { AddWordInput, type CaptureOutcome } from '@/components/capture/AddWordInput'
+import { CapturedWordCard } from '@/components/capture/CapturedWordCard'
 import { ParagraphExtractor } from '@/components/capture/ParagraphExtractor'
 import { BulkUploader } from '@/components/capture/BulkUploader'
-import { useCapture } from '@/lib/hooks/use-capture'
+import { useCapture, type CapturedWord } from '@/lib/hooks/use-capture'
 import { useExtract } from '@/lib/hooks/use-extract'
 import { useBulkImport } from '@/lib/hooks/use-bulk-import'
 import { toUserMessage } from '@/lib/utils/errors'
@@ -16,6 +18,7 @@ export function CapturePageClient() {
     const captureMutation = useCapture()
     const extractMutation = useExtract()
     const bulkImportMutation = useBulkImport()
+    const [lastCaptured, setLastCaptured] = useState<CapturedWord | null>(null)
 
     async function handleCapture(term: string): Promise<CaptureOutcome> {
         try {
@@ -23,8 +26,9 @@ export function CapturePageClient() {
             if (result.kind === 'suggestion') {
                 return { status: 'suggestion', suggestion: result.suggestion }
             }
+            setLastCaptured(result.word)
             router.refresh()
-            return { status: 'saved' }
+            return { status: 'saved', word: result.word }
         } catch (err) {
             const kind = err instanceof Error ? err.message : 'unknown'
             return { status: 'error', error: toUserMessage(kind) }
@@ -63,11 +67,14 @@ export function CapturePageClient() {
                             Type or paste a word. We&rsquo;ll fetch the definition automatically.
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="space-y-5">
                         <AddWordInput
                             onSubmit={handleCapture}
                             loading={captureMutation.isPending}
                         />
+                        {lastCaptured && (
+                            <CapturedWordCard key={lastCaptured.id} word={lastCaptured} />
+                        )}
                     </CardContent>
                 </Card>
             </TabsContent>

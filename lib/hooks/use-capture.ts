@@ -6,7 +6,10 @@ export interface CapturedWord {
     id: string
     term: string
     definition: string
+    examples: string[]
     source: string
+    phonetic: string | null
+    audioUrl: string | null
     addedAt: string
 }
 

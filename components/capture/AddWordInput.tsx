@@ -14,9 +14,10 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog'
+import type { CapturedWord } from '@/lib/hooks/use-capture'
 
 export type CaptureOutcome =
-    | { status: 'saved' }
+    | { status: 'saved'; word: CapturedWord }
     | { status: 'suggestion'; suggestion: string }
     | { status: 'error'; error: string }
 
@@ -46,7 +47,6 @@ export function AddWordInput({ onSubmit, loading }: AddWordInputProps) {
         const outcome = await onSubmit(term)
 
         if (outcome.status === 'saved') {
-            toast.success(`Captured: ${term}`)
             setValue('')
             setOpen(false)
             inputRef.current?.focus()
@@ -106,7 +106,8 @@ export function AddWordInput({ onSubmit, loading }: AddWordInputProps) {
                         <Button
                             type="submit"
                             disabled={loading || !value.trim()}
-                            className="h-11 px-5 gap-2 bg-accent text-accent-foreground hover:bg-accent/90 flex-shrink-0 min-w-[100px]"
+                            variant="accent"
+                            className="h-11 px-5 gap-2 flex-shrink-0 min-w-[100px]"
                         >
                             {loading ? (
                                 <>
@@ -162,7 +163,8 @@ export function AddWordInput({ onSubmit, loading }: AddWordInputProps) {
                             type="button"
                             onClick={() => void submitTerm(suggestion, true)}
                             disabled={loading}
-                            className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+                            variant="accent"
+                            className="gap-2"
                         >
                             {loading ? (
                                 <Loader2 size={16} className="animate-spin" aria-hidden="true" />

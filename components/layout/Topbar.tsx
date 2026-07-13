@@ -11,6 +11,7 @@ import { Button, buttonVariants } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { Sidebar } from './Sidebar'
 import { cn } from '@/lib/utils'
+import { useQuickCapture } from '@/components/capture/QuickCaptureProvider'
 
 interface TopbarProps {
     dueCount: number
@@ -20,6 +21,7 @@ interface TopbarProps {
 
 export function Topbar({ dueCount, userEmail, displayName }: TopbarProps) {
     const { theme, setTheme } = useTheme()
+    const { openQuickCapture } = useQuickCapture()
     const [mounted, setMounted] = useState(false)
     const [sheetOpen, setSheetOpen] = useState(false)
     const pathname = usePathname()
@@ -31,7 +33,6 @@ export function Topbar({ dueCount, userEmail, displayName }: TopbarProps) {
         setTheme(theme === 'dark' ? 'light' : 'dark')
     }
 
-    const captureHref: Route = '/capture'
     const dashboardHref: Route = '/dashboard'
 
     return (
@@ -80,16 +81,17 @@ export function Topbar({ dueCount, userEmail, displayName }: TopbarProps) {
             </Button>
 
             {/* Add word CTA (hidden on mobile) */}
-            <Link
-                href={captureHref}
-                className={cn(
-                    buttonVariants(),
-                    'hidden md:flex gap-1.5 bg-accent text-accent-foreground hover:bg-accent/90',
-                )}
+            <Button
+                variant="accent"
+                onClick={openQuickCapture}
+                className="hidden md:flex gap-1.5"
             >
                 <Plus size={16} aria-hidden="true" />
                 Add word
-            </Link>
+                <kbd className="ml-1 hidden lg:inline-flex h-5 items-center rounded border border-accent-foreground/25 px-1.5 font-mono text-[10px] opacity-80">
+                    ⌘K
+                </kbd>
+            </Button>
         </header>
     )
 }
