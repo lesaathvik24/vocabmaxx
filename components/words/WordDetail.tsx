@@ -69,14 +69,18 @@ export function WordDetail(props: WordDetailProps) {
             const res = await fetch(`/api/words/${props.id}`, { method: 'DELETE' })
             if (!res.ok) {
                 toast.error(`Couldn't delete "${props.term}". Try again.`)
+                setDeleting(false)
                 return
             }
             toast.success(`Deleted "${props.term}".`)
-            router.push('/words')
+            setConfirmingDelete(false)
+            // replace, not push: the word is gone, so Back must not return to its page.
+            // refresh evicts the router cache, which still holds this route and a /words
+            // list that includes the word.
+            router.replace('/words')
             router.refresh()
         } catch {
             toast.error('Network error. Word was not deleted.')
-        } finally {
             setDeleting(false)
         }
     }
