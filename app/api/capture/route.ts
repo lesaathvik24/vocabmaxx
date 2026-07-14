@@ -35,6 +35,9 @@ export async function POST(req: Request) {
     if (!defResult.ok) {
         const e = defResult.error
         if (e.kind === 'invalid_term') return NextResponse.json({ error: e }, { status: 400 })
+        if (e.kind === 'did_you_mean') {
+            return NextResponse.json({ data: { suggestion: e.suggestion } }, { status: 200 })
+        }
         if (e.kind === 'not_found') return NextResponse.json({ error: e }, { status: 404 })
         if (e.kind === 'not_a_word') {
             // Not a real word — offer a "did you mean …?" before giving up.

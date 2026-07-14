@@ -15,6 +15,7 @@ export type CaptureError =
     | DefinitionError
     | { kind: 'duplicate_term' }
     | { kind: 'invalid_term' }
+    | { kind: 'did_you_mean'; suggestion: string }
 
 export type SRSError =
     | { kind: 'word_not_found' }

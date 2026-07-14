@@ -8,6 +8,7 @@ function makeDeps() {
         cacheWrite: vi.fn().mockResolvedValue(undefined),
         dict: vi.fn(),
         llm: vi.fn(),
+        suggest: vi.fn().mockResolvedValue(null),
     }
 }
 
@@ -62,6 +63,31 @@ describe('definition.service.fetchDefinition', () => {
         if (r.ok) expect(r.value.def.source).toBe('llm')
         expect(deps.llm).toHaveBeenCalledOnce()
         expect(deps.cacheWrite).toHaveBeenCalledWith('rare', expect.objectContaining({ source: 'llm' }))
+    })
+
+    it('dict not_found on a misspelling returns did_you_mean instead of letting the llm define it', async () => {
+        const deps = makeDeps()
+        deps.cacheLookup.mockResolvedValue(null)
+        deps.dict.mockResolvedValue(err({ kind: 'not_found' as const }))
+        deps.suggest.mockResolvedValue('galloping')
+
+        const r = await fetchDefinition('galopping', deps)
+        expect(r.ok).toBe(false)
+        if (!r.ok) expect(r.error).toEqual({ kind: 'did_you_mean', suggestion: 'galloping' })
+        expect(deps.llm).not.toHaveBeenCalled()
+        expect(deps.cacheWrite).not.toHaveBeenCalled()
+    })
+
+    it('dict network_failure skips spellcheck and falls back to the llm', async () => {
+        const deps = makeDeps()
+        deps.cacheLookup.mockResolvedValue(null)
+        deps.dict.mockResolvedValue(err({ kind: 'network_failure' as const, cause: 'timeout' }))
+        deps.llm.mockResolvedValue(ok({ definition: 'd', examples: ['e1', 'e2'], source: 'llm' as const }))
+
+        const r = await fetchDefinition('galloping', deps)
+        expect(r.ok).toBe(true)
+        expect(deps.suggest).not.toHaveBeenCalled()
+        expect(deps.llm).toHaveBeenCalledOnce()
     })
 
     it('dict network_failure also triggers llm fallback', async () => {

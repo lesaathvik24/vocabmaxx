@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -20,7 +19,6 @@ import { createClient } from '@/lib/auth/client'
 const CONFIRM_PHRASE = 'DELETE'
 
 export function DeleteAccountDialog() {
-    const router = useRouter()
     const [open, setOpen] = useState(false)
     const [confirm, setConfirm] = useState('')
     const [deleting, setDeleting] = useState(false)
@@ -42,8 +40,11 @@ export function DeleteAccountDialog() {
         } catch {
             // session already invalid server-side
         }
+        setOpen(false)
         toast.success('Your account has been deleted.')
-        router.push('/auth/sign-in')
+        // Hard navigation: a router.push would keep the router cache and the
+        // React Query cache of a user that no longer exists.
+        window.location.assign('/auth/sign-in')
     }
 
     return (
