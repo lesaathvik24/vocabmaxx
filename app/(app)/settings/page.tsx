@@ -14,7 +14,7 @@ export default async function SettingsPage() {
         <div className="mx-auto max-w-2xl space-y-6">
             <PageHeader
                 title="Settings"
-                description="Manage your profile, theme, notifications, and account."
+                description="Manage your profile, notifications, and account."
             />
             <SettingsForm userEmail={user.email ?? ''} preferences={preferences} />
         </div>

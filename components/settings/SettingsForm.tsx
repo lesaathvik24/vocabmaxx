@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
 import { Loader2, BellRing } from 'lucide-react'
 import { enablePush, disablePush, getPushStatus, type PushStatus } from '@/lib/push/client'
@@ -37,7 +36,6 @@ export function SettingsForm({ userEmail, preferences }: SettingsFormProps) {
     return (
         <div className="space-y-6">
             <ProfileSection userEmail={userEmail} displayName={preferences.displayName} />
-            <ThemeSection initialTheme={preferences.theme} />
             <NotificationsSection
                 initialEnabled={preferences.dailyDigest}
                 initialHour={preferences.digestHour}
@@ -270,51 +268,3 @@ function ProfileSection({
     )
 }
 
-function ThemeSection({ initialTheme }: { initialTheme: 'light' | 'dark' }) {
-    const { setTheme } = useTheme()
-    const [selected, setSelected] = useState<'light' | 'dark'>(initialTheme)
-    const [saving, setSaving] = useState(false)
-
-    async function choose(next: 'light' | 'dark') {
-        if (next === selected) return
-        const previous = selected
-        setSelected(next)
-        setTheme(next) // immediate visual change via next-themes
-        setSaving(true)
-        const ok = await patchPreferences({ theme: next })
-        setSaving(false)
-        if (ok) {
-            toast.success('Theme saved.')
-        } else {
-            setSelected(previous)
-            setTheme(previous)
-            toast.error('Could not save your theme.')
-        }
-    }
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Theme</CardTitle>
-                <CardDescription>Pick light or dark. Saved to your account.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div role="radiogroup" aria-label="Theme" className="flex gap-2">
-                    {(['light', 'dark'] as const).map((t) => (
-                        <Button
-                            key={t}
-                            role="radio"
-                            aria-checked={selected === t}
-                            variant={selected === t ? 'default' : 'outline'}
-                            onClick={() => choose(t)}
-                            disabled={saving}
-                            className="capitalize"
-                        >
-                            {t}
-                        </Button>
-                    ))}
-                </div>
-            </CardContent>
-        </Card>
-    )
-}

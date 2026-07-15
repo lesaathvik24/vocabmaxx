@@ -56,7 +56,11 @@ export function Topbar({ dueCount, userEmail, displayName }: TopbarProps) {
                 >
                     <Menu size={20} aria-hidden="true" />
                 </SheetTrigger>
-                <SheetContent side="left" className="p-0 w-[214px]" showCloseButton={false}>
+                <SheetContent
+                    side="left"
+                    showCloseButton={false}
+                    className="gap-0 p-0 w-[214px] max-w-[214px] data-[side=left]:w-[214px] data-[side=left]:sm:max-w-[214px]"
+                >
                     <Sidebar dueCount={dueCount} userEmail={userEmail} displayName={displayName} onClose={() => setSheetOpen(false)} />
                 </SheetContent>
             </Sheet>
