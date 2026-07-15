@@ -2,11 +2,12 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* Kept so any `dark:` utilities in primitives never match (light-only app). */
 @custom-variant dark (&:is(.dark *));
 
-/* ─── font variables (next/font injects these via CSS vars) ─── */
+/* ─── base type ─── */
 body {
-  font-family: var(--font-inter, system-ui, sans-serif);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -19,13 +20,15 @@ body {
 
 /* ─── Tailwind v4 theme mapping ─── */
 @theme inline {
-  /* fonts */
-  --font-sans: var(--font-inter, system-ui, sans-serif);
-  --font-display: var(--font-inter-tight, var(--font-inter, sans-serif));
+  /* fonts — SF system stack for text + display; Inter kept for tabular numerics (.num) */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    var(--font-inter), system-ui, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+    var(--font-inter), system-ui, sans-serif;
   --font-serif: var(--font-source-serif, Georgia, serif);
   --font-mono: var(--font-jetbrains-mono, ui-monospace, monospace);
 
-  /* colors */
+  /* semantic colors */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -51,6 +54,25 @@ body {
   --color-input: var(--input);
   --color-ring: var(--ring);
 
+  /* extended Cobalt tokens */
+  --color-canvas: #e7e9ef;
+  --color-surface-2: #fbfcfe;
+  --color-primary-hi: #4f77ff;
+  --color-primary-glow: #6b8cff;
+  --color-primary-wash: #eaf0fe;
+  --color-ink-2: #454a58;
+  --color-slate-2: #7a8091;
+  --color-faint: #9aa0b0;
+  --color-line-2: #eef1f8;
+  --color-success-wash: #e6f6ee;
+  --color-warn-wash: #fff2e6;
+  --color-danger-line: #f0c8c4;
+  /* activity heatmap ramp (Less → More) */
+  --color-heat-0: #eef1f8;
+  --color-heat-1: #cdd6ee;
+  --color-heat-2: #9db0e8;
+  --color-heat-3: #2f5bea;
+
   /* radii */
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -61,79 +83,51 @@ body {
   --radius-4xl: calc(var(--radius) * 2.6);
 
   /* sidebar compat */
-  --color-sidebar: var(--card);
+  --color-sidebar: var(--surface-2);
   --color-sidebar-foreground: var(--foreground);
   --color-sidebar-border: var(--border);
   --color-sidebar-ring: var(--ring);
-  --color-sidebar-primary: var(--primary);
-  --color-sidebar-primary-foreground: var(--primary-foreground);
+  --color-sidebar-primary: var(--accent);
+  --color-sidebar-primary-foreground: var(--accent-foreground);
   --color-sidebar-accent: var(--accent-soft);
   --color-sidebar-accent-foreground: var(--accent);
 }
 
-/* ─── Light ─── */
+/* ─── Cobalt palette (light only) ─── */
 :root {
   --radius: 0.625rem;
 
-  --background: oklch(0.98 0.004 240);
-  --foreground: oklch(0.18 0.02 240);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.02 240);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.02 240);
-  --primary: oklch(0.18 0.02 240);
-  --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.95 0.005 240);
-  --secondary-foreground: oklch(0.18 0.02 240);
-  --muted: oklch(0.95 0.005 240);
-  --muted-foreground: oklch(0.52 0.01 240);
+  --background: #f6f8fc; /* app-bg */
+  --foreground: #1a1d29; /* ink */
+  --card: #ffffff; /* surface */
+  --card-foreground: #1a1d29;
+  --popover: #ffffff;
+  --popover-foreground: #1a1d29;
 
-  /* accent: teal-ish (matches design hue 174) */
-  --accent: oklch(0.46 0.12 174);
-  --accent-foreground: oklch(1 0 0);
-  --accent-soft: oklch(0.95 0.04 174);
+  --primary: #1a1d29; /* ink — default Button + strong text */
+  --primary-foreground: #ffffff;
+  --secondary: #eef1f8;
+  --secondary-foreground: #1a1d29;
+  --muted: #eef1f8; /* line-2 */
+  --muted-foreground: #5c6270; /* slate */
 
-  --destructive: oklch(0.58 0.22 27);
-  --destructive-foreground: oklch(0.98 0 0);
-  --success: oklch(0.50 0.14 150);
-  --success-foreground: oklch(0.98 0 0);
-  --warning: oklch(0.60 0.16 60);
-  --warning-foreground: oklch(0.18 0 0);
+  /* brand cobalt */
+  --accent: #2f5bea;
+  --accent-foreground: #ffffff;
+  --accent-soft: #eaf0fe; /* primary-wash */
 
-  --border: oklch(0.90 0.005 240);
-  --input: oklch(0.90 0.005 240);
-  --ring: oklch(0.46 0.12 174);
-}
+  --surface-2: #fbfcfe;
 
-/* ─── Dark ─── */
-.dark {
-  --background: oklch(0.14 0.015 240);
-  --foreground: oklch(0.92 0.008 240);
-  --card: oklch(0.18 0.015 240);
-  --card-foreground: oklch(0.92 0.008 240);
-  --popover: oklch(0.18 0.015 240);
-  --popover-foreground: oklch(0.92 0.008 240);
-  --primary: oklch(0.92 0.008 240);
-  --primary-foreground: oklch(0.14 0.015 240);
-  --secondary: oklch(0.22 0.015 240);
-  --secondary-foreground: oklch(0.92 0.008 240);
-  --muted: oklch(0.22 0.015 240);
-  --muted-foreground: oklch(0.60 0.01 240);
+  --destructive: #d1493c;
+  --destructive-foreground: #ffffff;
+  --success: #1f9e6a;
+  --success-foreground: #ffffff;
+  --warning: #e8863b;
+  --warning-foreground: #ffffff;
 
-  --accent: oklch(0.60 0.12 174);
-  --accent-foreground: oklch(0.12 0.02 240);
-  --accent-soft: oklch(0.24 0.06 174);
-
-  --destructive: oklch(0.65 0.20 27);
-  --destructive-foreground: oklch(0.98 0 0);
-  --success: oklch(0.60 0.14 150);
-  --success-foreground: oklch(0.14 0 0);
-  --warning: oklch(0.68 0.15 60);
-  --warning-foreground: oklch(0.14 0 0);
-
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.60 0.12 174);
+  --border: #e9ecf3; /* line */
+  --input: #e9ecf3;
+  --ring: #2f5bea;
 }
 
 /* ─── Base ─── */
@@ -144,22 +138,54 @@ body {
   }
   body {
     @apply bg-background text-foreground;
-    transition: background var(--transition-base), color var(--transition-base);
   }
   html {
     @apply font-sans;
   }
+  a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  a:hover {
+    opacity: 0.82;
+  }
   ::selection {
-    background: oklch(from var(--accent) l c h / 0.22);
+    background: color-mix(in srgb, var(--accent) 18%, transparent);
   }
   :focus-visible {
-    outline: 2px solid oklch(from var(--ring) l c h);
+    outline: 2px solid var(--ring);
     outline-offset: 2px;
     border-radius: 6px;
   }
   :focus:not(:focus-visible) {
     outline: none;
   }
+}
+
+/* ─── Utilities ─── */
+
+/* Tabular figures for stats, counts, phonetics, dates, kbd */
+.num {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Glass top bar */
+.glass-bar {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Hero / "Due now" gradient */
+.bg-hero-gradient {
+  background: linear-gradient(120deg, #2f5bea, #4f77ff 55%, #6b8cff);
+}
+
+/* Logo mark gradient */
+.bg-logo-gradient {
+  background: linear-gradient(145deg, #4f77ff, #2f5bea);
 }
 
 /* ─── Card flip ─── */

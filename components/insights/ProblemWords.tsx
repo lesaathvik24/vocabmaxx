@@ -15,7 +15,7 @@ interface ProblemWordsProps {
 
 export function ProblemWords({ words }: ProblemWordsProps) {
     return (
-        <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+        <section className="rounded-[18px] border border-border bg-card p-5 shadow-sm">
             <div className="mb-3 flex items-center gap-2">
                 <AlertTriangle size={18} className="text-warning" aria-hidden="true" />
                 <h2 className="font-display text-lg font-semibold">Problem words</h2>

@@ -13,15 +13,46 @@ interface GradeButtonsProps {
 interface GradeDef {
     grade: Grade
     label: string
+    hint: string
     key: string
     colorClass: string
+    hintClass: string
 }
 
 const GRADES: GradeDef[] = [
-    { grade: 0, label: 'Again', key: '1', colorClass: 'border-destructive/50 text-destructive hover:bg-destructive/10' },
-    { grade: 3, label: 'Hard', key: '2', colorClass: 'border-warning/50 text-warning hover:bg-warning/10' },
-    { grade: 4, label: 'Good', key: '3', colorClass: 'border-accent/50 text-accent hover:bg-accent/10' },
-    { grade: 5, label: 'Easy', key: '4', colorClass: 'border-success/50 text-success hover:bg-success/10' },
+    {
+        grade: 0,
+        label: 'Again',
+        hint: '< 1 min',
+        key: '1',
+        colorClass: 'bg-card border-[#f0c8c4] text-destructive hover:bg-destructive/5',
+        hintClass: 'opacity-75',
+    },
+    {
+        grade: 3,
+        label: 'Hard',
+        hint: '6 min',
+        key: '2',
+        colorClass: 'bg-card border-border text-muted-foreground hover:bg-muted/50',
+        hintClass: 'opacity-75',
+    },
+    {
+        grade: 4,
+        label: 'Good',
+        hint: '1 day',
+        key: '3',
+        colorClass:
+            'bg-accent border-accent text-accent-foreground shadow-[0_10px_22px_-10px_rgba(47,91,234,.7)] hover:bg-accent/90',
+        hintClass: 'opacity-85',
+    },
+    {
+        grade: 5,
+        label: 'Easy',
+        hint: '4 days',
+        key: '4',
+        colorClass: 'bg-card border-[#b9e6d0] text-success hover:bg-success/5',
+        hintClass: 'opacity-75',
+    },
 ]
 
 export function GradeButtons({ onGrade, disabled = false }: GradeButtonsProps) {
@@ -49,15 +80,15 @@ export function GradeButtons({ onGrade, disabled = false }: GradeButtonsProps) {
                     disabled={disabled}
                     onClick={() => onGrade(g.grade)}
                     className={cn(
-                        'flex flex-1 flex-col items-center gap-1 rounded-xl border bg-card px-2 py-3 min-h-[56px]',
+                        'flex flex-1 flex-col items-center gap-0.5 rounded-[14px] border-[1.5px] px-2 py-3 min-h-[56px]',
                         'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                         'disabled:opacity-40 disabled:pointer-events-none',
                         g.colorClass,
                     )}
-                    aria-label={`Grade: ${g.label} (key ${g.key})`}
+                    aria-label={`Grade: ${g.label} (key ${g.key}) — next in ${g.hint}`}
                 >
-                    <span className="font-mono text-[11px] opacity-60">{g.key}</span>
                     <span className="text-sm font-semibold">{g.label}</span>
+                    <span className={cn('num text-[11px] font-medium', g.hintClass)}>{g.hint}</span>
                 </button>
             ))}
         </div>

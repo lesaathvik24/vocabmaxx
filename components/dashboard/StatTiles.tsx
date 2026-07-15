@@ -1,5 +1,5 @@
-import { BookOpen, Flame, Target, Layers, Sparkles } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
+import { cn } from '@/lib/utils'
 
 export interface DashboardStats {
     learned: number
@@ -20,7 +20,6 @@ interface StatTilesProps {
 interface TileData {
     num: string
     label: string
-    icon: React.ElementType
     colorClass: string
 }
 
@@ -29,31 +28,21 @@ function buildTiles(stats: DashboardStats): TileData[] {
         {
             num: String(stats.learned),
             label: 'Words learned',
-            icon: BookOpen,
-            colorClass: 'text-muted-foreground',
+            colorClass: 'text-foreground',
         },
         {
             num: `${stats.streakDays}d`,
             label: 'Current streak',
-            icon: Flame,
             colorClass: 'text-warning',
         },
         {
             num: `${Math.round(stats.retention * 100)}%`,
             label: 'Retention',
-            icon: Target,
             colorClass: 'text-success',
-        },
-        {
-            num: String(stats.due),
-            label: 'Due today',
-            icon: Layers,
-            colorClass: 'text-accent',
         },
         {
             num: String(stats.xp),
             label: 'Sidequest XP',
-            icon: Sparkles,
             colorClass: 'text-accent',
         },
     ]
@@ -62,8 +51,8 @@ function buildTiles(stats: DashboardStats): TileData[] {
 export function StatTiles({ stats, loading = false }: StatTilesProps) {
     if (loading) {
         return (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                {Array.from({ length: 5 }).map((_, i) => (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {Array.from({ length: 4 }).map((_, i) => (
                     <div key={i} className="rounded-2xl border border-border bg-card p-4 shadow-sm space-y-3">
                         <Skeleton className="h-8 w-16" />
                         <Skeleton className="h-4 w-24" />
@@ -78,24 +67,18 @@ export function StatTiles({ stats, loading = false }: StatTilesProps) {
     const tiles = buildTiles(stats)
 
     return (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-            {tiles.map((tile) => {
-                const Icon = tile.icon
-                return (
-                    <div
-                        key={tile.label}
-                        className="rounded-2xl border border-border bg-card p-4 shadow-sm"
-                    >
-                        <div className="flex items-start justify-between">
-                            <span className="font-display font-semibold text-2xl leading-none">
-                                {tile.num}
-                            </span>
-                            <Icon size={20} className={tile.colorClass} aria-hidden="true" />
-                        </div>
-                        <p className="mt-2 text-sm text-muted-foreground">{tile.label}</p>
-                    </div>
-                )
-            })}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {tiles.map((tile) => (
+                <div
+                    key={tile.label}
+                    className="rounded-2xl border border-border bg-card p-4 shadow-sm"
+                >
+                    <span className={cn('num font-display font-semibold text-[28px] leading-none tracking-tight', tile.colorClass)}>
+                        {tile.num}
+                    </span>
+                    <p className="mt-1.5 text-[12.5px] text-slate-2">{tile.label}</p>
+                </div>
+            ))}
         </div>
     )
 }

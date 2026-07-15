@@ -16,44 +16,54 @@ interface CapturedWordCardProps {
 
 export function CapturedWordCard({ word, onAddAnother }: CapturedWordCardProps) {
     const detailHref = `/words/${word.id}` as Route
+    const pos = toSenses(word.senses, word.definition, word.examples)[0]?.partOfSpeech ?? null
 
     return (
-        <div className="rounded-2xl border border-accent/30 bg-accent-soft/40 p-5 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <div className="flex items-center gap-2">
-                <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-accent">
-                    Captured
-                </span>
-                <span className="text-[11px] text-muted-foreground">
-                    via {word.source === 'llm' ? 'AI' : 'dictionary'}
-                </span>
+        <div className="overflow-hidden rounded-[20px] border border-border bg-card shadow-[0_2px_4px_rgba(20,30,60,.04),0_20px_44px_-26px_rgba(20,30,60,.3)] animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {/* header */}
+            <div className="flex items-end gap-3 border-b border-line-2 px-7 pt-6 pb-5">
+                <div className="min-w-0">
+                    {pos && (
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-faint">{pos}</p>
+                    )}
+                    <h3 className="mt-1 font-display text-[32px] font-semibold tracking-tight leading-none">
+                        {word.term}
+                    </h3>
+                </div>
+                {word.phonetic && <p className="num pb-1 text-[15px] text-faint">{word.phonetic}</p>}
+                <PronounceButton term={word.term} audioUrl={word.audioUrl} className="ml-auto" />
             </div>
 
-            <div className="mt-3 flex items-center gap-2">
-                <h3 className="font-display text-2xl font-semibold tracking-tight">{word.term}</h3>
-                <PronounceButton term={word.term} audioUrl={word.audioUrl} />
+            {/* body */}
+            <div className="px-7 py-6">
+                <SenseList
+                    senses={toSenses(word.senses, word.definition, word.examples)}
+                    dense
+                    highlight={word.term}
+                />
             </div>
-            {word.phonetic && <p className="mt-0.5 text-sm text-muted-foreground">{word.phonetic}</p>}
 
-            <SenseList
-                senses={toSenses(word.senses, word.definition, word.examples)}
-                dense
-                className="mt-3"
-            />
-
-            <div className="mt-4 flex flex-wrap gap-2">
-                <Link
-                    href={detailHref}
-                    className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'gap-1.5')}
-                >
-                    <BookOpen size={15} aria-hidden="true" />
-                    View word
-                </Link>
-                {onAddAnother && (
-                    <Button variant="ghost" size="sm" onClick={onAddAnother} className="gap-1.5">
-                        <Sparkles size={15} aria-hidden="true" />
-                        Add another
-                    </Button>
-                )}
+            {/* footer */}
+            <div className="flex flex-wrap items-center gap-3 border-t border-line-2 bg-surface-2 px-7 py-4">
+                <div className="flex items-center gap-2 text-[13px] text-faint">
+                    <span className="h-[7px] w-[7px] rounded-full bg-success" aria-hidden="true" />
+                    Added to your library · via {word.source === 'llm' ? 'AI' : 'dictionary'}
+                </div>
+                <div className="ml-auto flex items-center gap-2">
+                    {onAddAnother && (
+                        <Button variant="ghost" size="sm" onClick={onAddAnother} className="gap-1.5">
+                            <Sparkles size={15} aria-hidden="true" />
+                            Add another
+                        </Button>
+                    )}
+                    <Link
+                        href={detailHref}
+                        className={cn(buttonVariants({ variant: 'accent', size: 'sm' }), 'gap-1.5')}
+                    >
+                        <BookOpen size={15} aria-hidden="true" />
+                        View word
+                    </Link>
+                </div>
             </div>
         </div>
     )

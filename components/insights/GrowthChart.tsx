@@ -23,7 +23,7 @@ export function GrowthChart({ data }: GrowthChartProps) {
     const gained = total - start
 
     return (
-        <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+        <section className="rounded-[18px] border border-border bg-card p-5 shadow-sm">
             <div className="mb-4 flex items-baseline justify-between">
                 <div>
                     <h2 className="font-display text-lg font-semibold">Vocabulary growth</h2>
@@ -32,8 +32,8 @@ export function GrowthChart({ data }: GrowthChartProps) {
                     </p>
                 </div>
                 <div className="text-right">
-                    <p className="text-2xl font-semibold tabular-nums">{total}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="num text-[28px] font-bold tracking-tight leading-none text-accent">{total}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
                         {gained > 0 ? `+${gained} this window` : 'total words'}
                     </p>
                 </div>
@@ -52,17 +52,35 @@ export function GrowthChart({ data }: GrowthChartProps) {
                         role="img"
                         aria-label={`Vocabulary growth: ${total} words total`}
                     >
-                        <path d={geo.area} className="fill-accent/15" />
+                        <defs>
+                            <linearGradient id="growthFill" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0" stopColor="#2f5bea" stopOpacity="0.22" />
+                                <stop offset="1" stopColor="#2f5bea" stopOpacity="0" />
+                            </linearGradient>
+                        </defs>
+                        {[0.25, 0.5, 0.75].map((f) => (
+                            <line
+                                key={f}
+                                x1={0}
+                                x2={VIEW_W}
+                                y1={VIEW_H * f}
+                                y2={VIEW_H * f}
+                                stroke="var(--color-line-2)"
+                                strokeWidth={1}
+                                vectorEffect="non-scaling-stroke"
+                            />
+                        ))}
+                        <path d={geo.area} fill="url(#growthFill)" />
                         <path
                             d={geo.line}
                             className="fill-none stroke-accent"
-                            strokeWidth={2}
+                            strokeWidth={3}
                             strokeLinejoin="round"
                             strokeLinecap="round"
                             vectorEffect="non-scaling-stroke"
                         />
                     </svg>
-                    <div className="mt-2 flex justify-between text-[11px] text-muted-foreground">
+                    <div className="num mt-2 flex justify-between text-[11px] text-faint">
                         <span>{fmtDay(data[0].date)}</span>
                         <span>{fmtDay(data[data.length - 1].date)}</span>
                     </div>

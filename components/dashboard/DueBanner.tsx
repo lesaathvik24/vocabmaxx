@@ -38,25 +38,25 @@ export function DueBanner({ due, estMinutes = 4 }: DueBannerProps) {
         <div
             role="region"
             aria-label="Cards due for review"
-            className="relative overflow-hidden rounded-2xl bg-accent p-4 sm:p-6 shadow-sm"
+            className="bg-hero-gradient relative overflow-hidden rounded-[20px] p-5 sm:p-6 shadow-[0_18px_40px_-20px_rgba(47,91,234,.7)]"
         >
             <div
-                className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-accent-foreground/5"
+                className="pointer-events-none absolute -top-10 -right-8 h-44 w-44 rounded-full bg-white/12"
                 aria-hidden="true"
             />
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 relative">
                 <div className="flex-1 min-w-0">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-accent-foreground/70">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-white/80">
                         Due now
                     </p>
-                    <p className="font-display font-semibold text-3xl sm:text-4xl text-accent-foreground mt-1 leading-none">
+                    <p className="num font-display font-semibold text-3xl sm:text-[38px] text-white mt-1 leading-tight">
                         {due}{' '}
-                        <span className="text-lg sm:text-2xl font-medium opacity-75">
+                        <span className="text-lg sm:text-xl font-medium opacity-85">
                             cards ready to review
                         </span>
                     </p>
-                    <p className="flex items-center gap-2 mt-2 text-sm text-accent-foreground/80">
+                    <p className="flex items-center gap-2 mt-1.5 text-sm text-white/85">
                         <Clock size={15} aria-hidden="true" />
                         About {estMinutes} minutes · spaced just right
                     </p>
@@ -65,7 +65,7 @@ export function DueBanner({ due, estMinutes = 4 }: DueBannerProps) {
                     href={reviewHref}
                     className={cn(
                         buttonVariants({ size: 'lg' }),
-                        'flex-shrink-0 gap-2 bg-accent-foreground text-accent hover:bg-accent-foreground/90 min-h-[44px]',
+                        'flex-shrink-0 gap-2 h-[46px] px-5 bg-white text-accent hover:bg-white/90 shadow-[0_10px_24px_-10px_rgba(0,0,0,.3)] min-h-[44px]',
                     )}
                 >
                     Start review <ArrowRight size={18} aria-hidden="true" />

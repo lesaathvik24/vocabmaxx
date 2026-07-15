@@ -1,13 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import type { Route } from 'next'
-import { Menu, Sun, Moon, Plus } from 'lucide-react'
-import { useTheme } from 'next-themes'
+import { Menu, Plus, Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { Sidebar } from './Sidebar'
 import { cn } from '@/lib/utils'
@@ -19,24 +17,34 @@ interface TopbarProps {
     displayName?: string | null
 }
 
+function initialsFromEmail(email: string): string {
+    const local = email.split('@')[0] ?? ''
+    const parts = local.split(/[._-]/).filter(Boolean)
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
+    return local.slice(0, 2).toUpperCase() || 'U'
+}
+
+function initials(name: string): string {
+    const parts = name.trim().split(/\s+/).filter(Boolean)
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+    return 'U'
+}
+
 export function Topbar({ dueCount, userEmail, displayName }: TopbarProps) {
-    const { theme, setTheme } = useTheme()
     const { openQuickCapture } = useQuickCapture()
-    const [mounted, setMounted] = useState(false)
     const [sheetOpen, setSheetOpen] = useState(false)
     const pathname = usePathname()
 
-    useEffect(() => setMounted(true), [])
     useEffect(() => setSheetOpen(false), [pathname])
 
-    function toggleTheme() {
-        setTheme(theme === 'dark' ? 'light' : 'dark')
-    }
-
     const dashboardHref: Route = '/dashboard'
+    const wordsHref: Route = '/words'
+    const settingsHref: Route = '/settings'
+    const avatar = displayName ? initials(displayName) : initialsFromEmail(userEmail)
 
     return (
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-card/80 backdrop-blur-sm px-4">
+        <header className="glass-bar sticky top-0 z-30 flex h-14 items-center gap-3 px-4">
             {/* Mobile hamburger — SheetTrigger renders a native <button> */}
             <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
                 <SheetTrigger
@@ -48,50 +56,59 @@ export function Topbar({ dueCount, userEmail, displayName }: TopbarProps) {
                 >
                     <Menu size={20} aria-hidden="true" />
                 </SheetTrigger>
-                <SheetContent side="left" className="p-0 w-64" showCloseButton={false}>
+                <SheetContent side="left" className="p-0 w-[214px]" showCloseButton={false}>
                     <Sidebar dueCount={dueCount} userEmail={userEmail} displayName={displayName} onClose={() => setSheetOpen(false)} />
                 </SheetContent>
             </Sheet>
 
-            {/* Brand (mobile only) */}
+            {/* Brand (mobile only — sidebar carries it on desktop) */}
             <Link
                 href={dashboardHref}
                 className="md:hidden flex items-center gap-2 font-display font-semibold text-sm"
                 aria-label="VocabMaxx home"
             >
-                <Image src="/logo.png" alt="" width={24} height={24} className="h-6 w-6 rounded-md" priority />
+                <span className="bg-logo-gradient flex h-6 w-6 items-center justify-center rounded-lg text-[13px] font-bold text-white">
+                    V
+                </span>
                 VocabMaxx
             </Link>
 
             <div className="flex-1" aria-hidden="true" />
 
-            {/* Theme toggle */}
-            <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleTheme}
-                aria-label={mounted && theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-                className="min-h-[44px] min-w-[44px]"
+            {/* Search (desktop) */}
+            <Link
+                href={wordsHref}
+                className="hidden md:flex h-9 w-56 items-center gap-2 rounded-lg bg-muted px-3 text-sm text-muted-foreground transition-colors hover:bg-muted/70"
             >
-                {mounted && theme === 'dark' ? (
-                    <Sun size={18} aria-hidden="true" />
-                ) : (
-                    <Moon size={18} aria-hidden="true" />
-                )}
-            </Button>
+                <Search size={15} aria-hidden="true" />
+                Search words
+            </Link>
 
-            {/* Add word CTA (hidden on mobile) */}
-            <Button
-                variant="accent"
+            {/* Add word CTA */}
+            <button
+                type="button"
                 onClick={openQuickCapture}
-                className="hidden md:flex gap-1.5"
+                className={cn(
+                    buttonVariants({ variant: 'accent', size: 'default' }),
+                    'hidden md:inline-flex h-9 gap-1.5 px-3 shadow-[0_6px_16px_-6px_rgba(47,91,234,.6)]',
+                )}
             >
-                <Plus size={16} aria-hidden="true" />
+                <Plus size={15} aria-hidden="true" />
                 Add word
-                <kbd className="ml-1 hidden lg:inline-flex h-5 items-center rounded border border-accent-foreground/25 px-1.5 font-mono text-[10px] opacity-80">
+                <kbd className="ml-0.5 hidden lg:inline-flex h-5 items-center rounded bg-white/20 px-1.5 font-mono text-[10px]">
                     ⌘K
                 </kbd>
-            </Button>
+            </button>
+
+            {/* Avatar */}
+            <Link
+                href={settingsHref}
+                aria-label="Your account"
+                className="flex h-8 w-8 flex-none items-center justify-center rounded-full text-[13px] font-bold text-accent"
+                style={{ background: 'radial-gradient(circle at 30% 30%, #c9d4f5, #9db0e8)' }}
+            >
+                {avatar}
+            </Link>
         </header>
     )
 }

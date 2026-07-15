@@ -18,6 +18,8 @@ interface FlipCardProps {
 }
 
 export function FlipCard({ term, definition, examples, phonetic, audioUrl, senses, flipped, onFlip }: FlipCardProps) {
+    const resolvedSenses = toSenses(senses, definition, examples)
+    const pos = resolvedSenses[0]?.partOfSpeech ?? null
     useEffect(() => {
         function onKey(e: KeyboardEvent) {
             if (e.key !== ' ' && e.key !== 'Enter') return
@@ -54,14 +56,17 @@ export function FlipCard({ term, definition, examples, phonetic, audioUrl, sense
                 aria-pressed={flipped}
             >
                 {/* Front */}
-                <div className="flip-face w-full h-full rounded-2xl border border-border bg-card shadow-sm flex flex-col items-center justify-center p-8 select-none">
-                    <div className="flex items-center gap-2">
-                        <p className="font-display font-semibold text-3xl text-center">{term}</p>
+                <div className="flip-face w-full h-full rounded-[24px] border border-border bg-card shadow-[0_2px_4px_rgba(20,30,60,.05),0_20px_44px_-26px_rgba(20,30,60,.3)] flex flex-col items-center justify-center p-8 select-none">
+                    {pos && (
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-faint">{pos}</p>
+                    )}
+                    <div className="mt-2 flex items-center gap-2">
+                        <p className="font-display font-semibold text-4xl tracking-tight text-center">{term}</p>
                         <PronounceButton term={term} audioUrl={audioUrl} />
                     </div>
-                    {phonetic && <p className="mt-1 text-sm text-muted-foreground">{phonetic}</p>}
-                    <p className="mt-6 text-xs text-muted-foreground flex items-center gap-1.5">
-                        <kbd className="inline-flex h-5 items-center rounded border border-border bg-muted px-1.5 font-mono text-[10px]">
+                    {phonetic && <p className="num mt-1.5 text-base text-faint">{phonetic}</p>}
+                    <p className="mt-8 text-xs text-faint flex items-center gap-1.5">
+                        <kbd className="num inline-flex h-5 items-center rounded-md bg-muted px-2 text-[11px] font-semibold">
                             Space
                         </kbd>
                         to reveal
@@ -69,16 +74,18 @@ export function FlipCard({ term, definition, examples, phonetic, audioUrl, sense
                 </div>
 
                 {/* Back */}
-                <div className="flip-face flip-face-back w-full h-full rounded-2xl border border-border bg-card shadow-sm flex flex-col p-6 overflow-y-auto select-none">
-                    <div className="flex items-center gap-2">
-                        <p className="font-display font-semibold text-2xl">{term}</p>
-                        <PronounceButton term={term} audioUrl={audioUrl} size="sm" />
+                <div className="flip-face flip-face-back w-full h-full rounded-[24px] border border-border bg-card shadow-[0_2px_4px_rgba(20,30,60,.05),0_20px_44px_-26px_rgba(20,30,60,.3)] flex flex-col overflow-hidden select-none">
+                    <div className="flex items-center gap-2 px-6 pt-6 pb-4 border-b border-line-2">
+                        {pos && (
+                            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-faint">{pos}</span>
+                        )}
+                        <p className="font-display font-semibold text-2xl tracking-tight">{term}</p>
+                        {phonetic && <span className="num text-sm text-faint">{phonetic}</span>}
+                        <PronounceButton term={term} audioUrl={audioUrl} size="sm" className="ml-auto" />
                     </div>
-                    <SenseList
-                        senses={toSenses(senses, definition, examples)}
-                        dense
-                        className="mt-3"
-                    />
+                    <div className="flex-1 overflow-y-auto px-6 py-5">
+                        <SenseList senses={resolvedSenses} dense highlight={term} />
+                    </div>
                 </div>
             </div>
         </div>

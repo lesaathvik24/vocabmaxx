@@ -82,9 +82,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <body>
                 <ThemeProvider
                     attribute="class"
-                    defaultTheme="dark"
+                    forcedTheme="light"
                     enableSystem={false}
-                    disableTransitionOnChange={false}
                 >
                     <PostHogProvider>
                         <QueryProvider>

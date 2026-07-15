@@ -1,11 +1,10 @@
 'use client'
 
 import { useRef, useState, type FormEvent } from 'react'
-import { Loader2, Check, X } from 'lucide-react'
+import { Loader2, Check, X, Search } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
     Dialog,
     DialogContent,
@@ -85,44 +84,43 @@ export function AddWordInput({ onSubmit, loading }: AddWordInputProps) {
 
     return (
         <>
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-1.5">
-                    <Label htmlFor="capture-input">Word</Label>
-                    <div className="flex gap-2">
-                        <Input
-                            id="capture-input"
-                            ref={inputRef}
-                            value={value}
-                            onChange={(e) => setValue(e.target.value)}
-                            placeholder="e.g. ubiquitous, ephemeral…"
-                            autoFocus
-                            autoComplete="off"
-                            autoCorrect="off"
-                            spellCheck={false}
-                            disabled={loading}
-                            className="flex-1 h-11 text-base"
-                            aria-describedby="capture-hint"
-                        />
-                        <Button
-                            type="submit"
-                            disabled={loading || !value.trim()}
-                            variant="accent"
-                            className="h-11 px-5 gap-2 flex-shrink-0 min-w-[100px]"
-                        >
-                            {loading ? (
-                                <>
-                                    <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-                                    <span>Saving…</span>
-                                </>
-                            ) : (
-                                'Capture'
-                            )}
-                        </Button>
-                    </div>
-                    <p id="capture-hint" className="text-xs text-muted-foreground">
-                        Press Enter to capture. Common words use the dictionary, rare words use AI.
-                    </p>
+            <form onSubmit={handleSubmit} className="space-y-3">
+                <div className="flex items-center gap-2 rounded-[18px] border-2 border-accent bg-card px-4 h-16 shadow-[0_12px_30px_-14px_rgba(47,91,234,.4)] focus-within:shadow-[0_16px_36px_-14px_rgba(47,91,234,.5)] transition-shadow">
+                    <Search size={22} className="flex-shrink-0 text-faint" aria-hidden="true" />
+                    <Input
+                        id="capture-input"
+                        ref={inputRef}
+                        value={value}
+                        onChange={(e) => setValue(e.target.value)}
+                        placeholder="Type a word, we'll do the rest"
+                        aria-label="Word to capture"
+                        autoFocus
+                        autoComplete="off"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        disabled={loading}
+                        aria-describedby="capture-hint"
+                        className="flex-1 h-full border-0 bg-transparent px-0 text-2xl font-semibold tracking-tight shadow-none focus-visible:ring-0 dark:bg-transparent"
+                    />
+                    <Button
+                        type="submit"
+                        disabled={loading || !value.trim()}
+                        variant="accent"
+                        className="h-10 px-5 gap-2 flex-shrink-0"
+                    >
+                        {loading ? (
+                            <>
+                                <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                                <span>Saving…</span>
+                            </>
+                        ) : (
+                            'Capture'
+                        )}
+                    </Button>
                 </div>
+                <p id="capture-hint" className="text-center text-[12.5px] text-faint">
+                    Definition fetched automatically · common words use the dictionary, rare words use AI
+                </p>
             </form>
 
             <Dialog

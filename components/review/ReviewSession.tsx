@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Loader2 } from 'lucide-react'
+import { ChevronLeft, Loader2 } from 'lucide-react'
 import { FlipCard } from './FlipCard'
 import { GradeButtons } from './GradeButtons'
 import { SessionDoneScreen } from './SessionDoneScreen'
@@ -95,26 +95,45 @@ export function ReviewSession({ initialCards, practice = false }: ReviewSessionP
     const card = currentCard(session)
     if (!card) return null
 
+    const progress = Math.round((session.index / session.cards.length) * 100)
+
     return (
-        <div className="flex flex-col items-center gap-6 py-8">
-            <div className="flex items-center gap-3">
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Card {session.index + 1} of {session.cards.length}
-                </p>
-                {practice && (
-                    <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-accent">
-                        Practice
+        <div className="flex flex-col items-center gap-6 py-4">
+            {/* Minimal session bar */}
+            <div className="flex w-full max-w-[560px] items-center gap-4">
+                <button
+                    type="button"
+                    onClick={() => router.push('/dashboard')}
+                    className="flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                >
+                    <ChevronLeft size={17} aria-hidden="true" />
+                    End session
+                </button>
+                <div
+                    className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#dfe4f0]"
+                    role="progressbar"
+                    aria-valuenow={progress}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label="Session progress"
+                >
+                    <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${progress}%` }} />
+                </div>
+                <div className="flex items-center gap-2">
+                    {practice && (
+                        <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-accent">
+                            Practice
+                        </span>
+                    )}
+                    {savingCount > 0 && (
+                        <span className="flex items-center gap-1 text-[11px] text-muted-foreground" aria-live="polite">
+                            <Loader2 size={12} className="animate-spin" aria-hidden="true" />
+                        </span>
+                    )}
+                    <span className="num text-sm font-medium text-faint">
+                        {session.index + 1} / {session.cards.length}
                     </span>
-                )}
-                {savingCount > 0 && (
-                    <span
-                        className="flex items-center gap-1 text-[11px] text-muted-foreground"
-                        aria-live="polite"
-                    >
-                        <Loader2 size={12} className="animate-spin" aria-hidden="true" />
-                        Saving
-                    </span>
-                )}
+                </div>
             </div>
             <FlipCard
                 key={card.id}
@@ -128,6 +147,9 @@ export function ReviewSession({ initialCards, practice = false }: ReviewSessionP
                 onFlip={handleFlip}
             />
             <GradeButtons onGrade={handleGrade} disabled={!session.flipped} />
+            <p className="text-center text-[12.5px] text-faint">
+                Space bar to flip · 1–4 to grade
+            </p>
             {practice && (
                 <p className="max-w-xs text-center text-xs text-muted-foreground">
                     Practice mode — your review schedule won&apos;t change.

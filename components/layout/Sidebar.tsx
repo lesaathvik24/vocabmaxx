@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import type { Route } from 'next'
 import { usePathname } from 'next/navigation'
 import {
@@ -64,28 +63,26 @@ interface SidebarProps {
     onClose?: () => void
 }
 
+const reviewHref: Route = '/review'
+
 export function Sidebar({ dueCount, userEmail, displayName, onClose }: SidebarProps) {
     const pathname = usePathname()
 
     return (
         <nav
-            className="flex h-full w-64 flex-col bg-card border-r border-border"
+            className="flex h-full w-[214px] flex-col bg-surface-2 border-r border-border"
             aria-label="Primary navigation"
         >
             {/* Brand */}
-            <div className="flex items-center gap-3 px-5 py-5 border-b border-border">
-                <Image
-                    src="/logo.png"
-                    alt=""
-                    width={32}
-                    height={32}
-                    className="h-8 w-8 rounded-lg flex-shrink-0"
+            <div className="flex items-center gap-2.5 px-4 py-[18px] border-b border-border">
+                <span
+                    className="bg-logo-gradient flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[9px] text-sm font-bold text-white"
                     aria-hidden="true"
-                    priority
-                />
+                >
+                    V
+                </span>
                 <div className="flex-1 min-w-0">
-                    <div className="font-display font-semibold text-sm leading-tight">VocabMaxx</div>
-                    <div className="text-xs text-muted-foreground leading-tight">Everyday vocabulary</div>
+                    <div className="font-display font-semibold text-[15px] leading-tight tracking-tight">VocabMaxx</div>
                 </div>
                 {onClose && (
                     <button
@@ -120,7 +117,7 @@ export function Sidebar({ dueCount, userEmail, displayName, onClose }: SidebarPr
                                                 'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors min-h-[44px]',
                                                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                                                 active
-                                                    ? 'bg-accent-soft text-accent'
+                                                    ? 'bg-accent-soft text-accent font-semibold'
                                                     : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                                             )}
                                         >
@@ -129,7 +126,7 @@ export function Sidebar({ dueCount, userEmail, displayName, onClose }: SidebarPr
                                             {item.badge === 'due' && dueCount > 0 && (
                                                 <Badge
                                                     variant="secondary"
-                                                    className="ml-auto h-5 min-w-5 px-1.5 text-[11px] bg-accent text-accent-foreground"
+                                                    className="num ml-auto h-5 min-w-5 justify-center px-1.5 text-[11px] font-bold bg-accent text-accent-foreground"
                                                 >
                                                     {dueCount}
                                                 </Badge>
@@ -141,6 +138,20 @@ export function Sidebar({ dueCount, userEmail, displayName, onClose }: SidebarPr
                         </ul>
                     </div>
                 ))}
+            </div>
+
+            {/* Streak promo */}
+            <div className="px-3 pb-1">
+                <Link
+                    href={reviewHref}
+                    onClick={onClose}
+                    className="block rounded-2xl border border-[#dde6fb] bg-[linear-gradient(150deg,#eef3ff,#e3ebfe)] p-3.5 transition-opacity hover:opacity-90"
+                >
+                    <div className="text-[13px] font-semibold">🔥 Keep your streak</div>
+                    <div className="mt-0.5 text-xs leading-snug text-muted-foreground">
+                        Review today to keep it alive.
+                    </div>
+                </Link>
             </div>
 
             {/* Footer */}

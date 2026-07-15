@@ -1,144 +1,187 @@
 import Link from 'next/link'
-import Image from 'next/image'
-import { Zap, Repeat, Lock, ArrowRight, Sparkles } from 'lucide-react'
+import { Plus, Layers, BarChart3, ArrowRight, Play } from 'lucide-react'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
-const features = [
+const steps = [
     {
-        icon: Zap,
-        title: 'Catch the word the second you meet it.',
-        body: 'Type. Enter. Saved. We pull the cleanest definition + an example in under a second — dictionary first, AI when the word gets weird.',
+        icon: Plus,
+        title: '1 · Capture',
+        body: 'Type or paste any word. We fetch the definition, phonetics and real example sentences instantly.',
     },
     {
-        icon: Repeat,
-        title: 'We bug you right before you forget.',
-        body: 'SM-2 spaced repetition. The cards come back at the exact wrong-best moment. Reps you actually need, no busywork.',
+        icon: Layers,
+        title: '2 · Review',
+        body: 'A few cards a day. Grade how well you knew it and the schedule adapts to your memory.',
     },
     {
-        icon: Lock,
-        title: 'Your vocabulary, in your pocket. Forever.',
-        body: 'Search it. Export it (JSON/CSV). Walk away with it. Own it in your own database. No ads, no "premium tier." Built for the long game.',
+        icon: BarChart3,
+        title: '3 · Master',
+        body: 'Watch retention climb. Sidequests and streaks keep the habit alive without the grind.',
     },
+]
+
+const previewRows = [
+    { dot: '#e8863b', term: 'alacrity', gloss: 'brisk and cheerful readiness', tint: false },
+    { dot: '#2f5bea', term: 'ephemeral', gloss: 'lasting for a very short time', tint: true },
+    { dot: '#1f9e6a', term: 'ubiquitous', gloss: 'present everywhere at once', tint: false },
 ]
 
 export default function MarketingPage() {
     return (
-        <main className="min-h-screen flex flex-col bg-background text-foreground">
-            <nav className="flex items-center justify-between px-6 py-4 border-b border-border">
+        <main className="flex min-h-screen flex-col bg-background text-foreground">
+            {/* Glass nav */}
+            <nav className="glass-bar sticky top-0 z-30 flex h-16 items-center gap-4 px-6">
                 <Link href="/" className="flex items-center gap-2.5">
-                    <Image
-                        src="/logo.png"
-                        alt="VocabMaxx"
-                        width={32}
-                        height={32}
-                        className="h-8 w-8 rounded-lg"
-                        priority
-                    />
-                    <span className="font-display font-semibold text-base tracking-tight">VocabMaxx</span>
+                    <span className="bg-logo-gradient flex h-7 w-7 items-center justify-center rounded-[9px] text-sm font-bold text-white">
+                        V
+                    </span>
+                    <span className="font-display text-base font-semibold tracking-tight">VocabMaxx</span>
                 </Link>
-                <div className="flex items-center gap-2">
-                    <Link
-                        href="/auth/sign-in"
-                        className={cn(buttonVariants({ variant: 'ghost' }), 'text-sm')}
-                    >
-                        Sign in
-                    </Link>
-                    <Link
-                        href="/auth/sign-up"
-                        className={cn(buttonVariants({ variant: 'accent' }), 'text-sm')}
-                    >
-                        Get started
-                    </Link>
+                <div className="ml-6 hidden items-center gap-6 text-sm font-medium text-muted-foreground md:flex">
+                    <span>Features</span>
+                    <span>How it works</span>
+                    <span>Pricing</span>
                 </div>
+                <div className="flex-1" />
+                <Link href="/auth/sign-in" className="text-sm font-medium text-muted-foreground hover:text-foreground">
+                    Sign in
+                </Link>
+                <Link
+                    href="/auth/sign-up"
+                    className={cn(
+                        buttonVariants({ variant: 'accent' }),
+                        'h-9 px-4 text-sm shadow-[0_8px_20px_-8px_rgba(47,91,234,.6)]',
+                    )}
+                >
+                    Get started
+                </Link>
             </nav>
 
             {/* Hero */}
-            <section className="px-6 pt-20 pb-24 sm:pt-28 sm:pb-32">
-                <div className="max-w-3xl mx-auto text-center space-y-7">
-                    <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground">
-                        <Sparkles size={13} className="text-accent" aria-hidden="true" />
-                        Stop renting words. Own them.
+            <section className="relative overflow-hidden px-6 pt-[74px] pb-8 text-center">
+                <div
+                    className="pointer-events-none absolute -top-28 left-1/2 h-[420px] w-[680px] max-w-full -translate-x-1/2"
+                    style={{ background: 'radial-gradient(ellipse at center, rgba(79,119,255,.16), transparent 68%)' }}
+                    aria-hidden="true"
+                />
+                <div className="relative mx-auto max-w-3xl">
+                    <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-accent-soft px-4 py-1.5 text-[13px] font-semibold text-accent">
+                        <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" />
+                        Now with AI-generated example sentences
                     </div>
-                    <h1 className="font-display font-semibold text-5xl sm:text-6xl tracking-tight leading-[1.05]">
-                        Every word you Google twice
+                    <h1 className="mx-auto max-w-[760px] font-display text-4xl font-bold leading-[1.02] tracking-[-0.035em] sm:text-6xl">
+                        Every word you meet,
                         <br />
-                        <span className="text-accent">is a leak.</span>
+                        remembered for good.
                     </h1>
-                    <p className="text-lg sm:text-xl text-muted-foreground max-w-xl mx-auto leading-relaxed">
-                        VocabMaxx turns every word you almost knew into one you actually use.
-                        Capture, review, own — in under a minute a day.
+                    <p className="mx-auto mt-5 max-w-xl text-lg text-muted-foreground sm:text-xl">
+                        Capture a word in one tap. VocabMaxx writes the definition, builds the flashcard, and schedules it so
+                        it sticks — using spaced repetition that adapts to you.
                     </p>
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                    <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
                         <Link
                             href="/auth/sign-up"
                             className={cn(
                                 buttonVariants({ variant: 'accent', size: 'lg' }),
-                                'gap-2 h-12 px-7 text-base',
+                                'h-[52px] gap-2 px-6 text-base shadow-[0_14px_30px_-12px_rgba(47,91,234,.65)]',
                             )}
                         >
-                            Start for free
+                            Start learning free
                             <ArrowRight size={18} aria-hidden="true" />
                         </Link>
                         <Link
                             href="/auth/sign-in"
                             className={cn(
-                                buttonVariants({ variant: 'ghost', size: 'lg' }),
-                                'h-12 px-5 text-base text-muted-foreground hover:text-foreground',
+                                buttonVariants({ variant: 'outline', size: 'lg' }),
+                                'h-[52px] gap-2 px-6 text-base',
                             )}
                         >
-                            I already have an account
+                            <Play size={15} aria-hidden="true" className="fill-current" />
+                            Watch demo
                         </Link>
                     </div>
-                    <p className="text-xs text-muted-foreground pt-1">
-                        Free during beta. No card. No "AI credits." Just words.
-                    </p>
+                    <p className="num mt-4 text-[13px] text-faint">Free forever · No card required · 12,000+ learners</p>
                 </div>
-            </section>
 
-            {/* Features */}
-            <section className="px-6 pb-20">
-                <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-5">
-                    {features.map((f) => (
-                        <article
-                            key={f.title}
-                            className="rounded-2xl border border-border bg-card p-6 shadow-sm flex flex-col gap-3"
-                        >
-                            <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-accent-soft text-accent">
-                                <f.icon size={20} aria-hidden="true" />
+                {/* Product shot */}
+                <div className="relative mx-auto mt-12 w-full max-w-[720px] overflow-hidden rounded-t-[20px] border border-b-0 border-[#e6e9f0] bg-card shadow-[0_40px_80px_-40px_rgba(20,30,60,.4)]">
+                    <div className="flex h-9 items-center gap-1.5 border-b border-border bg-[#f2f4f9] px-4">
+                        <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+                        <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+                        <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+                    </div>
+                    <div className="flex flex-col gap-4 p-6 text-left sm:flex-row">
+                        <div className="bg-hero-gradient flex-1 rounded-2xl p-5 text-white">
+                            <div className="text-[10px] font-bold uppercase tracking-[0.12em] opacity-80">Due now</div>
+                            <div className="num mt-1 text-[34px] font-bold tracking-tight">
+                                12 <span className="text-[15px] font-medium opacity-85">cards</span>
                             </div>
-                            <h3 className="font-display font-semibold text-lg leading-snug">{f.title}</h3>
-                            <p className="text-sm text-muted-foreground leading-relaxed">{f.body}</p>
-                        </article>
-                    ))}
+                            <div className="mt-5 inline-flex h-9 items-center rounded-[10px] bg-white px-4 text-[13px] font-semibold text-accent">
+                                Start review →
+                            </div>
+                        </div>
+                        <div className="flex flex-[1.3] flex-col gap-2.5">
+                            {previewRows.map((r) => (
+                                <div
+                                    key={r.term}
+                                    className={cn(
+                                        'flex items-center gap-3 rounded-xl px-3.5 py-3',
+                                        r.tint ? 'bg-background' : 'border border-border',
+                                    )}
+                                >
+                                    <span className="h-[7px] w-[7px] flex-none rounded-full" style={{ background: r.dot }} />
+                                    <div className="min-w-0">
+                                        <div className="text-[13.5px] font-semibold">{r.term}</div>
+                                        <div className="truncate text-xs text-faint">{r.gloss}</div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             </section>
 
-            {/* Closer */}
-            <section className="px-6 pb-24">
-                <div className="max-w-3xl mx-auto rounded-2xl border border-border bg-card p-10 sm:p-14 text-center space-y-5">
-                    <h2 className="font-display font-semibold text-3xl sm:text-4xl tracking-tight">
-                        From <span className="text-muted-foreground line-through">heard once</span>{' '}
-                        to <span className="text-accent">use in a meeting</span>.
-                    </h2>
-                    <p className="text-base text-muted-foreground max-w-md mx-auto">
-                        Your future self will Google fewer words. Promise.
-                    </p>
-                    <Link
-                        href="/auth/sign-up"
-                        className={cn(
-                            buttonVariants({ variant: 'accent', size: 'lg' }),
-                            'gap-2 h-12 px-7 text-base',
-                        )}
-                    >
-                        Capture your first word
-                        <ArrowRight size={18} aria-hidden="true" />
-                    </Link>
+            {/* How it works */}
+            <section className="border-t border-border bg-card px-6 py-14">
+                <div className="mx-auto max-w-5xl">
+                    <div className="mb-10 text-center">
+                        <div className="text-[13px] font-semibold uppercase tracking-[0.1em] text-accent">How it works</div>
+                        <h2 className="mt-2 font-display text-3xl font-bold tracking-tight">Three steps. Zero busywork.</h2>
+                    </div>
+                    <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+                        {steps.map((s) => (
+                            <article
+                                key={s.title}
+                                className="rounded-[18px] border border-line-2 bg-background p-6"
+                            >
+                                <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-[13px] bg-accent-soft text-accent">
+                                    <s.icon size={22} aria-hidden="true" />
+                                </div>
+                                <h3 className="text-[17px] font-semibold tracking-tight">{s.title}</h3>
+                                <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{s.body}</p>
+                            </article>
+                        ))}
+                    </div>
                 </div>
             </section>
 
-            <footer className="mt-auto border-t border-border px-6 py-6 text-center text-xs text-muted-foreground">
-                © {new Date().getFullYear()} VocabMaxx · Built for word people.
+            {/* Footer */}
+            <footer className="mt-auto flex flex-col gap-3 bg-[#0e1220] px-6 py-8 text-sm sm:flex-row sm:items-center">
+                <div className="flex items-center gap-2.5">
+                    <span className="bg-logo-gradient flex h-6 w-6 items-center justify-center rounded-[7px] text-[13px] font-bold text-white">
+                        V
+                    </span>
+                    <span className="font-semibold text-white">VocabMaxx</span>
+                    <span className="ml-2 text-[13px] text-[#6b7286]">
+                        © {new Date().getFullYear()} · Learn a little every day
+                    </span>
+                </div>
+                <div className="flex gap-6 text-[13px] text-[#9aa0b0] sm:ml-auto">
+                    <span>Privacy</span>
+                    <span>Terms</span>
+                    <span>Contact</span>
+                </div>
             </footer>
         </main>
     )

@@ -19,7 +19,7 @@ import {
 import { cn } from '@/lib/utils'
 import { filterWords, type WordStatus, type WordFilter } from '@/lib/words/filter'
 import { PronounceButton } from './PronounceButton'
-import { StatusBadge, DueBadge } from './StatusBadge'
+import { StatusBadge, DueBadge, MemoryBar } from './StatusBadge'
 
 export interface WordRow {
     id: string
@@ -40,7 +40,7 @@ interface WordsListProps {
 // Above this many rows we window the list (render only the visible slice) so
 // large libraries (250+ words) scroll without laying out every node.
 const VIRTUALIZE_THRESHOLD = 50
-const ROW_HEIGHT = 68 // px, must match the row's rendered height
+const ROW_HEIGHT = 74 // px, must match the row's rendered height
 const VIEWPORT_HEIGHT = 640 // px scroll container
 const OVERSCAN = 6 // extra rows above/below the viewport
 
@@ -102,7 +102,7 @@ export function WordsList({ words }: WordsListProps) {
                 <div
                     role="tablist"
                     aria-label="Filter words"
-                    className="inline-flex rounded-lg border border-border bg-card p-0.5"
+                    className="flex gap-2 overflow-x-auto pb-0.5 sm:pb-0"
                 >
                     {FILTERS.map((f) => (
                         <button
@@ -111,10 +111,10 @@ export function WordsList({ words }: WordsListProps) {
                             aria-selected={filter === f.id}
                             onClick={() => setFilter(f.id)}
                             className={cn(
-                                'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                                'h-8 flex-none rounded-full px-4 text-[13px] font-medium transition-colors',
                                 filter === f.id
-                                    ? 'bg-accent text-accent-foreground'
-                                    : 'text-muted-foreground hover:text-foreground',
+                                    ? 'bg-accent text-accent-foreground font-semibold'
+                                    : 'border border-border bg-card text-muted-foreground hover:text-foreground',
                             )}
                         >
                             {f.label}
@@ -215,12 +215,18 @@ function WordRowItem({
                 }
             }}
             style={{ height: ROW_HEIGHT }}
-            className="flex cursor-pointer items-center gap-3 px-4 outline-none transition-colors hover:bg-muted/40 focus-visible:bg-muted/40"
+            className="flex cursor-pointer items-center gap-3 px-4 outline-none transition-colors hover:bg-surface-2 focus-visible:bg-surface-2"
         >
             <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{word.term}</p>
-                <p className="truncate text-xs text-muted-foreground">{word.definition}</p>
+                <div className="flex items-baseline gap-2">
+                    <p className="truncate text-[15px] font-semibold">{word.term}</p>
+                    {word.phonetic && (
+                        <span className="num hidden truncate text-xs text-faint sm:inline">{word.phonetic}</span>
+                    )}
+                </div>
+                <p className="truncate text-[13px] text-muted-foreground">{word.definition}</p>
             </div>
+            <MemoryBar status={word.status} className="hidden w-24 flex-shrink-0 md:block" />
             <PronounceButton term={word.term} audioUrl={word.audioUrl} size="sm" className="flex-shrink-0" />
             <StatusBadge status={word.status} className="hidden flex-shrink-0 sm:inline-flex" />
             {word.due && <DueBadge className="flex-shrink-0" />}

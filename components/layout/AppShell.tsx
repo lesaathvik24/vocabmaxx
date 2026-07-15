@@ -1,6 +1,6 @@
 import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
-import { MobileAddFab } from './MobileAddFab'
+import { MobileTabBar } from './MobileTabBar'
 import { QuickCaptureProvider } from '@/components/capture/QuickCaptureProvider'
 
 interface AppShellProps {
@@ -23,12 +23,12 @@ export function AppShell({ children, dueCount = 0, userEmail, displayName }: App
                 <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
                     <Topbar dueCount={dueCount} userEmail={userEmail} displayName={displayName} />
                     <main className="flex-1 overflow-y-auto">
-                        <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8 pb-24 md:pb-6">
+                        <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8 pb-24 md:pb-8">
                             {children}
                         </div>
                     </main>
                 </div>
-                <MobileAddFab />
+                <MobileTabBar />
             </div>
         </QuickCaptureProvider>
     )

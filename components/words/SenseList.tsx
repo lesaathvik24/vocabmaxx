@@ -5,7 +5,28 @@ interface SenseListProps {
     senses: Sense[]
     /** Compact spacing + smaller type, for cards and the flashcard back. */
     dense?: boolean
+    /** When set, occurrences of this term inside examples are bolded in cobalt. */
+    highlight?: string
     className?: string
+}
+
+function escapeRegExp(s: string): string {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/** Render an example, bolding occurrences of `term` in the brand color. */
+function renderExample(text: string, term?: string): React.ReactNode {
+    if (!term || !term.trim()) return text
+    const parts = text.split(new RegExp(`(${escapeRegExp(term.trim())})`, 'gi'))
+    return parts.map((part, i) =>
+        part.toLowerCase() === term.trim().toLowerCase() ? (
+            <b key={i} className="font-semibold not-italic text-accent">
+                {part}
+            </b>
+        ) : (
+            part
+        ),
+    )
 }
 
 /**
@@ -13,17 +34,17 @@ interface SenseListProps {
  * before multi-sense support have a single synthesised sense — see
  * `toSenses` for the fallback.
  */
-export function SenseList({ senses, dense = false, className }: SenseListProps) {
+export function SenseList({ senses, dense = false, highlight, className }: SenseListProps) {
     const numbered = senses.length > 1
 
     return (
-        <ol className={cn(dense ? 'space-y-3' : 'space-y-4', className)}>
+        <ol className={cn(dense ? 'space-y-4' : 'space-y-5', className)}>
             {senses.map((sense, i) => (
                 <li key={i} className="flex gap-2.5">
                     {numbered && (
                         <span
                             className={cn(
-                                'flex-shrink-0 select-none font-mono text-muted-foreground',
+                                'num flex-shrink-0 select-none text-faint',
                                 dense ? 'text-[11px] leading-6' : 'text-xs leading-7',
                             )}
                         >
@@ -31,25 +52,25 @@ export function SenseList({ senses, dense = false, className }: SenseListProps) 
                         </span>
                     )}
                     <div className="min-w-0 flex-1">
-                        <p className={cn('leading-relaxed', dense ? 'text-sm' : 'text-base')}>
-                            {sense.partOfSpeech && (
-                                <span className="mr-2 font-serif text-sm italic text-accent">
-                                    {sense.partOfSpeech}
-                                </span>
-                            )}
-                            <span className="font-serif">{sense.definition}</span>
+                        {sense.partOfSpeech && (
+                            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-faint">
+                                {sense.partOfSpeech}
+                            </p>
+                        )}
+                        <p className={cn('leading-normal text-foreground', dense ? 'text-[15px]' : 'text-lg')}>
+                            {sense.definition}
                         </p>
                         {sense.examples.length > 0 && (
-                            <ul className={cn('space-y-1', dense ? 'mt-1.5' : 'mt-2')}>
+                            <ul className={cn('space-y-2', dense ? 'mt-2.5' : 'mt-3')}>
                                 {sense.examples.map((ex, j) => (
                                     <li
                                         key={j}
                                         className={cn(
-                                            'border-l-2 border-border pl-3 font-serif italic text-muted-foreground',
-                                            dense ? 'text-xs' : 'text-sm',
+                                            'border-l-[3px] border-[#dfe4f0] pl-3.5 leading-normal text-muted-foreground',
+                                            dense ? 'text-[14px]' : 'text-[15px]',
                                         )}
                                     >
-                                        {ex}
+                                        {renderExample(ex, highlight)}
                                     </li>
                                 ))}
                             </ul>

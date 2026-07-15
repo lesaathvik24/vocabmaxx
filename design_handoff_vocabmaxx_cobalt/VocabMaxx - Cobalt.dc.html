@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #e7e9ef; color: #1a1d29;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  a { color: #2f5bea; text-decoration: none; }
+  a:hover { opacity: .82; }
+  ::selection { background: rgba(47,91,234,.18); }
+  .num { font-family: "Inter", system-ui, sans-serif; font-feature-settings: "tnum" 1; }
+  .card { background:#fff; border:1px solid #e9ecf3; border-radius:16px; box-shadow:0 1px 2px rgba(20,30,60,.04); }
+  .web { width:1200px; border-radius:26px; overflow:hidden; background:#f6f8fc; box-shadow:0 2px 4px rgba(20,30,60,.05), 0 40px 90px -40px rgba(20,30,60,.4); border:1px solid #e6e9f0; }
+  .phone { width:310px; border-radius:44px; padding:11px; background:#0e1220; box-shadow:0 30px 70px -30px rgba(20,30,60,.55); flex:none; }
+  .screen { border-radius:33px; overflow:hidden; background:#f6f8fc; position:relative; }
+  .notch { position:absolute; top:9px; left:50%; transform:translateX(-50%); width:98px; height:27px; background:#0e1220; border-radius:99px; z-index:3; }
+  .sbar { height:36px; display:flex; align-items:center; justify-content:space-between; padding:0 22px; font-size:12px; font-weight:600; color:#1a1d29; position:relative; z-index:2; }
+  .sec-title { font-size:34px; line-height:1.08; letter-spacing:-.025em; font-weight:700; margin:0; }
+  .chip { display:inline-flex; align-items:center; justify-content:center; height:30px; padding:0 13px; border-radius:99px; background:#2f5bea; color:#fff; font-size:13px; font-weight:700; letter-spacing:.02em; }
+  @keyframes vmfloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+</style>
+</helmet>
+
+<div style="padding:60px 60px 160px; min-width:max-content; display:flex; flex-direction:column; gap:120px;">
+
+  <!-- ===== INTRO / UX CRITIQUE ===== -->
+  <div style="max-width:1200px; display:flex; flex-direction:column; gap:28px;">
+    <div>
+      <div style="font-size:12px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:#8a8f9c;">VocabMaxx · Cobalt direction</div>
+      <h1 style="font-size:46px; line-height:1.05; letter-spacing:-.03em; font-weight:700; margin:12px 0 14px;">The full redesign, top to bottom</h1>
+      <p style="font-size:18px; line-height:1.55; color:#5c6270; margin:0; max-width:720px;">Direction <b style="color:#1a1d29;">1a — Cobalt</b> applied across every screen, web and mobile. Same flow you have today; new surface, depth, type and rhythm. Scroll down through Landing → Dashboard → Review → Capture → Words → Insights. Pan / zoom freely.</p>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; max-width:1000px;">
+      <div class="card" style="padding:22px 24px; border-radius:18px;">
+        <div style="display:flex; align-items:center; gap:9px; margin-bottom:14px;"><span style="width:8px;height:8px;border-radius:99px;background:#2f5bea;"></span><span style="font-size:13px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:#2f5bea;">What I fixed cosmetically</span></div>
+        <ul style="margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:11px; font-size:14px; line-height:1.5; color:#454a58;">
+          <li><b style="color:#1a1d29;">Flat teal → cobalt with depth.</b> Soft layered shadows, one glass top bar, gradient only on the hero moment — not everywhere.</li>
+          <li><b style="color:#1a1d29;">Type hierarchy.</b> SF-system display, tabular figures for all stats, tighter tracking on headings.</li>
+          <li><b style="color:#1a1d29;">Calmer neutrals.</b> Warmer off-white canvas so white cards actually read as elevated.</li>
+          <li><b style="color:#1a1d29;">Consistent radii & spacing scale.</b> 16 / 20 / 26px families instead of ad-hoc values.</li>
+        </ul>
+      </div>
+      <div class="card" style="padding:22px 24px; border-radius:18px;">
+        <div style="display:flex; align-items:center; gap:9px; margin-bottom:14px;"><span style="width:8px;height:8px;border-radius:99px;background:#e8863b;"></span><span style="font-size:13px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:#e8863b;">UX issues I caught</span></div>
+        <ul style="margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:11px; font-size:14px; line-height:1.5; color:#454a58;">
+          <li><b style="color:#1a1d29;">No clear "next action."</b> Dashboard now leads with one Due banner as the primary CTA; everything else is secondary.</li>
+          <li><b style="color:#1a1d29;">Grade buttons lacked meaning.</b> Again/Hard/Good/Easy now carry color + interval hints so the choice is obvious.</li>
+          <li><b style="color:#1a1d29;">Capture had no feedback.</b> Live definition preview appears before you commit, so adding a word feels instant.</li>
+          <li><b style="color:#1a1d29;">Words list was a flat table.</b> Added status pills + memory-strength bars so scanning is meaningful.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 1. MARKETING LANDING ===== -->
+  <section style="display:flex; flex-direction:column; gap:22px;">
+    <div style="display:flex; align-items:center; gap:13px;"><span class="chip">01</span><div><div style="font-size:17px; font-weight:600; letter-spacing:-.01em;">Marketing landing</div><div style="font-size:13px; color:#7a8091;">First impression — the million-dollar promise</div></div></div>
+    <div style="display:flex; gap:32px; align-items:flex-start;">
+      <!-- WEB LANDING -->
+      <div class="web">
+        <div style="height:64px; display:flex; align-items:center; gap:14px; padding:0 30px; background:rgba(255,255,255,.72); backdrop-filter:blur(18px); border-bottom:1px solid #e9ecf3;">
+          <div style="width:28px; height:28px; border-radius:9px; background:linear-gradient(145deg,#4f77ff,#2f5bea); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:15px;">V</div>
+          <span style="font-weight:600; letter-spacing:-.01em; font-size:16px;">VocabMaxx</span>
+          <div style="display:flex; gap:26px; margin-left:34px; font-size:14px; color:#5c6270; font-weight:500;"><span>Features</span><span>How it works</span><span>Pricing</span></div>
+          <div style="flex:1;"></div>
+          <span style="font-size:14px; color:#5c6270; font-weight:500;">Sign in</span>
+          <div style="display:flex; align-items:center; height:38px; padding:0 18px; border-radius:11px; background:#2f5bea; color:#fff; font-size:14px; font-weight:600; box-shadow:0 8px 20px -8px rgba(47,91,234,.6);">Get started</div>
+        </div>
+        <!-- hero -->
+        <div style="position:relative; padding:74px 60px 30px; text-align:center; overflow:hidden;">
+          <div style="position:absolute; top:-120px; left:50%; transform:translateX(-50%); width:680px; height:420px; background:radial-gradient(ellipse at center, rgba(79,119,255,.16), transparent 68%); pointer-events:none;"></div>
+          <div style="position:relative;">
+            <div style="display:inline-flex; align-items:center; gap:8px; height:32px; padding:0 15px; border-radius:99px; background:#eaf0fe; color:#2f5bea; font-size:13px; font-weight:600; margin-bottom:24px;"><span style="width:6px;height:6px;border-radius:99px;background:#2f5bea;"></span>Now with AI-generated example sentences</div>
+            <h2 style="font-size:60px; line-height:1.02; letter-spacing:-.035em; font-weight:700; margin:0 auto 20px; max-width:760px;">Every word you meet,<br>remembered for good.</h2>
+            <p style="font-size:20px; line-height:1.5; color:#5c6270; margin:0 auto 32px; max-width:560px;">Capture a word in one tap. VocabMaxx writes the definition, builds the flashcard, and schedules it so it sticks — using spaced repetition that adapts to you.</p>
+            <div style="display:flex; gap:12px; justify-content:center;">
+              <div style="display:flex; align-items:center; gap:8px; height:52px; padding:0 26px; border-radius:14px; background:#2f5bea; color:#fff; font-size:16px; font-weight:600; box-shadow:0 14px 30px -12px rgba(47,91,234,.65);">Start learning free<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+              <div style="display:flex; align-items:center; gap:8px; height:52px; padding:0 24px; border-radius:14px; background:#fff; border:1px solid #e2e6f0; color:#1a1d29; font-size:16px; font-weight:600;"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Watch demo</div>
+            </div>
+            <div style="font-size:13px; color:#9aa0b0; margin-top:16px;">Free forever · No card required · 12,000+ learners</div>
+          </div>
+          <!-- product shot -->
+          <div style="position:relative; margin:46px auto 0; width:720px; border-radius:20px 20px 0 0; overflow:hidden; background:#fff; border:1px solid #e6e9f0; border-bottom:none; box-shadow:0 40px 80px -40px rgba(20,30,60,.4);">
+            <div style="height:38px; display:flex; align-items:center; gap:7px; padding:0 16px; background:#f2f4f9; border-bottom:1px solid #e9ecf3;">
+              <span style="width:11px;height:11px;border-radius:99px;background:#ff5f57;"></span><span style="width:11px;height:11px;border-radius:99px;background:#febc2e;"></span><span style="width:11px;height:11px;border-radius:99px;background:#28c840;"></span>
+            </div>
+            <div style="padding:26px; display:flex; gap:16px; text-align:left;">
+              <div style="flex:1; border-radius:16px; padding:22px 24px; background:linear-gradient(120deg,#2f5bea,#4f77ff 60%,#6b8cff); color:#fff;">
+                <div style="font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; opacity:.8;">Due now</div>
+                <div style="font-size:34px; font-weight:700; letter-spacing:-.02em; margin-top:4px;">12 <span style="font-size:15px; font-weight:500; opacity:.85;">cards</span></div>
+                <div style="margin-top:22px; display:inline-flex; align-items:center; gap:6px; height:36px; padding:0 16px; border-radius:10px; background:#fff; color:#2f5bea; font-size:13px; font-weight:600;">Start review →</div>
+              </div>
+              <div style="flex:1.3; display:flex; flex-direction:column; gap:10px;">
+                <div style="display:flex; align-items:center; gap:11px; padding:11px 14px; border-radius:12px; border:1px solid #e9ecf3;"><span style="width:7px;height:7px;border-radius:99px;background:#e8863b;"></span><div style="flex:1;"><div style="font-size:13.5px; font-weight:600;">alacrity</div><div style="font-size:12px; color:#8a8f9c;">brisk and cheerful readiness</div></div></div>
+                <div style="display:flex; align-items:center; gap:11px; padding:11px 14px; border-radius:12px; background:#f6f8fc;"><span style="width:7px;height:7px;border-radius:99px;background:#2f5bea;"></span><div style="flex:1;"><div style="font-size:13.5px; font-weight:600;">ephemeral</div><div style="font-size:12px; color:#8a8f9c;">lasting for a very short time</div></div></div>
+                <div style="display:flex; align-items:center; gap:11px; padding:11px 14px; border-radius:12px; border:1px solid #e9ecf3;"><span style="width:7px;height:7px;border-radius:99px;background:#1f9e6a;"></span><div style="flex:1;"><div style="font-size:13.5px; font-weight:600;">ubiquitous</div><div style="font-size:12px; color:#8a8f9c;">present everywhere at once</div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- feature strip -->
+        <div style="background:#fff; border-top:1px solid #e9ecf3; padding:56px 60px;">
+          <div style="text-align:center; margin-bottom:40px;"><div style="font-size:13px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:#2f5bea;">How it works</div><h3 style="font-size:32px; letter-spacing:-.025em; font-weight:700; margin:10px 0 0;">Three steps. Zero busywork.</h3></div>
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:20px;">
+            <div style="padding:26px; border-radius:18px; background:#f6f8fc; border:1px solid #eef1f8;">
+              <div style="width:44px; height:44px; border-radius:13px; background:#eaf0fe; display:flex; align-items:center; justify-content:center; color:#2f5bea; margin-bottom:16px;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></div>
+              <div style="font-size:17px; font-weight:600; letter-spacing:-.01em; margin-bottom:6px;">1 · Capture</div>
+              <div style="font-size:14px; line-height:1.55; color:#5c6270;">Type or paste any word. We fetch the definition, phonetics and real example sentences instantly.</div>
+            </div>
+            <div style="padding:26px; border-radius:18px; background:#f6f8fc; border:1px solid #eef1f8;">
+              <div style="width:44px; height:44px; border-radius:13px; background:#eaf0fe; display:flex; align-items:center; justify-content:center; color:#2f5bea; margin-bottom:16px;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="m2 17 10 5 10-5M2 12l10 5 10-5"/></svg></div>
+              <div style="font-size:17px; font-weight:600; letter-spacing:-.01em; margin-bottom:6px;">2 · Review</div>
+              <div style="font-size:14px; line-height:1.55; color:#5c6270;">A few cards a day. Grade how well you knew it and the schedule adapts to your memory.</div>
+            </div>
+            <div style="padding:26px; border-radius:18px; background:#f6f8fc; border:1px solid #eef1f8;">
+              <div style="width:44px; height:44px; border-radius:13px; background:#eaf0fe; display:flex; align-items:center; justify-content:center; color:#2f5bea; margin-bottom:16px;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v16h16"/><path d="M8 16v-5M12 16V8M16 16v-3"/></svg></div>
+              <div style="font-size:17px; font-weight:600; letter-spacing:-.01em; margin-bottom:6px;">3 · Master</div>
+              <div style="font-size:14px; line-height:1.55; color:#5c6270;">Watch retention climb. Sidequests and streaks keep the habit alive without the grind.</div>
+            </div>
+          </div>
+        </div>
+        <div style="background:#0e1220; padding:30px 60px; display:flex; align-items:center; gap:12px;">
+          <div style="width:24px; height:24px; border-radius:7px; background:linear-gradient(145deg,#4f77ff,#2f5bea); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:13px;">V</div>
+          <span style="color:#fff; font-weight:600; font-size:14px;">VocabMaxx</span>
+          <span style="color:#6b7286; font-size:13px; margin-left:8px;">© 2025 · Learn a little every day</span>
+          <div style="flex:1;"></div>
+          <div style="display:flex; gap:22px; color:#9aa0b0; font-size:13px;"><span>Privacy</span><span>Terms</span><span>Contact</span></div>
+        </div>
+      </div>
+
+      <!-- MOBILE LANDING -->
+      <div class="phone">
+        <div class="screen">
+          <div class="notch"></div>
+          <div class="sbar"><span>9:41</span><span style="letter-spacing:1px;">●●● ▮</span></div>
+          <div style="padding:8px 22px 26px; text-align:center; position:relative; overflow:hidden;">
+            <div style="position:absolute; top:-80px; left:50%; transform:translateX(-50%); width:320px; height:280px; background:radial-gradient(ellipse at center, rgba(79,119,255,.18), transparent 68%);"></div>
+            <div style="position:relative;">
+              <div style="display:inline-flex; align-items:center; gap:7px; height:28px; padding:0 13px; border-radius:99px; background:#eaf0fe; color:#2f5bea; font-size:11.5px; font-weight:600; margin:12px 0 20px;"><span style="width:5px;height:5px;border-radius:99px;background:#2f5bea;"></span>AI example sentences</div>
+              <h2 style="font-size:33px; line-height:1.04; letter-spacing:-.03em; font-weight:700; margin:0 0 14px;">Every word,<br>remembered<br>for good.</h2>
+              <p style="font-size:15px; line-height:1.5; color:#5c6270; margin:0 0 24px;">Capture a word in a tap. We write the card and schedule it so it sticks.</p>
+              <div style="display:flex; align-items:center; justify-content:center; gap:8px; height:50px; border-radius:14px; background:#2f5bea; color:#fff; font-size:15.5px; font-weight:600; box-shadow:0 14px 30px -12px rgba(47,91,234,.6);">Start learning free<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+              <div style="font-size:12px; color:#9aa0b0; margin-top:12px;">Free forever · No card required</div>
+              <div style="margin-top:28px; border-radius:18px; overflow:hidden; background:#fff; border:1px solid #e6e9f0; box-shadow:0 30px 50px -30px rgba(20,30,60,.4); text-align:left;">
+                <div style="padding:18px; background:linear-gradient(120deg,#2f5bea,#4f77ff); color:#fff;">
+                  <div style="font-size:9.5px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; opacity:.8;">Due now</div>
+                  <div style="font-size:26px; font-weight:700; letter-spacing:-.02em; margin-top:3px;">12 <span style="font-size:13px; font-weight:500; opacity:.85;">cards</span></div>
+                </div>
+                <div style="padding:12px;">
+                  <div style="display:flex; align-items:center; gap:10px; padding:9px 10px;"><span style="width:6px;height:6px;border-radius:99px;background:#e8863b;"></span><div style="flex:1;"><div style="font-size:13px; font-weight:600;">alacrity</div><div style="font-size:11.5px; color:#8a8f9c;">cheerful readiness</div></div></div>
+                  <div style="display:flex; align-items:center; gap:10px; padding:9px 10px; background:#f6f8fc; border-radius:10px;"><span style="width:6px;height:6px;border-radius:99px;background:#2f5bea;"></span><div style="flex:1;"><div style="font-size:13px; font-weight:600;">ephemeral</div><div style="font-size:11.5px; color:#8a8f9c;">lasting a short time</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 2. DASHBOARD ===== -->
+  <section style="display:flex; flex-direction:column; gap:22px;">
+    <div style="display:flex; align-items:center; gap:13px;"><span class="chip">02</span><div><div style="font-size:17px; font-weight:600; letter-spacing:-.01em;">Dashboard</div><div style="font-size:13px; color:#7a8091;">One clear next action, then the ambient stats</div></div></div>
+    <div style="display:flex; gap:32px; align-items:flex-start;">
+      <!-- WEB DASH -->
+      <div class="web">
+        <div style="height:60px; display:flex; align-items:center; gap:14px; padding:0 22px; background:rgba(255,255,255,.72); backdrop-filter:blur(18px); border-bottom:1px solid #e9ecf3;">
+          <div style="width:26px; height:26px; border-radius:8px; background:linear-gradient(145deg,#4f77ff,#2f5bea); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:14px;">V</div>
+          <span style="font-weight:600; letter-spacing:-.01em; font-size:15px;">VocabMaxx</span>
+          <div style="flex:1;"></div>
+          <div style="display:flex; align-items:center; gap:8px; height:34px; padding:0 12px; border-radius:10px; background:#eef1f8; color:#8b90a0; font-size:13px; width:240px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Search words</div>
+          <div style="display:flex; align-items:center; gap:7px; height:34px; padding:0 14px 0 12px; border-radius:10px; background:#2f5bea; color:#fff; font-size:13.5px; font-weight:600; box-shadow:0 6px 16px -6px rgba(47,91,234,.6);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>Add word<kbd style="margin-left:2px; font:600 10px 'Inter'; background:rgba(255,255,255,.22); padding:2px 5px; border-radius:5px;">⌘K</kbd></div>
+          <div style="width:32px; height:32px; border-radius:99px; background:linear-gradient(145deg,#c9d4f5,#9db0e8); display:flex; align-items:center; justify-content:center; color:#2f5bea; font-weight:700; font-size:13px;">L</div>
+        </div>
+        <div style="display:flex;">
+          <div style="width:214px; padding:18px 14px; border-right:1px solid #e9ecf3; background:#fbfcfe;">
+            <div style="font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:#9aa0b0; padding:0 10px; margin-bottom:8px;">Learn</div>
+            <div style="display:flex; align-items:center; gap:11px; padding:9px 11px; border-radius:11px; background:#eaf0fe; color:#2f5bea; font-size:14px; font-weight:600; margin-bottom:2px;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Dashboard</div>
+            <div style="display:flex; align-items:center; gap:11px; padding:9px 11px; border-radius:11px; color:#5c6270; font-size:14px; font-weight:500; margin-bottom:2px;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="m2 17 10 5 10-5M2 12l10 5 10-5"/></svg>Review<span style="margin-left:auto; background:#2f5bea; color:#fff; font-size:11px; font-weight:700; height:19px; min-width:19px; padding:0 5px; border-radius:99px; display:flex; align-items:center; justify-content:center;" class="num">12</span></div>
+            <div style="display:flex; align-items:center; gap:11px; padding:9px 11px; border-radius:11px; color:#5c6270; font-size:14px; font-weight:500;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/></svg>Sidequests</div>
+            <div style="font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:#9aa0b0; padding:0 10px; margin:16px 0 8px;">Library</div>
+            <div style="display:flex; align-items:center; gap:11px; padding:9px 11px; border-radius:11px; color:#5c6270; font-size:14px; font-weight:500; margin-bottom:2px;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Capture</div>
+            <div style="display:flex; align-items:center; gap:11px; padding:9px 11px; border-radius:11px; color:#5c6270; font-size:14px; font-weight:500;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v16h16"/><path d="M8 16v-5M12 16V8M16 16v-3"/></svg>Words</div>
+            <div style="margin-top:20px; border-radius:14px; padding:15px; background:linear-gradient(150deg,#eef3ff,#e3ebfe); border:1px solid #dde6fb;">
+              <div style="font-size:13px; font-weight:600; margin-bottom:3px;">🔥 9-day streak</div>
+              <div style="font-size:12px; color:#5c6270; line-height:1.45;">Review today to keep it alive.</div>
+            </div>
+          </div>
+          <div style="flex:1; padding:26px 28px;">
+            <div style="font-size:13px; color:#8a8f9c; font-weight:500;">Monday, July 14</div>
+            <h2 style="font-size:26px; font-weight:700; letter-spacing:-.02em; margin:3px 0 22px;">Good afternoon, Lekhan</h2>
+            <div style="position:relative; overflow:hidden; border-radius:20px; padding:24px 26px; background:linear-gradient(120deg,#2f5bea,#4f77ff 55%,#6b8cff); color:#fff; display:flex; align-items:center; gap:20px; box-shadow:0 18px 40px -20px rgba(47,91,234,.7);">
+              <div style="position:absolute; top:-40px; right:-30px; width:180px; height:180px; border-radius:99px; background:rgba(255,255,255,.12);"></div>
+              <div style="flex:1; position:relative;">
+                <div style="font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; opacity:.8;">Due now</div>
+                <div style="font-size:38px; font-weight:700; letter-spacing:-.02em; line-height:1.05; margin-top:5px;" class="num">12 <span style="font-size:18px; font-weight:500; opacity:.85; letter-spacing:0;">cards ready</span></div>
+                <div style="font-size:13.5px; opacity:.85; margin-top:6px;">About 4 minutes · spaced just right</div>
+              </div>
+              <div style="position:relative; display:flex; align-items:center; gap:8px; height:46px; padding:0 22px; border-radius:13px; background:#fff; color:#2f5bea; font-weight:600; font-size:15px; box-shadow:0 10px 24px -10px rgba(0,0,0,.3);">Start review<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:13px; margin-top:18px;">
+              <div class="card" style="padding:16px 16px 14px;"><div style="font-size:28px; font-weight:700; letter-spacing:-.02em;" class="num">248</div><div style="font-size:12.5px; color:#7a8091; margin-top:3px;">Words learned</div></div>
+              <div class="card" style="padding:16px 16px 14px;"><div style="font-size:28px; font-weight:700; letter-spacing:-.02em; color:#e8863b;" class="num">9<span style="font-size:17px;">d</span></div><div style="font-size:12.5px; color:#7a8091; margin-top:3px;">Current streak</div></div>
+              <div class="card" style="padding:16px 16px 14px;"><div style="font-size:28px; font-weight:700; letter-spacing:-.02em; color:#1f9e6a;" class="num">87<span style="font-size:17px;">%</span></div><div style="font-size:12.5px; color:#7a8091; margin-top:3px;">Retention</div></div>
+              <div class="card" style="padding:16px 16px 14px;"><div style="font-size:28px; font-weight:700; letter-spacing:-.02em; color:#2f5bea;" class="num">340</div><div style="font-size:12.5px; color:#7a8091; margin-top:3px;">Sidequest XP</div></div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1.15fr; gap:16px; margin-top:16px;">
+              <div class="card" style="padding:18px 20px; border-radius:18px;">
+                <div style="display:flex; justify-content:space-between; align-items:baseline;"><span style="font-size:14px; font-weight:600;">This week</span><span style="font-size:12px; color:#8a8f9c;" class="num">18/25</span></div>
+                <div style="height:6px; border-radius:99px; background:#eef1f8; margin-top:12px; overflow:hidden;"><div style="width:72%; height:100%; border-radius:99px; background:#2f5bea;"></div></div>
+                <div style="display:flex; gap:6px; align-items:flex-end; height:66px; margin-top:20px;">
+                  <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:6px;"><div style="width:100%; height:38%; background:#cdd6ee; border-radius:5px;"></div><span style="font-size:10px; color:#9aa0b0;">M</span></div>
+                  <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:6px;"><div style="width:100%; height:62%; background:#cdd6ee; border-radius:5px;"></div><span style="font-size:10px; color:#9aa0b0;">T</span></div>
+                  <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:6px;"><div style="width:100%; height:48%; background:#cdd6ee; border-radius:5px;"></div><span style="font-size:10px; color:#9aa0b0;">W</span></div>
+                  <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:6px;"><div style="width:100%; height:80%; background:#cdd6ee; border-radius:5px;"></div><span style="font-size:10px; color:#9aa0b0;">T</span></div>
+                  <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:6px;"><div style="width:100%; height:55%; background:#cdd6ee; border-radius:5px;"></div><span style="font-size:10px; color:#9aa0b0;">F</span></div>
+                  <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:6px;"><div style="width:100%; height:30%; background:#cdd6ee; border-radius:5px;"></div><span style="font-size:10px; color:#9aa0b0;">S</span></div>
+                  <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:6px;"><div style="width:100%; height:90%; background:#2f5bea; border-radius:5px;"></div><span style="font-size:10px; color:#2f5bea; font-weight:600;">S</span></div>
+                </div>
+              </div>
+              <div class="card" style="padding:16px 8px 8px; border-radius:18px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:0 12px 8px;"><span style="font-size:14px; font-weight:600;">Recent captures</span><span style="font-size:12px; color:#2f5bea; font-weight:500;">View all →</span></div>
+                <div style="display:flex; align-items:center; gap:11px; padding:9px 12px; border-radius:11px;"><span style="width:7px; height:7px; border-radius:99px; background:#e8863b;"></span><div style="flex:1;"><div style="font-size:13.5px; font-weight:600;">alacrity</div><div style="font-size:12px; color:#8a8f9c;">brisk and cheerful readiness</div></div><span style="font-size:11px; color:#9aa0b0;" class="num">4m</span></div>
+                <div style="display:flex; align-items:center; gap:11px; padding:9px 12px; border-radius:11px; background:#f6f8fc;"><span style="width:7px; height:7px; border-radius:99px; background:#2f5bea;"></span><div style="flex:1;"><div style="font-size:13.5px; font-weight:600;">ephemeral</div><div style="font-size:12px; color:#8a8f9c;">lasting for a very short time</div></div><span style="font-size:11px; color:#9aa0b0;" class="num">2h</span></div>
+                <div style="display:flex; align-items:center; gap:11px; padding:9px 12px; border-radius:11px;"><span style="width:7px; height:7px; border-radius:99px; background:#1f9e6a;"></span><div style="flex:1;"><div style="font-size:13.5px; font-weight:600;">ubiquitous</div><div style="font-size:12px; color:#8a8f9c;">present everywhere at once</div></div><span style="font-size:11px; color:#9aa0b0;" class="num">1d</span></div>
+                <div style="display:flex; align-items:center; gap:11px; padding:9px 12px; border-radius:11px;"><span style="width:7px; height:7px; border-radius:99px; background:#8a8f9c;"></span><div style="flex:1;"><div style="font-size:13.5px; font-weight:600;">sonder</div><div style="font-size:12px; color:#8a8f9c;">awareness each passerby has a life</div></div><span style="font-size:11px; color:#9aa0b0;" class="num">2d</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MOBILE DASH -->
+      <div class="phone">
+        <div class="screen">
+          <div class="notch"></div>
+          <div class="sbar"><span>9:41</span><span style="letter-spacing:1px;">●●● ▮</span></div>
+          <div style="padding:6px 18px 80px;">
+            <div style="font-size:12px; color:#8a8f9c; font-weight:500;">Monday, July 14</div>
+            <h2 style="font-size:23px; font-weight:700; letter-spacing:-.02em; margin:2px 0 18px;">Good afternoon,<br>Lekhan</h2>
+            <div style="position:relative; overflow:hidden; border-radius:20px; padding:20px; background:linear-gradient(125deg,#2f5bea,#4f77ff); color:#fff; box-shadow:0 18px 36px -18px rgba(47,91,234,.7);">
+              <div style="position:absolute; top:-30px; right:-20px; width:130px; height:130px; border-radius:99px; background:rgba(255,255,255,.12);"></div>
+              <div style="position:relative;">
+                <div style="font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; opacity:.8;">Due now</div>
+                <div style="font-size:32px; font-weight:700; letter-spacing:-.02em; margin-top:3px;" class="num">12 <span style="font-size:15px; font-weight:500; opacity:.85; letter-spacing:0;">cards</span></div>
+                <div style="font-size:12.5px; opacity:.85; margin-top:4px;">About 4 minutes</div>
+                <div style="margin-top:16px; display:flex; align-items:center; justify-content:center; gap:7px; height:44px; border-radius:12px; background:#fff; color:#2f5bea; font-weight:600; font-size:14.5px;">Start review<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+              </div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:11px; margin-top:14px;">
+              <div class="card" style="padding:14px 15px;"><div style="font-size:24px; font-weight:700; letter-spacing:-.02em;" class="num">248</div><div style="font-size:12px; color:#7a8091; margin-top:2px;">Words learned</div></div>
+              <div class="card" style="padding:14px 15px;"><div style="font-size:24px; font-weight:700; letter-spacing:-.02em; color:#e8863b;" class="num">9<span style="font-size:15px;">d</span></div><div style="font-size:12px; color:#7a8091; margin-top:2px;">Streak</div></div>
+              <div class="card" style="padding:14px 15px;"><div style="font-size:24px; font-weight:700; letter-spacing:-.02em; color:#1f9e6a;" class="num">87<span style="font-size:15px;">%</span></div><div style="font-size:12px; color:#7a8091; margin-top:2px;">Retention</div></div>
+              <div class="card" style="padding:14px 15px;"><div style="font-size:24px; font-weight:700; letter-spacing:-.02em; color:#2f5bea;" class="num">340</div><div style="font-size:12px; color:#7a8091; margin-top:2px;">XP</div></div>
+            </div>
+            <div class="card" style="margin-top:14px; padding:14px 15px 12px; border-radius:16px;">
+              <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">Recent captures</div>
+              <div style="display:flex; align-items:center; gap:10px; padding:6px 0;"><span style="width:6px;height:6px;border-radius:99px;background:#e8863b;"></span><div style="flex:1;"><div style="font-size:13px; font-weight:600;">alacrity</div></div><span style="font-size:11px; color:#9aa0b0;" class="num">4m</span></div>
+              <div style="display:flex; align-items:center; gap:10px; padding:6px 0;"><span style="width:6px;height:6px;border-radius:99px;background:#2f5bea;"></span><div style="flex:1;"><div style="font-size:13px; font-weight:600;">ephemeral</div></div><span style="font-size:11px; color:#9aa0b0;" class="num">2h</span></div>
+            </div>
+          </div>
+          <!-- tab bar -->
+          <div style="position:absolute; bottom:0; left:0; right:0; height:64px; background:rgba(255,255,255,.86); backdrop-filter:blur(18px); border-top:1px solid #e9ecf3; display:flex; align-items:center; padding:0 14px 10px;">
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; color:#2f5bea;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span style="font-size:10px; font-weight:600;">Home</span></div>
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; color:#9aa0b0;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="m2 17 10 5 10-5"/></svg><span style="font-size:10px;">Review</span></div>
+            <div style="flex:none; width:46px; height:46px; margin:0 6px; border-radius:99px; background:#2f5bea; display:flex; align-items:center; justify-content:center; color:#fff; box-shadow:0 8px 18px -6px rgba(47,91,234,.7);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg></div>
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; color:#9aa0b0;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v16h16"/><path d="M8 16v-5M12 16V8M16 16v-3"/></svg><span style="font-size:10px;">Words</span></div>
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; color:#9aa0b0;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span style="font-size:10px;">You</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 3. REVIEW ===== -->
+  <section style="display:flex; flex-direction:column; gap:22px;">
+    <div style="display:flex; align-items:center; gap:13px;"><span class="chip">03</span><div><div style="font-size:17px; font-weight:600; letter-spacing:-.01em;">Review session</div><div style="font-size:13px; color:#7a8091;">Front → revealed. Grades now carry meaning + intervals</div></div></div>
+    <div style="display:flex; gap:32px; align-items:flex-start;">
+      <!-- WEB REVIEW (revealed) -->
+      <div class="web" style="background:#eef1f8;">
+        <div style="height:56px; display:flex; align-items:center; gap:14px; padding:0 24px; background:rgba(255,255,255,.72); backdrop-filter:blur(18px); border-bottom:1px solid #e9ecf3;">
+          <div style="display:flex; align-items:center; gap:8px; color:#5c6270; font-size:14px; font-weight:500;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>End session</div>
+          <div style="flex:1; max-width:420px; margin:0 auto; height:6px; border-radius:99px; background:#dfe4f0; overflow:hidden;"><div style="width:25%; height:100%; border-radius:99px; background:#2f5bea;"></div></div>
+          <div style="font-size:13px; color:#8a8f9c; font-weight:500;" class="num">3 / 12</div>
+        </div>
+        <div style="padding:44px 40px 48px; display:flex; flex-direction:column; align-items:center;">
+          <div style="width:560px; background:#fff; border-radius:24px; box-shadow:0 2px 4px rgba(20,30,60,.05), 0 30px 60px -30px rgba(20,30,60,.35); overflow:hidden;">
+            <div style="padding:40px 44px 28px; text-align:center; border-bottom:1px solid #eef1f8;">
+              <div style="font-size:11px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:#9aa0b0;">Adjective</div>
+              <div style="font-size:44px; font-weight:700; letter-spacing:-.025em; margin:8px 0 6px;">ephemeral</div>
+              <div style="font-size:16px; color:#8a8f9c;" class="num">/əˈfem(ə)rəl/</div>
+            </div>
+            <div style="padding:28px 44px 34px; text-align:left;">
+              <div style="font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:#2f5bea; margin-bottom:7px;">Definition</div>
+              <div style="font-size:18px; line-height:1.5; color:#1a1d29; margin-bottom:22px;">Lasting for a very short time; fleeting and quickly fading from existence or memory.</div>
+              <div style="font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:#8a8f9c; margin-bottom:7px;">In context</div>
+              <div style="font-size:15px; line-height:1.55; color:#5c6270; padding-left:14px; border-left:3px solid #dfe4f0; font-style:italic;">"The <b style="color:#2f5bea; font-style:normal;">ephemeral</b> beauty of the cherry blossoms drew crowds for the single week they bloomed."</div>
+              <div style="display:flex; gap:8px; margin-top:20px;"><span style="font-size:12px; padding:5px 11px; border-radius:99px; background:#f2f4f9; color:#5c6270;">synonym · transient</span><span style="font-size:12px; padding:5px 11px; border-radius:99px; background:#f2f4f9; color:#5c6270;">synonym · fleeting</span></div>
+            </div>
+          </div>
+          <div style="width:560px; display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:22px;">
+            <div style="display:flex; flex-direction:column; align-items:center; gap:4px; padding:13px 0; border-radius:14px; background:#fff; border:1.5px solid #f0c8c4; color:#d1493c; font-weight:600; font-size:14px;">Again<span style="font-size:11px; font-weight:500; opacity:.75;">&lt; 1 min</span></div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:4px; padding:13px 0; border-radius:14px; background:#fff; border:1.5px solid #e9ecf3; color:#5c6270; font-weight:600; font-size:14px;">Hard<span style="font-size:11px; font-weight:500; opacity:.75;">6 min</span></div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:4px; padding:13px 0; border-radius:14px; background:#2f5bea; color:#fff; font-weight:600; font-size:14px; box-shadow:0 10px 22px -10px rgba(47,91,234,.7);">Good<span style="font-size:11px; font-weight:500; opacity:.85;">1 day</span></div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:4px; padding:13px 0; border-radius:14px; background:#fff; border:1.5px solid #b9e6d0; color:#1f9e6a; font-weight:600; font-size:14px;">Easy<span style="font-size:11px; font-weight:500; opacity:.75;">4 days</span></div>
+          </div>
+          <div style="font-size:12.5px; color:#9aa0b0; margin-top:16px;">Space bar to flip · 1–4 to grade</div>
+        </div>
+      </div>
+
+      <!-- MOBILE REVIEW (front) -->
+      <div class="phone">
+        <div class="screen" style="background:#eef1f8;">
+          <div class="notch"></div>
+          <div class="sbar"><span>9:41</span><span style="letter-spacing:1px;">●●● ▮</span></div>
+          <div style="padding:8px 18px 24px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;"><span style="font-size:13px; color:#8a8f9c; font-weight:500;" class="num">Review · 3 of 12</span><span style="font-size:13px; color:#2f5bea; font-weight:600;">End</span></div>
+            <div style="height:5px; border-radius:99px; background:#dfe4f0; margin-bottom:22px; overflow:hidden;"><div style="width:25%; height:100%; border-radius:99px; background:#2f5bea;"></div></div>
+            <div style="background:#fff; border-radius:24px; padding:56px 24px; text-align:center; box-shadow:0 2px 4px rgba(20,30,60,.05), 0 20px 40px -22px rgba(20,30,60,.3); margin-bottom:20px; min-height:300px; display:flex; flex-direction:column; justify-content:center;">
+              <div style="font-size:11px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:#9aa0b0;">Adjective</div>
+              <div style="font-size:34px; font-weight:700; letter-spacing:-.025em; margin:10px 0 6px;">ephemeral</div>
+              <div style="font-size:15px; color:#8a8f9c;" class="num">/əˈfem(ə)rəl/</div>
+              <div style="display:inline-flex; align-items:center; gap:6px; margin:38px auto 0; font-size:12.5px; color:#9aa0b0;"><kbd style="background:#eef1f8; padding:4px 8px; border-radius:7px; font:600 11px 'Inter';">tap</kbd> to reveal</div>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:7px;">
+              <div style="text-align:center; padding:11px 0 9px; border-radius:13px; background:#fff; border:1.5px solid #f0c8c4; color:#d1493c; font-size:12.5px; font-weight:600;">Again<div style="font-size:10px; font-weight:500; opacity:.7; margin-top:2px;">&lt;1m</div></div>
+              <div style="text-align:center; padding:11px 0 9px; border-radius:13px; background:#fff; border:1.5px solid #e9ecf3; color:#5c6270; font-size:12.5px; font-weight:600;">Hard<div style="font-size:10px; font-weight:500; opacity:.7; margin-top:2px;">6m</div></div>
+              <div style="text-align:center; padding:11px 0 9px; border-radius:13px; background:#2f5bea; color:#fff; font-size:12.5px; font-weight:600;">Good<div style="font-size:10px; font-weight:500; opacity:.85; margin-top:2px;">1d</div></div>
+              <div style="text-align:center; padding:11px 0 9px; border-radius:13px; background:#fff; border:1.5px solid #b9e6d0; color:#1f9e6a; font-size:12.5px; font-weight:600;">Easy<div style="font-size:10px; font-weight:500; opacity:.7; margin-top:2px;">4d</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 4. CAPTURE ===== -->
+  <section style="display:flex; flex-direction:column; gap:22px;">
+    <div style="display:flex; align-items:center; gap:13px;"><span class="chip">04</span><div><div style="font-size:17px; font-weight:600; letter-spacing:-.01em;">Capture a word</div><div style="font-size:13px; color:#7a8091;">Live definition preview before you commit</div></div></div>
+    <div style="display:flex; gap:32px; align-items:flex-start;">
+      <!-- WEB CAPTURE -->
+      <div class="web">
+        <div style="height:60px; display:flex; align-items:center; gap:14px; padding:0 24px; background:rgba(255,255,255,.72); backdrop-filter:blur(18px); border-bottom:1px solid #e9ecf3;">
+          <div style="width:26px; height:26px; border-radius:8px; background:linear-gradient(145deg,#4f77ff,#2f5bea); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:14px;">V</div>
+          <span style="font-weight:600; letter-spacing:-.01em; font-size:15px;">Add a word</span>
+          <div style="flex:1;"></div>
+          <div style="display:flex; align-items:center; gap:6px; font-size:13px; color:#8a8f9c;"><kbd style="background:#eef1f8; padding:3px 7px; border-radius:6px; font:600 11px 'Inter';">Esc</kbd> to close</div>
+        </div>
+        <div style="padding:48px 60px 56px; max-width:760px; margin:0 auto;">
+          <div style="text-align:center; margin-bottom:8px;"><div style="font-size:13px; color:#8a8f9c; font-weight:500;">Type a word, we'll do the rest</div></div>
+          <div style="display:flex; align-items:center; gap:12px; height:64px; padding:0 22px; border-radius:18px; background:#fff; border:2px solid #2f5bea; box-shadow:0 12px 30px -14px rgba(47,91,234,.4); margin-bottom:8px;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9aa0b0" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <span style="font-size:24px; font-weight:600; letter-spacing:-.01em;">ephemeral</span><span style="width:2px; height:26px; background:#2f5bea; animation:vmfloat 1s infinite; margin-left:2px;"></span>
+            <div style="flex:1;"></div>
+            <div style="display:flex; align-items:center; gap:6px; font-size:12px; color:#1f9e6a; font-weight:500;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>Found</div>
+          </div>
+          <div style="font-size:12.5px; color:#9aa0b0; text-align:center; margin-bottom:26px;">Definition fetched automatically · edit anything before saving</div>
+          <!-- preview card -->
+          <div style="border-radius:20px; overflow:hidden; background:#fff; border:1px solid #e9ecf3; box-shadow:0 2px 4px rgba(20,30,60,.04), 0 20px 44px -26px rgba(20,30,60,.3);">
+            <div style="padding:24px 28px 20px; border-bottom:1px solid #eef1f8; display:flex; align-items:flex-end; gap:14px;">
+              <div><div style="font-size:11px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:#9aa0b0;">Adjective</div><div style="font-size:32px; font-weight:700; letter-spacing:-.025em; margin-top:4px;">ephemeral</div></div>
+              <div style="font-size:15px; color:#8a8f9c; padding-bottom:6px;" class="num">/əˈfem(ə)rəl/</div>
+              <div style="flex:1;"></div>
+              <div style="width:38px; height:38px; border-radius:11px; background:#eef1f8; display:flex; align-items:center; justify-content:center; color:#5c6270;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg></div>
+            </div>
+            <div style="padding:22px 28px 26px;">
+              <div style="font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:#2f5bea; margin-bottom:7px;">Definition</div>
+              <div style="font-size:16px; line-height:1.5; color:#1a1d29; margin-bottom:20px;">Lasting for a very short time; fleeting and quickly fading from existence or memory.</div>
+              <div style="font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:#8a8f9c; margin-bottom:9px;">Example sentences</div>
+              <div style="display:flex; flex-direction:column; gap:9px;">
+                <div style="font-size:14.5px; line-height:1.5; color:#5c6270; padding-left:13px; border-left:3px solid #dfe4f0;">The <b style="color:#2f5bea;">ephemeral</b> beauty of the cherry blossoms drew crowds for a single week.</div>
+                <div style="font-size:14.5px; line-height:1.5; color:#5c6270; padding-left:13px; border-left:3px solid #dfe4f0;">Fame can be <b style="color:#2f5bea;">ephemeral</b>, here one season and gone the next.</div>
+              </div>
+              <div style="display:flex; gap:8px; margin-top:18px;"><span style="font-size:12px; padding:5px 11px; border-radius:99px; background:#f2f4f9; color:#5c6270;">transient</span><span style="font-size:12px; padding:5px 11px; border-radius:99px; background:#f2f4f9; color:#5c6270;">fleeting</span><span style="font-size:12px; padding:5px 11px; border-radius:99px; background:#f2f4f9; color:#5c6270;">momentary</span></div>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px; padding:16px 28px; background:#fbfcfe; border-top:1px solid #eef1f8;">
+              <div style="display:flex; align-items:center; gap:8px; font-size:13px; color:#8a8f9c;"><span style="width:7px;height:7px;border-radius:99px;background:#e8863b;"></span>Will be due for review today</div>
+              <div style="flex:1;"></div>
+              <div style="height:42px; padding:0 18px; display:flex; align-items:center; border-radius:11px; background:#eef1f8; color:#5c6270; font-size:14px; font-weight:600;">Cancel</div>
+              <div style="height:42px; padding:0 22px; display:flex; align-items:center; gap:7px; border-radius:11px; background:#2f5bea; color:#fff; font-size:14px; font-weight:600; box-shadow:0 8px 18px -8px rgba(47,91,234,.6);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>Add to library</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MOBILE CAPTURE -->
+      <div class="phone">
+        <div class="screen">
+          <div class="notch"></div>
+          <div class="sbar"><span>9:41</span><span style="letter-spacing:1px;">●●● ▮</span></div>
+          <div style="padding:8px 18px 24px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;"><span style="font-size:17px; font-weight:700; letter-spacing:-.01em;">Add a word</span><span style="font-size:13px; color:#8a8f9c;">Cancel</span></div>
+            <div style="display:flex; align-items:center; gap:10px; height:52px; padding:0 16px; border-radius:14px; background:#fff; border:2px solid #2f5bea; box-shadow:0 10px 24px -14px rgba(47,91,234,.4); margin-bottom:8px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9aa0b0" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+              <span style="font-size:18px; font-weight:600;">ephemeral</span><span style="width:2px; height:20px; background:#2f5bea; margin-left:1px;"></span>
+            </div>
+            <div style="font-size:11.5px; color:#9aa0b0; text-align:center; margin-bottom:20px;">Fetched automatically · edit before saving</div>
+            <div class="card" style="border-radius:18px; overflow:hidden; padding:0;">
+              <div style="padding:18px 18px 14px; border-bottom:1px solid #eef1f8;">
+                <div style="font-size:10px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:#9aa0b0;">Adjective</div>
+                <div style="font-size:24px; font-weight:700; letter-spacing:-.02em; margin:3px 0 2px;">ephemeral</div>
+                <div style="font-size:13px; color:#8a8f9c;" class="num">/əˈfem(ə)rəl/</div>
+              </div>
+              <div style="padding:16px 18px 18px;">
+                <div style="font-size:10px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:#2f5bea; margin-bottom:6px;">Definition</div>
+                <div style="font-size:14.5px; line-height:1.5; color:#1a1d29; margin-bottom:14px;">Lasting for a very short time; fleeting and quickly fading.</div>
+                <div style="font-size:14px; line-height:1.5; color:#5c6270; padding-left:11px; border-left:3px solid #dfe4f0;">The <b style="color:#2f5bea;">ephemeral</b> beauty of the blossoms drew crowds.</div>
+                <div style="display:flex; gap:6px; margin-top:14px;"><span style="font-size:11px; padding:4px 9px; border-radius:99px; background:#f2f4f9; color:#5c6270;">transient</span><span style="font-size:11px; padding:4px 9px; border-radius:99px; background:#f2f4f9; color:#5c6270;">fleeting</span></div>
+              </div>
+            </div>
+            <div style="margin-top:16px; display:flex; align-items:center; justify-content:center; gap:8px; height:50px; border-radius:14px; background:#2f5bea; color:#fff; font-size:15px; font-weight:600; box-shadow:0 12px 26px -12px rgba(47,91,234,.6);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>Add to library</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 5. WORDS LIST ===== -->
+  <section style="display:flex; flex-direction:column; gap:22px;">
+    <div style="display:flex; align-items:center; gap:13px;"><span class="chip">05</span><div><div style="font-size:17px; font-weight:600; letter-spacing:-.01em;">Words library</div><div style="font-size:13px; color:#7a8091;">Status pills + memory-strength bars for real scanning</div></div></div>
+    <div style="display:flex; gap:32px; align-items:flex-start;">
+      <!-- WEB WORDS -->
+      <div class="web">
+        <div style="height:60px; display:flex; align-items:center; gap:14px; padding:0 24px; background:rgba(255,255,255,.72); backdrop-filter:blur(18px); border-bottom:1px solid #e9ecf3;">
+          <div style="width:26px; height:26px; border-radius:8px; background:linear-gradient(145deg,#4f77ff,#2f5bea); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:14px;">V</div>
+          <span style="font-weight:600; letter-spacing:-.01em; font-size:15px;">Words</span>
+          <span style="font-size:13px; color:#9aa0b0; margin-left:2px;" class="num">248 total</span>
+          <div style="flex:1;"></div>
+          <div style="display:flex; align-items:center; gap:8px; height:34px; padding:0 12px; border-radius:10px; background:#eef1f8; color:#8b90a0; font-size:13px; width:220px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Search words</div>
+          <div style="display:flex; align-items:center; gap:7px; height:34px; padding:0 14px 0 12px; border-radius:10px; background:#2f5bea; color:#fff; font-size:13.5px; font-weight:600; box-shadow:0 6px 16px -6px rgba(47,91,234,.6);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>Add word</div>
+        </div>
+        <div style="padding:24px 28px 30px;">
+          <div style="display:flex; gap:8px; margin-bottom:18px;">
+            <span style="height:34px; display:flex; align-items:center; padding:0 15px; border-radius:99px; background:#2f5bea; color:#fff; font-size:13px; font-weight:600;">All <span class="num" style="margin-left:5px; opacity:.7;">248</span></span>
+            <span style="height:34px; display:flex; align-items:center; padding:0 15px; border-radius:99px; background:#fff; border:1px solid #e9ecf3; color:#5c6270; font-size:13px; font-weight:500;">New <span class="num" style="margin-left:5px; color:#9aa0b0;">14</span></span>
+            <span style="height:34px; display:flex; align-items:center; padding:0 15px; border-radius:99px; background:#fff; border:1px solid #e9ecf3; color:#5c6270; font-size:13px; font-weight:500;">Learning <span class="num" style="margin-left:5px; color:#9aa0b0;">62</span></span>
+            <span style="height:34px; display:flex; align-items:center; padding:0 15px; border-radius:99px; background:#fff; border:1px solid #e9ecf3; color:#5c6270; font-size:13px; font-weight:500;">Mastered <span class="num" style="margin-left:5px; color:#9aa0b0;">172</span></span>
+            <div style="flex:1;"></div>
+            <span style="height:34px; display:flex; align-items:center; gap:6px; padding:0 14px; border-radius:99px; background:#fff; border:1px solid #e9ecf3; color:#5c6270; font-size:13px; font-weight:500;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M6 12h12M10 18h4"/></svg>Recent</span>
+          </div>
+          <div class="card" style="border-radius:16px; overflow:hidden; padding:0;">
+            <div style="display:grid; grid-template-columns:2fr 3fr 1.1fr 1.3fr 0.9fr; gap:16px; padding:12px 22px; background:#fbfcfe; border-bottom:1px solid #eef1f8; font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:#9aa0b0;">
+              <span>Word</span><span>Definition</span><span>Status</span><span>Memory</span><span style="text-align:right;">Due</span>
+            </div>
+            <!-- rows -->
+            <div style="display:grid; grid-template-columns:2fr 3fr 1.1fr 1.3fr 0.9fr; gap:16px; padding:15px 22px; align-items:center; border-bottom:1px solid #f2f4f9;">
+              <div><div style="font-size:15px; font-weight:600;">alacrity</div><div style="font-size:12px; color:#9aa0b0;" class="num">/əˈlakrədē/</div></div>
+              <div style="font-size:13.5px; color:#5c6270; line-height:1.4;">Brisk and cheerful readiness</div>
+              <div><span style="font-size:11.5px; font-weight:600; padding:4px 10px; border-radius:99px; background:#fff2e6; color:#e8863b;">New</span></div>
+              <div style="display:flex; align-items:center; gap:9px;"><div style="flex:1; height:6px; border-radius:99px; background:#eef1f8; overflow:hidden;"><div style="width:22%; height:100%; background:#e8863b; border-radius:99px;"></div></div></div>
+              <div style="text-align:right; font-size:12.5px; color:#5c6270; font-weight:500;">Today</div>
+            </div>
+            <div style="display:grid; grid-template-columns:2fr 3fr 1.1fr 1.3fr 0.9fr; gap:16px; padding:15px 22px; align-items:center; border-bottom:1px solid #f2f4f9;">
+              <div><div style="font-size:15px; font-weight:600;">ephemeral</div><div style="font-size:12px; color:#9aa0b0;" class="num">/əˈfem(ə)rəl/</div></div>
+              <div style="font-size:13.5px; color:#5c6270; line-height:1.4;">Lasting for a very short time</div>
+              <div><span style="font-size:11.5px; font-weight:600; padding:4px 10px; border-radius:99px; background:#eaf0fe; color:#2f5bea;">Learning</span></div>
+              <div style="display:flex; align-items:center; gap:9px;"><div style="flex:1; height:6px; border-radius:99px; background:#eef1f8; overflow:hidden;"><div style="width:55%; height:100%; background:#2f5bea; border-radius:99px;"></div></div></div>
+              <div style="text-align:right; font-size:12.5px; color:#5c6270; font-weight:500;">Tomorrow</div>
+            </div>
+            <div style="display:grid; grid-template-columns:2fr 3fr 1.1fr 1.3fr 0.9fr; gap:16px; padding:15px 22px; align-items:center; border-bottom:1px solid #f2f4f9; background:#fbfcfe;">
+              <div><div style="font-size:15px; font-weight:600;">ubiquitous</div><div style="font-size:12px; color:#9aa0b0;" class="num">/yo͞oˈbikwədəs/</div></div>
+              <div style="font-size:13.5px; color:#5c6270; line-height:1.4;">Present, appearing, or found everywhere</div>
+              <div><span style="font-size:11.5px; font-weight:600; padding:4px 10px; border-radius:99px; background:#e6f6ee; color:#1f9e6a;">Mastered</span></div>
+              <div style="display:flex; align-items:center; gap:9px;"><div style="flex:1; height:6px; border-radius:99px; background:#eef1f8; overflow:hidden;"><div style="width:92%; height:100%; background:#1f9e6a; border-radius:99px;"></div></div></div>
+              <div style="text-align:right; font-size:12.5px; color:#9aa0b0; font-weight:500;">in 12d</div>
+            </div>
+            <div style="display:grid; grid-template-columns:2fr 3fr 1.1fr 1.3fr 0.9fr; gap:16px; padding:15px 22px; align-items:center; border-bottom:1px solid #f2f4f9;">
+              <div><div style="font-size:15px; font-weight:600;">sonder</div><div style="font-size:12px; color:#9aa0b0;" class="num">/ˈsändər/</div></div>
+              <div style="font-size:13.5px; color:#5c6270; line-height:1.4;">The awareness that each passerby has a life as vivid as your own</div>
+              <div><span style="font-size:11.5px; font-weight:600; padding:4px 10px; border-radius:99px; background:#eaf0fe; color:#2f5bea;">Learning</span></div>
+              <div style="display:flex; align-items:center; gap:9px;"><div style="flex:1; height:6px; border-radius:99px; background:#eef1f8; overflow:hidden;"><div style="width:40%; height:100%; background:#2f5bea; border-radius:99px;"></div></div></div>
+              <div style="text-align:right; font-size:12.5px; color:#5c6270; font-weight:500;">in 2d</div>
+            </div>
+            <div style="display:grid; grid-template-columns:2fr 3fr 1.1fr 1.3fr 0.9fr; gap:16px; padding:15px 22px; align-items:center;">
+              <div><div style="font-size:15px; font-weight:600;">quixotic</div><div style="font-size:12px; color:#9aa0b0;" class="num">/kwikˈsädik/</div></div>
+              <div style="font-size:13.5px; color:#5c6270; line-height:1.4;">Extremely idealistic; unrealistic and impractical</div>
+              <div><span style="font-size:11.5px; font-weight:600; padding:4px 10px; border-radius:99px; background:#e6f6ee; color:#1f9e6a;">Mastered</span></div>
+              <div style="display:flex; align-items:center; gap:9px;"><div style="flex:1; height:6px; border-radius:99px; background:#eef1f8; overflow:hidden;"><div style="width:84%; height:100%; background:#1f9e6a; border-radius:99px;"></div></div></div>
+              <div style="text-align:right; font-size:12.5px; color:#9aa0b0; font-weight:500;">in 9d</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MOBILE WORDS -->
+      <div class="phone">
+        <div class="screen">
+          <div class="notch"></div>
+          <div class="sbar"><span>9:41</span><span style="letter-spacing:1px;">●●● ▮</span></div>
+          <div style="padding:8px 18px 24px;">
+            <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:14px;"><span style="font-size:22px; font-weight:700; letter-spacing:-.02em;">Words</span><span style="font-size:13px; color:#9aa0b0;" class="num">248</span></div>
+            <div style="display:flex; align-items:center; gap:9px; height:42px; padding:0 14px; border-radius:12px; background:#eef1f8; color:#8b90a0; font-size:14px; margin-bottom:14px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Search words</div>
+            <div style="display:flex; gap:6px; margin-bottom:16px; overflow-x:auto;">
+              <span style="flex:none; height:30px; display:flex; align-items:center; padding:0 13px; border-radius:99px; background:#2f5bea; color:#fff; font-size:12.5px; font-weight:600;">All</span>
+              <span style="height:30px; display:flex; align-items:center; padding:0 13px; border-radius:99px; background:#fff; border:1px solid #e9ecf3; color:#5c6270; font-size:12.5px; font-weight:500;">New</span>
+              <span style="height:30px; display:flex; align-items:center; padding:0 13px; border-radius:99px; background:#fff; border:1px solid #e9ecf3; color:#5c6270; font-size:12.5px; font-weight:500;">Learning</span>
+              <span style="height:30px; display:flex; align-items:center; padding:0 13px; border-radius:99px; background:#fff; border:1px solid #e9ecf3; color:#5c6270; font-size:12.5px; font-weight:500;">Mastered</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <div class="card" style="padding:14px 16px; border-radius:15px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:5px;"><span style="font-size:16px; font-weight:600;">alacrity</span><span style="font-size:10.5px; font-weight:600; padding:3px 8px; border-radius:99px; background:#fff2e6; color:#e8863b;">New</span><span style="margin-left:auto; font-size:11.5px; color:#e8863b; font-weight:600;">Due today</span></div>
+                <div style="font-size:13px; color:#5c6270; line-height:1.4; margin-bottom:10px;">Brisk and cheerful readiness</div>
+                <div style="height:5px; border-radius:99px; background:#eef1f8; overflow:hidden;"><div style="width:22%; height:100%; background:#e8863b; border-radius:99px;"></div></div>
+              </div>
+              <div class="card" style="padding:14px 16px; border-radius:15px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:5px;"><span style="font-size:16px; font-weight:600;">ephemeral</span><span style="font-size:10.5px; font-weight:600; padding:3px 8px; border-radius:99px; background:#eaf0fe; color:#2f5bea;">Learning</span><span style="margin-left:auto; font-size:11.5px; color:#9aa0b0;">Tomorrow</span></div>
+                <div style="font-size:13px; color:#5c6270; line-height:1.4; margin-bottom:10px;">Lasting for a very short time</div>
+                <div style="height:5px; border-radius:99px; background:#eef1f8; overflow:hidden;"><div style="width:55%; height:100%; background:#2f5bea; border-radius:99px;"></div></div>
+              </div>
+              <div class="card" style="padding:14px 16px; border-radius:15px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:5px;"><span style="font-size:16px; font-weight:600;">ubiquitous</span><span style="font-size:10.5px; font-weight:600; padding:3px 8px; border-radius:99px; background:#e6f6ee; color:#1f9e6a;">Mastered</span><span style="margin-left:auto; font-size:11.5px; color:#9aa0b0;">in 12d</span></div>
+                <div style="font-size:13px; color:#5c6270; line-height:1.4; margin-bottom:10px;">Present, appearing, or found everywhere</div>
+                <div style="height:5px; border-radius:99px; background:#eef1f8; overflow:hidden;"><div style="width:92%; height:100%; background:#1f9e6a; border-radius:99px;"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 6. INSIGHTS ===== -->
+  <section style="display:flex; flex-direction:column; gap:22px;">
+    <div style="display:flex; align-items:center; gap:13px;"><span class="chip">06</span><div><div style="font-size:17px; font-weight:600; letter-spacing:-.01em;">Insights</div><div style="font-size:13px; color:#7a8091;">Progress worth coming back for</div></div></div>
+    <div style="display:flex; gap:32px; align-items:flex-start;">
+      <!-- WEB INSIGHTS -->
+      <div class="web">
+        <div style="height:60px; display:flex; align-items:center; gap:14px; padding:0 24px; background:rgba(255,255,255,.72); backdrop-filter:blur(18px); border-bottom:1px solid #e9ecf3;">
+          <div style="width:26px; height:26px; border-radius:8px; background:linear-gradient(145deg,#4f77ff,#2f5bea); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:14px;">V</div>
+          <span style="font-weight:600; letter-spacing:-.01em; font-size:15px;">Insights</span>
+          <div style="flex:1;"></div>
+          <div style="display:flex; gap:4px; padding:3px; border-radius:10px; background:#eef1f8;"><span style="padding:5px 12px; border-radius:8px; font-size:12.5px; font-weight:600; background:#fff; color:#1a1d29; box-shadow:0 1px 2px rgba(0,0,0,.06);">30 days</span><span style="padding:5px 12px; border-radius:8px; font-size:12.5px; font-weight:500; color:#8a8f9c;">90 days</span><span style="padding:5px 12px; border-radius:8px; font-size:12.5px; font-weight:500; color:#8a8f9c;">All</span></div>
+        </div>
+        <div style="padding:26px 28px 32px;">
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:16px;">
+            <div class="card" style="padding:18px 20px;"><div style="font-size:12.5px; color:#7a8091;">Retention rate</div><div style="display:flex; align-items:baseline; gap:8px; margin-top:6px;"><span style="font-size:30px; font-weight:700; letter-spacing:-.02em; color:#1f9e6a;" class="num">87%</span><span style="font-size:12px; color:#1f9e6a; font-weight:600;">▲ 4%</span></div></div>
+            <div class="card" style="padding:18px 20px;"><div style="font-size:12.5px; color:#7a8091;">Reviews this month</div><div style="display:flex; align-items:baseline; gap:8px; margin-top:6px;"><span style="font-size:30px; font-weight:700; letter-spacing:-.02em;" class="num">412</span><span style="font-size:12px; color:#1f9e6a; font-weight:600;">▲ 18%</span></div></div>
+            <div class="card" style="padding:18px 20px;"><div style="font-size:12.5px; color:#7a8091;">Avg. session</div><div style="display:flex; align-items:baseline; gap:8px; margin-top:6px;"><span style="font-size:30px; font-weight:700; letter-spacing:-.02em;" class="num">4.2<span style="font-size:16px;">min</span></span></div></div>
+          </div>
+          <div style="display:grid; grid-template-columns:1.5fr 1fr; gap:16px;">
+            <!-- retention line chart -->
+            <div class="card" style="padding:20px 22px; border-radius:18px;">
+              <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;"><span style="font-size:14px; font-weight:600;">Retention over time</span><span style="font-size:12px; color:#8a8f9c;">Last 30 days</span></div>
+              <svg width="100%" height="180" viewBox="0 0 520 180" preserveAspectRatio="none" style="display:block; margin-top:8px;">
+                <defs><linearGradient id="rg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2f5bea" stop-opacity=".22"/><stop offset="1" stop-color="#2f5bea" stop-opacity="0"/></linearGradient></defs>
+                <line x1="0" y1="45" x2="520" y2="45" stroke="#eef1f8" stroke-width="1"/><line x1="0" y1="90" x2="520" y2="90" stroke="#eef1f8" stroke-width="1"/><line x1="0" y1="135" x2="520" y2="135" stroke="#eef1f8" stroke-width="1"/>
+                <path d="M0,120 C60,110 90,95 130,100 C180,106 210,70 260,66 C310,62 340,52 390,44 C440,38 480,34 520,30 L520,180 L0,180 Z" fill="url(#rg)"/>
+                <path d="M0,120 C60,110 90,95 130,100 C180,106 210,70 260,66 C310,62 340,52 390,44 C440,38 480,34 520,30" fill="none" stroke="#2f5bea" stroke-width="3" stroke-linecap="round"/>
+                <circle cx="520" cy="30" r="5" fill="#2f5bea" stroke="#fff" stroke-width="2.5"/>
+              </svg>
+              <div style="display:flex; justify-content:space-between; font-size:11px; color:#9aa0b0; margin-top:8px;"><span>Jun 14</span><span>Jun 28</span><span>Jul 6</span><span>Today</span></div>
+            </div>
+            <!-- status donut -->
+            <div class="card" style="padding:20px 22px; border-radius:18px;">
+              <div style="font-size:14px; font-weight:600; margin-bottom:14px;">Library by status</div>
+              <div style="display:flex; align-items:center; gap:20px;">
+                <svg width="130" height="130" viewBox="0 0 42 42">
+                  <circle cx="21" cy="21" r="15.9" fill="none" stroke="#eef1f8" stroke-width="7"/>
+                  <circle cx="21" cy="21" r="15.9" fill="none" stroke="#1f9e6a" stroke-width="7" stroke-dasharray="69 31" stroke-dashoffset="25" stroke-linecap="round"/>
+                  <circle cx="21" cy="21" r="15.9" fill="none" stroke="#2f5bea" stroke-width="7" stroke-dasharray="25 75" stroke-dashoffset="-44" stroke-linecap="round"/>
+                  <circle cx="21" cy="21" r="15.9" fill="none" stroke="#e8863b" stroke-width="7" stroke-dasharray="6 94" stroke-dashoffset="-69" stroke-linecap="round"/>
+                  <text x="21" y="20" text-anchor="middle" font-size="8" font-weight="700" fill="#1a1d29" class="num">248</text>
+                  <text x="21" y="27" text-anchor="middle" font-size="3.4" fill="#8a8f9c">words</text>
+                </svg>
+                <div style="display:flex; flex-direction:column; gap:11px;">
+                  <div style="display:flex; align-items:center; gap:9px; font-size:13px;"><span style="width:9px;height:9px;border-radius:3px;background:#1f9e6a;"></span>Mastered <b style="margin-left:auto;" class="num">172</b></div>
+                  <div style="display:flex; align-items:center; gap:9px; font-size:13px;"><span style="width:9px;height:9px;border-radius:3px;background:#2f5bea;"></span>Learning <b style="margin-left:auto;" class="num">62</b></div>
+                  <div style="display:flex; align-items:center; gap:9px; font-size:13px;"><span style="width:9px;height:9px;border-radius:3px;background:#e8863b;"></span>New <b style="margin-left:auto;" class="num">14</b></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- streak heatmap -->
+          <div class="card" style="padding:20px 22px; border-radius:18px; margin-top:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:16px;"><span style="font-size:14px; font-weight:600;">Review activity</span><span style="font-size:12px; color:#8a8f9c;">🔥 9-day streak · longest 21</span></div>
+            <div style="display:flex; gap:4px;">
+              <!-- 18 weeks x 7 -->
+              <div style="display:grid; grid-template-rows:repeat(7,1fr); grid-auto-flow:column; grid-auto-columns:13px; gap:4px;">
+                <!-- generate cells via repetition -->
+                <span style="width:13px;height:13px;border-radius:3px;background:#eef1f8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#cdd6ee;"></span><span style="width:13px;height:13px;border-radius:3px;background:#eef1f8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#9db0e8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#eef1f8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#cdd6ee;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span>
+                <span style="width:13px;height:13px;border-radius:3px;background:#cdd6ee;"></span><span style="width:13px;height:13px;border-radius:3px;background:#9db0e8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#eef1f8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#9db0e8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#eef1f8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#cdd6ee;"></span>
+                <span style="width:13px;height:13px;border-radius:3px;background:#eef1f8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#9db0e8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#cdd6ee;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#eef1f8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#9db0e8;"></span>
+                <span style="width:13px;height:13px;border-radius:3px;background:#9db0e8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#eef1f8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#cdd6ee;"></span><span style="width:13px;height:13px;border-radius:3px;background:#9db0e8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#eef1f8;"></span>
+                <span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#cdd6ee;"></span><span style="width:13px;height:13px;border-radius:3px;background:#9db0e8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#eef1f8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#cdd6ee;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span>
+                <span style="width:13px;height:13px;border-radius:3px;background:#eef1f8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#9db0e8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#cdd6ee;"></span><span style="width:13px;height:13px;border-radius:3px;background:#9db0e8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#9db0e8;"></span>
+                <span style="width:13px;height:13px;border-radius:3px;background:#cdd6ee;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#eef1f8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#9db0e8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#cdd6ee;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span>
+                <span style="width:13px;height:13px;border-radius:3px;background:#9db0e8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#eef1f8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#cdd6ee;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#9db0e8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#cdd6ee;"></span>
+                <span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#9db0e8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#eef1f8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#cdd6ee;"></span><span style="width:13px;height:13px;border-radius:3px;background:#9db0e8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span>
+                <span style="width:13px;height:13px;border-radius:3px;background:#eef1f8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#9db0e8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#cdd6ee;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#9db0e8;"></span>
+                <span style="width:13px;height:13px;border-radius:3px;background:#cdd6ee;"></span><span style="width:13px;height:13px;border-radius:3px;background:#9db0e8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#9db0e8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#eef1f8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span>
+                <span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#cdd6ee;"></span><span style="width:13px;height:13px;border-radius:3px;background:#9db0e8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#9db0e8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#cdd6ee;"></span>
+                <span style="width:13px;height:13px;border-radius:3px;background:#9db0e8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#eef1f8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#cdd6ee;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#9db0e8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span>
+                <span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#9db0e8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#cdd6ee;"></span><span style="width:13px;height:13px;border-radius:3px;background:#9db0e8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span>
+                <span style="width:13px;height:13px;border-radius:3px;background:#cdd6ee;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#9db0e8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#cdd6ee;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span>
+                <span style="width:13px;height:13px;border-radius:3px;background:#9db0e8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#9db0e8;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#2f5bea;"></span><span style="width:13px;height:13px;border-radius:3px;background:#9db0e8;"></span>
+              </div>
+              <div style="flex:1;"></div>
+              <div style="display:flex; align-items:center; gap:6px; align-self:flex-end; font-size:11px; color:#9aa0b0;">Less<span style="width:11px;height:11px;border-radius:3px;background:#eef1f8;"></span><span style="width:11px;height:11px;border-radius:3px;background:#cdd6ee;"></span><span style="width:11px;height:11px;border-radius:3px;background:#9db0e8;"></span><span style="width:11px;height:11px;border-radius:3px;background:#2f5bea;"></span>More</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MOBILE INSIGHTS -->
+      <div class="phone">
+        <div class="screen">
+          <div class="notch"></div>
+          <div class="sbar"><span>9:41</span><span style="letter-spacing:1px;">●●● ▮</span></div>
+          <div style="padding:8px 18px 24px;">
+            <div style="font-size:22px; font-weight:700; letter-spacing:-.02em; margin-bottom:16px;">Insights</div>
+            <div class="card" style="padding:18px 20px; border-radius:16px; margin-bottom:12px;">
+              <div style="font-size:12.5px; color:#7a8091;">Retention rate</div>
+              <div style="display:flex; align-items:baseline; gap:8px; margin:5px 0 14px;"><span style="font-size:30px; font-weight:700; letter-spacing:-.02em; color:#1f9e6a;" class="num">87%</span><span style="font-size:12px; color:#1f9e6a; font-weight:600;">▲ 4%</span></div>
+              <svg width="100%" height="80" viewBox="0 0 260 80" preserveAspectRatio="none">
+                <defs><linearGradient id="rgm" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2f5bea" stop-opacity=".2"/><stop offset="1" stop-color="#2f5bea" stop-opacity="0"/></linearGradient></defs>
+                <path d="M0,58 C40,52 55,44 70,46 C95,50 110,30 135,28 C165,25 180,20 210,15 C235,11 250,9 260,7 L260,80 L0,80 Z" fill="url(#rgm)"/>
+                <path d="M0,58 C40,52 55,44 70,46 C95,50 110,30 135,28 C165,25 180,20 210,15 C235,11 250,9 260,7" fill="none" stroke="#2f5bea" stroke-width="2.5" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="card" style="padding:18px 20px; border-radius:16px; margin-bottom:12px;">
+              <div style="font-size:13.5px; font-weight:600; margin-bottom:14px;">Library by status</div>
+              <div style="display:flex; align-items:center; gap:18px;">
+                <svg width="96" height="96" viewBox="0 0 42 42">
+                  <circle cx="21" cy="21" r="15.9" fill="none" stroke="#eef1f8" stroke-width="7"/>
+                  <circle cx="21" cy="21" r="15.9" fill="none" stroke="#1f9e6a" stroke-width="7" stroke-dasharray="69 31" stroke-dashoffset="25" stroke-linecap="round"/>
+                  <circle cx="21" cy="21" r="15.9" fill="none" stroke="#2f5bea" stroke-width="7" stroke-dasharray="25 75" stroke-dashoffset="-44" stroke-linecap="round"/>
+                  <circle cx="21" cy="21" r="15.9" fill="none" stroke="#e8863b" stroke-width="7" stroke-dasharray="6 94" stroke-dashoffset="-69" stroke-linecap="round"/>
+                </svg>
+                <div style="display:flex; flex-direction:column; gap:9px; flex:1;">
+                  <div style="display:flex; align-items:center; gap:8px; font-size:12.5px;"><span style="width:8px;height:8px;border-radius:3px;background:#1f9e6a;"></span>Mastered <b style="margin-left:auto;" class="num">172</b></div>
+                  <div style="display:flex; align-items:center; gap:8px; font-size:12.5px;"><span style="width:8px;height:8px;border-radius:3px;background:#2f5bea;"></span>Learning <b style="margin-left:auto;" class="num">62</b></div>
+                  <div style="display:flex; align-items:center; gap:8px; font-size:12.5px;"><span style="width:8px;height:8px;border-radius:3px;background:#e8863b;"></span>New <b style="margin-left:auto;" class="num">14</b></div>
+                </div>
+              </div>
+            </div>
+            <div class="card" style="padding:16px 18px; border-radius:16px;">
+              <div style="font-size:13px; font-weight:600; margin-bottom:3px;">🔥 9-day streak</div>
+              <div style="font-size:12px; color:#7a8091;">Longest streak 21 days · keep it going</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</x-dc>
+</body>
+</html>

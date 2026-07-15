@@ -31,16 +31,19 @@ export default async function DashboardPage() {
         preferencesService.get(user.id),
     ])
 
+    const firstName = prefs.displayName?.trim().split(/\s+/)[0]
+    const heading = firstName ? `${greeting()}, ${firstName}` : greeting()
+
     const firstRun = recentWords.length === 0 && stats.learned === 0 && stats.due === 0
     if (firstRun) {
         return (
             <div className="space-y-6">
                 <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    <p className="num text-[13px] font-medium text-slate-2">
                         {formatDate()}
                     </p>
-                    <h1 className="font-display font-semibold text-2xl sm:text-3xl mt-1">
-                        {greeting()}
+                    <h1 className="font-display font-semibold text-[26px] tracking-tight mt-0.5">
+                        {heading}
                     </h1>
                 </div>
                 <FirstRunHero displayName={prefs.displayName} />
@@ -61,11 +64,11 @@ export default async function DashboardPage() {
         <div className="space-y-6">
             {/* Header */}
             <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <p className="num text-[13px] font-medium text-slate-2">
                     {formatDate()}
                 </p>
-                <h1 className="font-display font-semibold text-2xl sm:text-3xl mt-1">
-                    {greeting()}
+                <h1 className="font-display font-semibold text-[26px] tracking-tight mt-0.5">
+                    {heading}
                 </h1>
             </div>
 

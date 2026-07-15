@@ -35,7 +35,7 @@ export function WeekProgress({ stats, loading = false }: WeekProgressProps) {
         <div className="rounded-2xl border border-border bg-card p-4 sm:p-6 shadow-sm flex flex-col">
             <div className="flex items-baseline justify-between">
                 <span className="font-semibold text-sm">This week</span>
-                <span className="font-mono text-xs text-muted-foreground">
+                <span className="num text-xs text-muted-foreground">
                     {stats.weekDone}/{stats.weekGoal}
                 </span>
             </div>
@@ -62,11 +62,11 @@ export function WeekProgress({ stats, loading = false }: WeekProgressProps) {
                         <div key={i} className="flex flex-1 flex-col items-center gap-1">
                             <div className="w-full flex items-end h-11">
                                 <div
-                                    className={`w-full rounded-sm ${isToday ? 'bg-accent' : 'bg-muted-foreground/30'}`}
+                                    className={`w-full rounded-sm ${isToday ? 'bg-accent' : 'bg-heat-1'}`}
                                     style={{ height: `${heightPct}%` }}
                                 />
                             </div>
-                            <span className="font-mono text-[10px] text-muted-foreground">
+                            <span className={`text-[10px] ${isToday ? 'font-semibold text-accent' : 'text-faint'}`}>
                                 {DAY_LABELS[i]}
                             </span>
                         </div>
