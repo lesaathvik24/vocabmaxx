@@ -43,8 +43,20 @@ export async function GET(request: Request) {
             },
         )
 
-        const { error } = await supabase.auth.exchangeCodeForSession(code)
-        if (!error) {
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+        if (!error && data.session) {
+            // Google returns provider_token/provider_refresh_token we never use. Left in
+            // the session they bloat the cookie past 4KB, forcing @supabase/ssr to split
+            // it into .0/.1 chunks — and a chunked cookie can strand a stale half across a
+            // tab close, so the session reads as absent and the user is silently logged
+            // out. Re-storing from just the two tokens drops the provider fields, keeping
+            // the cookie a single sub-4KB entry that survives for the refresh-token's life.
+            if (data.session.provider_token || data.session.provider_refresh_token) {
+                await supabase.auth.setSession({
+                    access_token: data.session.access_token,
+                    refresh_token: data.session.refresh_token,
+                })
+            }
             return NextResponse.redirect(`${origin}${next}`)
         }
     }
